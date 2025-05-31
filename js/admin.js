@@ -631,7 +631,73 @@ document.getElementById('exportBtn').addEventListener('click', async () => {
   try {
     const rows = [];
     
+    // Adiciona um cabeçalho/título à planilha
+    rows.push({
+      'ID da Casa': 'RELATÓRIO DE RESIDÊNCIAS TERAPÊUTICAS - SRT',
+      'Nome da Residência': '',
+      'CAPS Vinculado': '',
+      'CNES do CAPS': '',
+      'Tipo SRT': '',
+      'Data de Preenchimento': `Gerado em: ${new Date().toLocaleDateString('pt-BR')}`,
+    });
+    
+    // Linha vazia para separação
+    rows.push({});
+    
+    // Linha com estatísticas gerais
+    rows.push({
+      'ID da Casa': 'RESUMO GERAL',
+      'Nome da Residência': `Total de Casas: ${allHouses.length}`,
+      'CAPS Vinculado': `Total de Moradores: ${allHouses.reduce((sum, house) => sum + (house.residents?.length || 0), 0)}`,
+      'CNES do CAPS': `Taxa de Ocupação Média: ${(allHouses.reduce((sum, house) => {
+        const taxa = house.vagasTotais > 0 ? (house.vagasOcupadas / house.vagasTotais * 100) : 0;
+        return sum + taxa;
+      }, 0) / allHouses.length).toFixed(1)}%`,
+    });
+    
+    // Linha vazia
+    rows.push({});
+    
+    // Cabeçalho dos dados (será formatado depois)
+    rows.push({
+      'ID da Casa': 'ID da Casa',
+      'Nome da Residência': 'Nome da Residência',
+      'CAPS Vinculado': 'CAPS Vinculado',
+      'CNES do CAPS': 'CNES do CAPS',
+      'Tipo SRT': 'Tipo SRT',
+      'Data de Preenchimento': 'Data de Preenchimento',
+      'Responsável': 'Responsável',
+      'Cargo': 'Cargo',
+      'Contato': 'Contato',
+      'Endereço': 'Endereço',
+      'Bairro': 'Bairro',
+      'Município': 'Município',
+      'UF': 'UF',
+      'CEP': 'CEP',
+      'Total de Moradores': 'Total de Moradores',
+      'Vagas Totais': 'Vagas Totais',
+      'Vagas Ocupadas': 'Vagas Ocupadas',
+      'Vagas Disponíveis': 'Vagas Disponíveis',
+      'Taxa de Ocupação (%)': 'Taxa de Ocupação (%)',
+      'Morador Nº': 'Morador Nº',
+      'Nome do Morador': 'Nome do Morador',
+      'Nome Social': 'Nome Social',
+      'Data de Nascimento': 'Data de Nascimento',
+      'Idade': 'Idade',
+      'Instituição de Origem': 'Instituição de Origem',
+      'Tempo de Internação': 'Tempo de Internação',
+      'Raça/Cor': 'Raça/Cor',
+      'Sexo Biológico': 'Sexo Biológico',
+      'Identidade de Gênero': 'Identidade de Gênero',
+      'Participa do PVC': 'Participa do PVC',
+      'Vínculo Familiar': 'Vínculo Familiar',
+      'Frequência CAPS': 'Frequência CAPS',
+      'Frequência UBS': 'Frequência UBS'
+    });
+    
     for (const house of allHouses) {
+      const taxaOcupacao = house.vagasTotais > 0 ? ((house.vagasOcupadas / house.vagasTotais) * 100).toFixed(1) : '0.0';
+      
       const baseInfo = {
         'ID da Casa': house.id,
         'Nome da Residência': house.nomeResidencia || '',
@@ -648,9 +714,10 @@ document.getElementById('exportBtn').addEventListener('click', async () => {
         'UF': house.uf || '',
         'CEP': house.cep || '',
         'Total de Moradores': house.residents?.length || 0,
-        'Vagas Totais': house.vagasTotais || 0,
-        'Vagas Ocupadas': house.vagasOcupadas || 0,
-        'Vagas Disponíveis': house.vagasDisponiveis || 0
+        'Vagas Totais': parseInt(house.vagasTotais) || 0,
+        'Vagas Ocupadas': parseInt(house.vagasOcupadas) || 0,
+        'Vagas Disponíveis': parseInt(house.vagasDisponiveis) || 0,
+        'Taxa de Ocupação (%)': parseFloat(taxaOcupacao),
       };
       
       if (house.residents && house.residents.length > 0) {
@@ -678,12 +745,100 @@ document.getElementById('exportBtn').addEventListener('click', async () => {
       }
     }
     
-    const worksheet = XLSX.utils.json_to_sheet(rows);
+    // Criar a planilha com formatação
+    const worksheet = XLSX.utils.json_to_sheet(rows, { skipHeader: true });
+    
+    // Configurar larguras das colunas
+    const colWidths = [
+      { wch: 15 }, // ID da Casa
+      { wch: 30 }, // Nome da Residência
+      { wch: 25 }, // CAPS Vinculado
+      { wch: 15 }, // CNES do CAPS
+      { wch: 12 }, // Tipo SRT
+      { wch: 18 }, // Data de Preenchimento
+      { wch: 25 }, // Responsável
+      { wch: 20 }, // Cargo
+      { wch: 18 }, // Contato
+      { wch: 35 }, // Endereço
+      { wch: 20 }, // Bairro
+      { wch: 20 }, // Município
+      { wch: 8 },  // UF
+      { wch: 12 }, // CEP
+      { wch: 18 }, // Total de Moradores
+      { wch: 15 }, // Vagas Totais
+      { wch: 15 }, // Vagas Ocupadas
+      { wch: 18 }, // Vagas Disponíveis
+      { wch: 20 }, // Taxa de Ocupação
+      { wch: 12 }, // Morador Nº
+      { wch: 30 }, // Nome do Morador
+      { wch: 25 }, // Nome Social
+      { wch: 18 }, // Data de Nascimento
+      { wch: 10 }, // Idade
+      { wch: 30 }, // Instituição de Origem
+      { wch: 20 }, // Tempo de Internação
+      { wch: 15 }, // Raça/Cor
+      { wch: 15 }, // Sexo Biológico
+      { wch: 20 }, // Identidade de Gênero
+      { wch: 15 }, // Participa do PVC
+      { wch: 18 }, // Vínculo Familiar
+      { wch: 18 }, // Frequência CAPS
+      { wch: 18 }  // Frequência UBS
+    ];
+    
+    worksheet['!cols'] = colWidths;
+    
+    // Adicionar estilos básicos (funciona apenas com xlsx-style ou similar)
+    // Para a versão gratuita, vamos adicionar alguns ajustes de formatação
+    const range = XLSX.utils.decode_range(worksheet['!ref']);
+    
+    // Formatar células específicas
+    for (let R = range.s.r; R <= range.e.r; ++R) {
+      for (let C = range.s.c; C <= range.e.c; ++C) {
+        const cellAddress = XLSX.utils.encode_cell({ r: R, c: C });
+        if (!worksheet[cellAddress]) continue;
+        
+        // Formatar números
+        if (C >= 14 && C <= 17 && R > 4) { // Colunas de vagas
+          worksheet[cellAddress].t = 'n';
+        }
+        
+        // Formatar porcentagem
+        if (C === 18 && R > 4) { // Taxa de ocupação
+          worksheet[cellAddress].t = 'n';
+          worksheet[cellAddress].z = '0.0"%"';
+        }
+        
+        // Formatar datas
+        if ((C === 5 || C === 22) && R > 4 && worksheet[cellAddress].v) { // Colunas de data
+          if (worksheet[cellAddress].v.includes('-')) {
+            const dateParts = worksheet[cellAddress].v.split('-');
+            if (dateParts.length === 3) {
+              worksheet[cellAddress].v = `${dateParts[2]}/${dateParts[1]}/${dateParts[0]}`;
+            }
+          }
+        }
+      }
+    }
+    
+    // Mesclar células do título
+    worksheet['!merges'] = [
+      { s: { r: 0, c: 0 }, e: { r: 0, c: 4 } }, // Título principal
+      { s: { r: 2, c: 0 }, e: { r: 2, c: 0 } }, // Resumo geral
+    ];
+    
     const workbook = XLSX.utils.book_new();
     XLSX.utils.book_append_sheet(workbook, worksheet, "Casas SRT");
     
+    // Adicionar propriedades ao workbook
+    workbook.Props = {
+      Title: "Relatório SRT",
+      Subject: "Dados das Residências Terapêuticas",
+      Author: "Sistema SRT",
+      CreatedDate: new Date()
+    };
+    
     const date = new Date().toISOString().split('T')[0];
-    XLSX.writeFile(workbook, `export_srt_${date}.xlsx`);
+    XLSX.writeFile(workbook, `relatorio_srt_${date}.xlsx`);
     
     showToast('Dados exportados com sucesso!');
   } catch (error) {
