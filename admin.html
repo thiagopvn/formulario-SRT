@@ -245,64 +245,195 @@
         </div>
       </div>
 
-      <div class="tab-content" id="configTab" style="display:none;">
-        <header class="content-header">
-          <div>
-            <h1>Configurações do Formulário</h1>
-            <p class="text-muted">Personalize a estrutura dos campos</p>
-          </div>
-          <button id="resetConfigBtn" class="btn btn-warning">
-            <svg width="20" height="20" viewBox="0 0 24 24" fill="none">
-              <path d="M1 4v6h6m16 10v-6h-6" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
-              <path d="M3.51 9a9 9 0 0114.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0020.49 15" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+     <div class="tab-content" id="configTab" style="display:none;">
+  <header class="content-header">
+    <div>
+      <h1>Configurações do Formulário</h1>
+      <p class="text-muted">Gerencie os campos do formulário de forma visual</p>
+    </div>
+    <div class="header-actions">
+      <button id="addFieldBtn" class="btn btn-primary">
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none">
+          <path d="M12 5v14m-7-7h14" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
+        </svg>
+        Adicionar Campo
+      </button>
+    </div>
+  </header>
+  
+  <div class="config-visual-container">
+    <div class="config-sections">
+      <div class="config-section-card" data-section="general">
+        <div class="section-header-config">
+          <div class="section-info">
+            <svg width="24" height="24" viewBox="0 0 24 24" fill="none">
+              <path d="M19 21H5a2 2 0 01-2-2V5a2 2 0 012-2h14a2 2 0 012 2v14a2 2 0 01-2 2z" stroke="currentColor" stroke-width="2"/>
+              <path d="M7 10h10m-10 4h10" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
             </svg>
-            Restaurar Padrão
-          </button>
-        </header>
-        
-        <div class="config-container">
-          <div class="config-editor">
-            <div class="editor-header">
-              <h3>Editor JSON</h3>
-              <div class="editor-actions">
-                <button id="formatBtn" class="btn btn-sm">
-                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none">
-                    <path d="M4 6h16M4 12h16m-7 6h7" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
-                  </svg>
-                  Formatar
-                </button>
-                <button id="validateBtn" class="btn btn-sm">
-                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none">
-                    <path d="M9 11l3 3L22 4" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
-                  </svg>
-                  Validar
-                </button>
-              </div>
+            <div>
+              <h3>Dados da SRT</h3>
+              <p>Informações gerais da residência</p>
             </div>
-            <div class="editor-wrapper">
-              <div class="line-numbers" id="lineNumbers"></div>
-              <textarea id="configJSON" class="code-editor" spellcheck="false"></textarea>
+          </div>
+          <span class="field-count">13 campos</span>
+        </div>
+        <div class="fields-list" id="generalFieldsList"></div>
+      </div>
+      
+      <div class="config-section-card" data-section="residence">
+        <div class="section-header-config">
+          <div class="section-info">
+            <svg width="24" height="24" viewBox="0 0 24 24" fill="none">
+              <path d="M3 9l9-7 9 7v11a2 2 0 01-2 2H5a2 2 0 01-2-2z" stroke="currentColor" stroke-width="2"/>
+              <path d="M9 22V12h6v10" stroke="currentColor" stroke-width="2"/>
+            </svg>
+            <div>
+              <h3>Dados da Residência</h3>
+              <p>Endereço e estrutura física</p>
             </div>
+          </div>
+          <span class="field-count">16 campos</span>
+        </div>
+        <div class="fields-list" id="residenceFieldsList"></div>
+      </div>
+      
+      <div class="config-section-card" data-section="caregivers">
+        <div class="section-header-config">
+          <div class="section-info">
+            <svg width="24" height="24" viewBox="0 0 24 24" fill="none">
+              <path d="M16 21v-2a4 4 0 00-4-4H5a4 4 0 00-4 4v2" stroke="currentColor" stroke-width="2"/>
+              <circle cx="8.5" cy="7" r="4" stroke="currentColor" stroke-width="2"/>
+              <path d="M20 8v6m3-3h-6" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
+            </svg>
+            <div>
+              <h3>Equipe/Cuidadores</h3>
+              <p>Informações sobre a equipe</p>
+            </div>
+          </div>
+          <span class="field-count">11 campos</span>
+        </div>
+        <div class="fields-list" id="caregiversFieldsList"></div>
+      </div>
+      
+      <div class="config-section-card" data-section="residentFields">
+        <div class="section-header-config">
+          <div class="section-info">
+            <svg width="24" height="24" viewBox="0 0 24 24" fill="none">
+              <path d="M17 21v-2a4 4 0 00-4-4H5a4 4 0 00-4 4v2" stroke="currentColor" stroke-width="2"/>
+              <circle cx="9" cy="7" r="4" stroke="currentColor" stroke-width="2"/>
+            </svg>
+            <div>
+              <h3>Dados dos Moradores</h3>
+              <p>Campos individuais de cada morador</p>
+            </div>
+          </div>
+          <span class="field-count">20 campos</span>
+        </div>
+        <div class="fields-list" id="residentFieldsFieldsList"></div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Modal para adicionar/editar campo -->
+<div id="fieldModal" class="modal">
+  <div class="modal-backdrop"></div>
+  <div class="modal-content modal-form">
+    <button class="modal-close">
+      <svg width="24" height="24" viewBox="0 0 24 24" fill="none">
+        <path d="M18 6L6 18M6 6l12 12" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
+      </svg>
+    </button>
+    <div class="modal-header">
+      <h2 id="fieldModalTitle">Adicionar Campo</h2>
+    </div>
+    <div class="modal-body">
+      <form id="fieldForm">
+        <div class="form-row">
+          <div class="form-group">
+            <label for="fieldSection">Seção</label>
+            <select id="fieldSection" required>
+              <option value="">Selecione...</option>
+              <option value="general">Dados da SRT</option>
+              <option value="residence">Dados da Residência</option>
+              <option value="caregivers">Equipe/Cuidadores</option>
+              <option value="residentFields">Dados dos Moradores</option>
+            </select>
           </div>
           
-          <div class="config-preview">
-            <h3>Prévia</h3>
-            <div id="configPreview" class="preview-content">
-              <p class="text-muted">As alterações aparecerão aqui</p>
+          <div class="form-group">
+            <label for="fieldType">Tipo do Campo</label>
+            <select id="fieldType" required>
+              <option value="">Selecione...</option>
+              <option value="text">Texto</option>
+              <option value="number">Número</option>
+              <option value="date">Data</option>
+              <option value="select">Lista de Opções</option>
+              <option value="textarea">Texto Longo</option>
+              <option value="tel">Telefone</option>
+              <option value="email">E-mail</option>
+            </select>
+          </div>
+        </div>
+        
+        <div class="form-group">
+          <label for="fieldLabel">Nome do Campo</label>
+          <input type="text" id="fieldLabel" placeholder="Ex: Nome Completo" required>
+        </div>
+        
+        <div class="form-group">
+          <label for="fieldKey">Identificador (automático)</label>
+          <input type="text" id="fieldKey" readonly>
+        </div>
+        
+        <div id="optionsContainer" class="form-group" style="display: none;">
+          <label>Opções da Lista</label>
+          <div id="optionsList"></div>
+          <button type="button" class="btn btn-sm" id="addOptionBtn">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none">
+              <path d="M12 5v14m-7-7h14" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
+            </svg>
+            Adicionar Opção
+          </button>
+        </div>
+        
+        <div class="form-row">
+          <div class="form-group">
+            <label class="checkbox-label">
+              <input type="checkbox" id="fieldRequired">
+              <span>Campo obrigatório</span>
+            </label>
+          </div>
+          
+          <div id="numberConstraints" style="display: none;">
+            <div class="form-group">
+              <label for="fieldMin">Valor Mínimo</label>
+              <input type="number" id="fieldMin">
+            </div>
+            
+            <div class="form-group">
+              <label for="fieldMax">Valor Máximo</label>
+              <input type="number" id="fieldMax">
             </div>
           </div>
         </div>
         
-        <div class="config-footer">
-          <button id="saveConfigBtn" class="btn btn-primary">
+        <div class="modal-footer">
+          <button type="button" class="btn btn-secondary" onclick="closeFieldModal()">
+            Cancelar
+          </button>
+          <button type="submit" class="btn btn-primary">
             <svg width="20" height="20" viewBox="0 0 24 24" fill="none">
               <path d="M19 21H5a2 2 0 01-2-2V5a2 2 0 012-2h11l5 5v11a2 2 0 01-2 2z" stroke="currentColor" stroke-width="2"/>
               <path d="M17 21v-8H7v8M7 3v5h8" stroke="currentColor" stroke-width="2"/>
             </svg>
-            Salvar Alterações
+            Salvar Campo
           </button>
         </div>
-      </div>
+      </form>
+    </div>
+  </div>
+</div>
 
       <div class="tab-content" id="reportsTab" style="display:none;">
         <header class="content-header">

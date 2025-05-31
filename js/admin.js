@@ -15,6 +15,9 @@ const auth = firebase.auth();
 let allHouses = [];
 let currentConfig = null;
 let occupancyChart = null;
+let editingField = null;
+let editingFieldIndex = null;
+let editingFieldSection = null;
 
 const showLoading = () => document.getElementById('loadingOverlay').classList.add('show');
 const hideLoading = () => document.getElementById('loadingOverlay').classList.remove('show');
@@ -431,6 +434,26 @@ document.getElementById('exportBtn').addEventListener('click', async () => {
   }
 });
 
+const fieldTypeIcons = {
+  text: '<path d="M3 5h12m-6 0v14" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>',
+  number: '<path d="M6 20h12M6 12h12M6 4h12" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>',
+  date: '<rect x="3" y="4" width="18" height="18" rx="2" stroke="currentColor" stroke-width="2"/><path d="M16 2v4M8 2v4M3 10h18" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>',
+  select: '<path d="M4 6h16M4 12h16M4 18h16" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>',
+  textarea: '<rect x="3" y="3" width="18" height="18" rx="2" stroke="currentColor" stroke-width="2"/><path d="M7 7h10M7 12h10M7 17h4" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>',
+  tel: '<path d="M22 16.92v3a2 2 0 01-2.18 2 19.79 19.79 0 01-8.63-3.07 19.5 19.5 0 01-6-6 19.79 19.79 0 01-3.07-8.67A2 2 0 014.11 2h3a2 2 0 012 1.72c.127.96.361 1.903.7 2.81a2 2 0 01-.45 2.11L8.09 9.91a16 16 0 006 6l1.27-1.27a2 2 0 012.11-.45c.907.339 1.85.573 2.81.7A2 2 0 0122 16.92z" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>',
+  email: '<path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z" stroke="currentColor" stroke-width="2"/><path d="M22 6l-10 7L2 6" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>'
+};
+
+const fieldTypeLabels = {
+  text: 'Texto',
+  number: 'Número',
+  date: 'Data',
+  select: 'Lista',
+  textarea: 'Texto Longo',
+  tel: 'Telefone',
+  email: 'E-mail'
+};
+
 const loadConfigJSON = async () => {
   const configRef = db.collection("config").doc("srt");
   const configSnap = await configRef.get();
@@ -442,7 +465,325 @@ const loadConfigJSON = async () => {
     updateLineNumbers();
     updatePreview();
   }
+  renderConfigFields();
 };
+
+const renderConfigFields = () => {
+  if (!currentConfig) return;
+  
+  Object.entries(currentConfig).forEach(([section, fields]) => {
+    const container = document.getElementById(`${section}FieldsList`);
+    if (!container) return;
+    
+    container.innerHTML = '';
+    
+    if (fields.length === 0) {
+      container.innerHTML = `
+        <div class="empty-fields">
+          <svg width="48" height="48" viewBox="0 0 24 24" fill="none">
+            <path d="M12 5v14m-7-7h14" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
+          </svg>
+          <p>Nenhum campo cadastrado</p>
+        </div>
+      `;
+      return;
+    }
+    
+    fields.forEach((field, index) => {
+      const fieldElement = createFieldElement(field, index, section);
+      container.appendChild(fieldElement);
+    });
+    
+    updateFieldCount(section);
+    setupDragAndDrop(container, section);
+  });
+};
+
+const createFieldElement = (field, index, section) => {
+  const div = document.createElement('div');
+  div.className = 'field-item';
+  div.draggable = true;
+  div.dataset.index = index;
+  
+  div.innerHTML = `
+    <svg class="drag-handle" width="20" height="20" viewBox="0 0 24 24" fill="none">
+      <path d="M9 5h2v2H9zM13 5h2v2h-2zM9 9h2v2H9zM13 9h2v2h-2zM9 13h2v2H9zM13 13h2v2h-2zM9 17h2v2H9zM13 17h2v2h-2z" fill="currentColor"/>
+    </svg>
+    
+    <div class="field-icon">
+      <svg width="20" height="20" viewBox="0 0 24 24" fill="none">
+        ${fieldTypeIcons[field.type] || fieldTypeIcons.text}
+      </svg>
+    </div>
+    
+    <div class="field-content">
+      <div class="field-name">${field.label}</div>
+      <div class="field-meta">
+        <span class="field-type">${fieldTypeLabels[field.type] || field.type}</span>
+        ${field.required ? '<span class="field-required">Obrigatório</span>' : ''}
+        ${field.options ? `<span>${field.options.length} opções</span>` : ''}
+      </div>
+    </div>
+    
+    <div class="field-actions">
+      <button class="field-action-btn edit" onclick="editField('${section}', ${index})">
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none">
+          <path d="M11 4H4a2 2 0 00-2 2v14a2 2 0 002 2h14a2 2 0 002-2v-7" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+          <path d="M18.5 2.5a2.121 2.121 0 013 3L12 15l-4 1 1-4 9.5-9.5z" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+        </svg>
+      </button>
+      <button class="field-action-btn delete" onclick="deleteField('${section}', ${index})">
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none">
+          <path d="M3 6h18m-2 0v14a2 2 0 01-2 2H7a2 2 0 01-2-2V6m3 0V4a2 2 0 012-2h4a2 2 0 012 2v2" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+        </svg>
+      </button>
+    </div>
+  `;
+  
+  return div;
+};
+
+const setupDragAndDrop = (container, section) => {
+  let draggedElement = null;
+  
+  container.addEventListener('dragstart', (e) => {
+    if (e.target.classList.contains('field-item')) {
+      draggedElement = e.target;
+      e.target.classList.add('dragging');
+    }
+  });
+  
+  container.addEventListener('dragend', (e) => {
+    if (e.target.classList.contains('field-item')) {
+      e.target.classList.remove('dragging');
+    }
+  });
+  
+  container.addEventListener('dragover', (e) => {
+    e.preventDefault();
+    const afterElement = getDragAfterElement(container, e.clientY);
+    if (afterElement == null) {
+      container.appendChild(draggedElement);
+    } else {
+      container.insertBefore(draggedElement, afterElement);
+    }
+  });
+  
+  container.addEventListener('drop', async (e) => {
+    e.preventDefault();
+    if (!draggedElement) return;
+    
+    const newOrder = [...container.querySelectorAll('.field-item')].map(el => 
+      parseInt(el.dataset.index)
+    );
+    
+    const reorderedFields = newOrder.map(index => currentConfig[section][index]);
+    currentConfig[section] = reorderedFields;
+    
+    await saveConfig();
+    renderConfigFields();
+  });
+};
+
+const getDragAfterElement = (container, y) => {
+  const draggableElements = [...container.querySelectorAll('.field-item:not(.dragging)')];
+  
+  return draggableElements.reduce((closest, child) => {
+    const box = child.getBoundingClientRect();
+    const offset = y - box.top - box.height / 2;
+    
+    if (offset < 0 && offset > closest.offset) {
+      return { offset: offset, element: child };
+    } else {
+      return closest;
+    }
+  }, { offset: Number.NEGATIVE_INFINITY }).element;
+};
+
+const updateFieldCount = (section) => {
+  const card = document.querySelector(`[data-section="${section}"]`);
+  const countElement = card.querySelector('.field-count');
+  const count = currentConfig[section].length;
+  countElement.textContent = `${count} campo${count !== 1 ? 's' : ''}`;
+};
+
+document.getElementById('addFieldBtn').addEventListener('click', () => {
+  editingField = null;
+  editingFieldIndex = null;
+  editingFieldSection = null;
+  document.getElementById('fieldModalTitle').textContent = 'Adicionar Campo';
+  document.getElementById('fieldForm').reset();
+  document.getElementById('fieldModal').style.display = 'block';
+  updateFieldTypeUI();
+});
+
+const editField = (section, index) => {
+  const field = currentConfig[section][index];
+  editingField = field;
+  editingFieldIndex = index;
+  editingFieldSection = section;
+  
+  document.getElementById('fieldModalTitle').textContent = 'Editar Campo';
+  document.getElementById('fieldSection').value = section;
+  document.getElementById('fieldType').value = field.type;
+  document.getElementById('fieldLabel').value = field.label;
+  document.getElementById('fieldKey').value = field.key;
+  document.getElementById('fieldRequired').checked = field.required || false;
+  
+  if (field.type === 'number') {
+    document.getElementById('fieldMin').value = field.min || '';
+    document.getElementById('fieldMax').value = field.max || '';
+  }
+  
+  if (field.type === 'select' && field.options) {
+    renderOptions(field.options);
+  }
+  
+  updateFieldTypeUI();
+  document.getElementById('fieldModal').style.display = 'block';
+};
+
+const deleteField = async (section, index) => {
+  const field = currentConfig[section][index];
+  
+  if (!confirm(`Tem certeza que deseja excluir o campo "${field.label}"?`)) {
+    return;
+  }
+  
+  currentConfig[section].splice(index, 1);
+  await saveConfig();
+  renderConfigFields();
+  showToast('Campo excluído com sucesso!');
+};
+
+document.getElementById('fieldLabel').addEventListener('input', (e) => {
+  const label = e.target.value;
+  const key = label
+    .toLowerCase()
+    .normalize('NFD')
+    .replace(/[\u0300-\u036f]/g, '')
+    .replace(/[^a-z0-9\s]/g, '')
+    .replace(/\s+/g, '_')
+    .replace(/^_+|_+$/g, '');
+  
+  document.getElementById('fieldKey').value = key;
+});
+
+document.getElementById('fieldType').addEventListener('change', updateFieldTypeUI);
+
+function updateFieldTypeUI() {
+  const type = document.getElementById('fieldType').value;
+  
+  document.getElementById('optionsContainer').style.display = 
+    type === 'select' ? 'block' : 'none';
+  
+  document.getElementById('numberConstraints').style.display = 
+    type === 'number' ? 'block' : 'none';
+}
+
+document.getElementById('addOptionBtn').addEventListener('click', () => {
+  addOption();
+});
+
+const addOption = (value = '') => {
+  const optionsList = document.getElementById('optionsList');
+  const optionDiv = document.createElement('div');
+  optionDiv.className = 'option-item';
+  
+  optionDiv.innerHTML = `
+    <input type="text" placeholder="Digite uma opção" value="${value}" required>
+    <button type="button" onclick="removeOption(this)">
+      <svg width="20" height="20" viewBox="0 0 24 24" fill="none">
+        <path d="M18 6L6 18M6 6l12 12" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
+      </svg>
+    </button>
+  `;
+  
+  optionsList.appendChild(optionDiv);
+};
+
+const removeOption = (button) => {
+  button.parentElement.remove();
+};
+
+const renderOptions = (options) => {
+  const optionsList = document.getElementById('optionsList');
+  optionsList.innerHTML = '';
+  options.forEach(option => addOption(option));
+};
+
+document.getElementById('fieldForm').addEventListener('submit', async (e) => {
+  e.preventDefault();
+  
+  const section = document.getElementById('fieldSection').value;
+  const fieldData = {
+    key: document.getElementById('fieldKey').value,
+    label: document.getElementById('fieldLabel').value,
+    type: document.getElementById('fieldType').value,
+    required: document.getElementById('fieldRequired').checked
+  };
+  
+  if (fieldData.type === 'select') {
+    const options = [...document.querySelectorAll('#optionsList input')]
+      .map(input => input.value)
+      .filter(value => value.trim());
+    
+    if (options.length === 0) {
+      showToast('Adicione pelo menos uma opção para a lista', 'error');
+      return;
+    }
+    
+    fieldData.options = options;
+  }
+  
+  if (fieldData.type === 'number') {
+    const min = document.getElementById('fieldMin').value;
+    const max = document.getElementById('fieldMax').value;
+    
+    if (min) fieldData.min = parseInt(min);
+    if (max) fieldData.max = parseInt(max);
+  }
+  
+  if (editingField !== null) {
+    currentConfig[editingFieldSection][editingFieldIndex] = fieldData;
+  } else {
+    if (!currentConfig[section]) {
+      currentConfig[section] = [];
+    }
+    currentConfig[section].push(fieldData);
+  }
+  
+  await saveConfig();
+  renderConfigFields();
+  closeFieldModal();
+  showToast(editingField ? 'Campo atualizado com sucesso!' : 'Campo adicionado com sucesso!');
+});
+
+const closeFieldModal = () => {
+  document.getElementById('fieldModal').style.display = 'none';
+  document.getElementById('fieldForm').reset();
+  document.getElementById('optionsList').innerHTML = '';
+  editingField = null;
+  editingFieldIndex = null;
+  editingFieldSection = null;
+};
+
+const saveConfig = async () => {
+  try {
+    await db.collection('config').doc('srt').set(currentConfig);
+  } catch (error) {
+    console.error('Erro ao salvar configuração:', error);
+    showToast('Erro ao salvar configuração', 'error');
+  }
+};
+
+window.closeFieldModal = closeFieldModal;
+window.editField = editField;
+window.deleteField = deleteField;
+window.removeOption = removeOption;
+
+document.querySelector('#fieldModal .modal-close').addEventListener('click', closeFieldModal);
+document.querySelector('#fieldModal .modal-backdrop').addEventListener('click', closeFieldModal);
 
 const updateLineNumbers = () => {
   const textarea = document.getElementById('configJSON');
@@ -602,6 +943,7 @@ document.getElementById('resetConfigBtn').addEventListener('click', async () => 
   document.getElementById('configJSON').value = JSON.stringify(defaultConfig, null, 2);
   updateLineNumbers();
   updatePreview();
+  renderConfigFields();
   showToast('Configuração padrão restaurada!');
 });
 
