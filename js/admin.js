@@ -454,16 +454,86 @@ const fieldTypeLabels = {
   email: 'E-mail'
 };
 
+const getDefaultConfig = () => ({
+  general: [
+    { key: "dataPreenchimento", label: "Data do Preenchimento", type: "date", required: true },
+    { key: "responsavelNome", label: "Nome do Responsável", type: "text", required: true },
+    { key: "responsavelCargo", label: "Cargo do Responsável", type: "text", required: true },
+    { key: "contatoResponsavel", label: "Contato do Responsável", type: "tel", required: true },
+    { key: "nomeCaps", label: "Nome do CAPS Vinculado", type: "text", required: true },
+    { key: "cnesCaps", label: "CNES do CAPS", type: "text", required: true },
+    { key: "nomeResidencia", label: "Nome da Residência Terapêutica", type: "text", required: true },
+    { key: "tipoSRT", label: "Tipo de SRT", type: "select", options: ["Tipo I", "Tipo II"], required: true },
+    { key: "esferaGestao", label: "Esfera de Gestão Pública", type: "select", options: ["Municipal", "Estadual", "Federal"], required: true },
+    { key: "situacaoHabilitacao", label: "Situação da Habilitação", type: "select", options: ["Habilitada", "Em processo", "Não habilitada"], required: true },
+    { key: "numeroPortaria", label: "Número da Portaria", type: "text" },
+    { key: "dataPortaria", label: "Data da Portaria", type: "date" },
+    { key: "dataInauguracao", label: "Data de Inauguração", type: "date", required: true }
+  ],
+  residence: [
+    { key: "logradouro", label: "Logradouro", type: "text", required: true },
+    { key: "numero", label: "Número", type: "text", required: true },
+    { key: "complemento", label: "Complemento", type: "text" },
+    { key: "bairro", label: "Bairro", type: "text", required: true },
+    { key: "cep", label: "CEP", type: "text", required: true },
+    { key: "municipio", label: "Município", type: "text", required: true },
+    { key: "uf", label: "UF", type: "select", options: ["AC","AL","AP","AM","BA","CE","DF","ES","GO","MA","MT","MS","MG","PA","PB","PR","PE","PI","RJ","RN","RS","RO","RR","SC","SP","SE","TO"], required: true },
+    { key: "localizacao", label: "Localização", type: "select", options: ["Urbana", "Rural"], required: true },
+    { key: "quartos", label: "Quantidade de Quartos", type: "number", required: true },
+    { key: "salas", label: "Quantidade de Salas", type: "number", required: true },
+    { key: "cozinhas", label: "Quantidade de Cozinhas", type: "number", required: true },
+    { key: "banheiros", label: "Quantidade de Banheiros", type: "number", required: true },
+    { key: "varanda", label: "Quantidade de Varandas", type: "number" },
+    { key: "lavanderia", label: "Quantidade de Lavanderias", type: "number" },
+    { key: "despensa", label: "Quantidade de Despensas", type: "number" },
+    { key: "outros", label: "Outros cômodos", type: "text" }
+  ],
+  caregivers: [
+    { key: "totalProfissionais", label: "Total de Profissionais", type: "number", required: true },
+    { key: "totalCuidadores", label: "Total de Cuidadores", type: "number", required: true },
+    { key: "totalTecnicos", label: "Total de Técnicos", type: "number", required: true },
+    { key: "totalEnfermeiros", label: "Total de Enfermeiros", type: "number", required: true },
+    { key: "totalOutros", label: "Total de Outros", type: "number" },
+    { key: "escalaTrabalho", label: "Escala de Trabalho", type: "textarea", required: true },
+    { key: "relacaoCuidadorMorador", label: "Relação Cuidador/Morador", type: "text", required: true },
+    { key: "cuidadoresPorTurno", label: "Número de Cuidadores por Turno", type: "number", required: true },
+    { key: "participaEducacao", label: "Participa de Educação Permanente?", type: "select", options: ["Sim", "Não"], required: true },
+    { key: "quemPromoveEducacao", label: "Se sim, promovido por quem/frequência/temas", type: "textarea" },
+    { key: "reunioesRegulares", label: "Reuniões de equipe regulares?", type: "select", options: ["Sim", "Não"], required: true }
+  ],
+  residentFields: [
+    { key: "nomeCompleto", label: "Nome completo", type: "text", required: true },
+    { key: "nomeSocial", label: "Nome social", type: "text" },
+    { key: "dataNascimento", label: "Data de Nascimento", type: "date", required: true },
+    { key: "idade", label: "Idade", type: "number", required: true },
+    { key: "instituicaoOrigem", label: "Instituição psiquiátrica de origem", type: "text", required: true },
+    { key: "cnesOrigem", label: "CNES da Instituição de origem", type: "text" },
+    { key: "tempoInternacao", label: "Tempo de internação (anos)", type: "number", required: true },
+    { key: "racaCor", label: "Raça/Cor", type: "select", options: ["Branca", "Preta", "Parda", "Amarela", "Indígena", "Não declarada"], required: true },
+    { key: "generoNascimento", label: "Sexo biológico", type: "select", options: ["Masculino", "Feminino"], required: true },
+    { key: "identidadeGenero", label: "Identidade de gênero", type: "select", options: ["Homem cis", "Mulher cis", "Homem trans", "Mulher trans", "Não-binário", "Outro"] },
+    { key: "origemTerritorial", label: "Origem territorial", type: "text", required: true },
+    { key: "vinculoMunicipio", label: "Vínculo com o município atual", type: "text" },
+    { key: "participaPVC", label: "Participa do Programa de Volta para Casa?", type: "select", options: ["Sim", "Não"], required: true },
+    { key: "vinculoFamiliar", label: "Possui vínculo familiar ativo?", type: "select", options: ["Sim", "Não"], required: true },
+    { key: "descricaoVinculo", label: "Se sim, descreva o vínculo", type: "textarea" },
+    { key: "frequenciaCaps", label: "Frequência no CAPS", type: "select", options: ["Diária", "Semanal", "Quinzenal", "Mensal", "Não frequenta"], required: true },
+    { key: "frequenciaUBS", label: "Frequência na UBS", type: "select", options: ["Regular", "Esporádica", "Não frequenta"], required: true },
+    { key: "escola", label: "Frequenta instituição de ensino?", type: "select", options: ["Sim", "Não"], required: true },
+    { key: "qualEscola", label: "Se sim, qual?", type: "text" },
+    { key: "crasCreas", label: "Frequenta CRAS/CREAS?", type: "select", options: ["Sim", "Não"], required: true }
+  ]
+});
+
 const loadConfigJSON = async () => {
   const configRef = db.collection("config").doc("srt");
   const configSnap = await configRef.get();
   
   if (configSnap.exists) {
     currentConfig = configSnap.data();
-    const configJSON = JSON.stringify(currentConfig, null, 2);
-    document.getElementById('configJSON').value = configJSON;
-    updateLineNumbers();
-    updatePreview();
+  } else {
+    currentConfig = getDefaultConfig();
+    await configRef.set(currentConfig);
   }
   renderConfigFields();
 };
@@ -696,6 +766,7 @@ if (addOptionBtn) {
     addOption();
   });
 }
+
 const addOption = (value = '') => {
   const optionsList = document.getElementById('optionsList');
   const optionDiv = document.createElement('div');
@@ -723,52 +794,55 @@ const renderOptions = (options) => {
   options.forEach(option => addOption(option));
 };
 
-document.getElementById('fieldForm').addEventListener('submit', async (e) => {
-  e.preventDefault();
-  
-  const section = document.getElementById('fieldSection').value;
-  const fieldData = {
-    key: document.getElementById('fieldKey').value,
-    label: document.getElementById('fieldLabel').value,
-    type: document.getElementById('fieldType').value,
-    required: document.getElementById('fieldRequired').checked
-  };
-  
-  if (fieldData.type === 'select') {
-    const options = [...document.querySelectorAll('#optionsList input')]
-      .map(input => input.value)
-      .filter(value => value.trim());
+const fieldForm = document.getElementById('fieldForm');
+if (fieldForm) {
+  fieldForm.addEventListener('submit', async (e) => {
+    e.preventDefault();
     
-    if (options.length === 0) {
-      showToast('Adicione pelo menos uma opção para a lista', 'error');
-      return;
+    const section = document.getElementById('fieldSection').value;
+    const fieldData = {
+      key: document.getElementById('fieldKey').value,
+      label: document.getElementById('fieldLabel').value,
+      type: document.getElementById('fieldType').value,
+      required: document.getElementById('fieldRequired').checked
+    };
+    
+    if (fieldData.type === 'select') {
+      const options = [...document.querySelectorAll('#optionsList input')]
+        .map(input => input.value)
+        .filter(value => value.trim());
+      
+      if (options.length === 0) {
+        showToast('Adicione pelo menos uma opção para a lista', 'error');
+        return;
+      }
+      
+      fieldData.options = options;
     }
     
-    fieldData.options = options;
-  }
-  
-  if (fieldData.type === 'number') {
-    const min = document.getElementById('fieldMin').value;
-    const max = document.getElementById('fieldMax').value;
-    
-    if (min) fieldData.min = parseInt(min);
-    if (max) fieldData.max = parseInt(max);
-  }
-  
-  if (editingField !== null) {
-    currentConfig[editingFieldSection][editingFieldIndex] = fieldData;
-  } else {
-    if (!currentConfig[section]) {
-      currentConfig[section] = [];
+    if (fieldData.type === 'number') {
+      const min = document.getElementById('fieldMin').value;
+      const max = document.getElementById('fieldMax').value;
+      
+      if (min) fieldData.min = parseInt(min);
+      if (max) fieldData.max = parseInt(max);
     }
-    currentConfig[section].push(fieldData);
-  }
-  
-  await saveConfig();
-  renderConfigFields();
-  closeFieldModal();
-  showToast(editingField ? 'Campo atualizado com sucesso!' : 'Campo adicionado com sucesso!');
-});
+    
+    if (editingField !== null) {
+      currentConfig[editingFieldSection][editingFieldIndex] = fieldData;
+    } else {
+      if (!currentConfig[section]) {
+        currentConfig[section] = [];
+      }
+      currentConfig[section].push(fieldData);
+    }
+    
+    await saveConfig();
+    renderConfigFields();
+    closeFieldModal();
+    showToast(editingField ? 'Campo atualizado com sucesso!' : 'Campo adicionado com sucesso!');
+  });
+}
 
 const closeFieldModal = () => {
   document.getElementById('fieldModal').style.display = 'none';
@@ -802,168 +876,6 @@ const fieldModalBackdrop = document.querySelector('#fieldModal .modal-backdrop')
 if (fieldModalBackdrop) {
   fieldModalBackdrop.addEventListener('click', closeFieldModal);
 }
-
-const updateLineNumbers = () => {
-  const textarea = document.getElementById('configJSON');
-  const lines = textarea.value.split('\n').length;
-  const lineNumbers = document.getElementById('lineNumbers');
-  
-  let numbersHTML = '';
-  for (let i = 1; i <= lines; i++) {
-    numbersHTML += `${i}<br>`;
-  }
-  
-  lineNumbers.innerHTML = numbersHTML;
-};
-
-const updatePreview = () => {
-  try {
-    const config = JSON.parse(document.getElementById('configJSON').value);
-    const preview = document.getElementById('configPreview');
-    
-    let previewHTML = '<div class="preview-sections">';
-    
-    Object.entries(config).forEach(([section, fields]) => {
-      previewHTML += `<div class="preview-section"><h4>${section}</h4><ul>`;
-      fields.forEach(field => {
-        previewHTML += `<li>${field.label} (${field.type})${field.required ? ' *' : ''}</li>`;
-      });
-      previewHTML += '</ul></div>';
-    });
-    
-    previewHTML += '</div>';
-    preview.innerHTML = previewHTML;
-  } catch (e) {
-    document.getElementById('configPreview').innerHTML = '<p class="text-muted">JSON inválido</p>';
-  }
-};
-
-document.getElementById('configJSON').addEventListener('input', () => {
-  updateLineNumbers();
-  updatePreview();
-});
-
-document.getElementById('formatBtn').addEventListener('click', () => {
-  try {
-    const json = JSON.parse(document.getElementById('configJSON').value);
-    document.getElementById('configJSON').value = JSON.stringify(json, null, 2);
-    updateLineNumbers();
-    showToast('JSON formatado com sucesso!');
-  } catch (e) {
-    showToast('JSON inválido', 'error');
-  }
-});
-
-document.getElementById('validateBtn').addEventListener('click', () => {
-  try {
-    JSON.parse(document.getElementById('configJSON').value);
-    showToast('JSON válido!');
-  } catch (e) {
-    showToast('JSON inválido: ' + e.message, 'error');
-  }
-});
-
-document.getElementById('saveConfigBtn').addEventListener('click', async () => {
-  try {
-    const newConfig = JSON.parse(document.getElementById('configJSON').value);
-    
-    if (!newConfig.general || !newConfig.residence || !newConfig.caregivers || !newConfig.residentFields) {
-      throw new Error('Configuração deve conter: general, residence, caregivers e residentFields');
-    }
-    
-    showLoading();
-    await db.collection("config").doc("srt").set(newConfig);
-    currentConfig = newConfig;
-    showToast('Configuração salva com sucesso!');
-  } catch (e) {
-    showToast('Erro ao salvar: ' + e.message, 'error');
-  } finally {
-    hideLoading();
-  }
-});
-
-document.getElementById('resetConfigBtn').addEventListener('click', async () => {
-  if (!confirm('Tem certeza que deseja restaurar a configuração padrão?')) {
-    return;
-  }
-  
-  const defaultConfig = {
-    general: [
-      { key: "dataPreenchimento", label: "Data do Preenchimento", type: "date", required: true },
-      { key: "responsavelNome", label: "Nome do Responsável", type: "text", required: true },
-      { key: "responsavelCargo", label: "Cargo do Responsável", type: "text", required: true },
-      { key: "contatoResponsavel", label: "Contato do Responsável", type: "tel", required: true },
-      { key: "nomeCaps", label: "Nome do CAPS Vinculado", type: "text", required: true },
-      { key: "cnesCaps", label: "CNES do CAPS", type: "text", required: true },
-      { key: "nomeResidencia", label: "Nome da Residência Terapêutica", type: "text", required: true },
-      { key: "tipoSRT", label: "Tipo de SRT", type: "select", options: ["Tipo I", "Tipo II"], required: true },
-      { key: "esferaGestao", label: "Esfera de Gestão Pública", type: "select", options: ["Municipal", "Estadual", "Federal"], required: true },
-      { key: "situacaoHabilitacao", label: "Situação da Habilitação", type: "select", options: ["Habilitada", "Em processo", "Não habilitada"], required: true },
-      { key: "numeroPortaria", label: "Número da Portaria", type: "text" },
-      { key: "dataPortaria", label: "Data da Portaria", type: "date" },
-      { key: "dataInauguracao", label: "Data de Inauguração", type: "date", required: true }
-    ],
-    residence: [
-      { key: "logradouro", label: "Logradouro", type: "text", required: true },
-      { key: "numero", label: "Número", type: "text", required: true },
-      { key: "complemento", label: "Complemento", type: "text" },
-      { key: "bairro", label: "Bairro", type: "text", required: true },
-      { key: "cep", label: "CEP", type: "text", required: true },
-      { key: "municipio", label: "Município", type: "text", required: true },
-      { key: "uf", label: "UF", type: "select", options: ["AC","AL","AP","AM","BA","CE","DF","ES","GO","MA","MT","MS","MG","PA","PB","PR","PE","PI","RJ","RN","RS","RO","RR","SC","SP","SE","TO"], required: true },
-      { key: "localizacao", label: "Localização", type: "select", options: ["Urbana", "Rural"], required: true },
-      { key: "quartos", label: "Quantidade de Quartos", type: "number", required: true },
-      { key: "salas", label: "Quantidade de Salas", type: "number", required: true },
-      { key: "cozinhas", label: "Quantidade de Cozinhas", type: "number", required: true },
-      { key: "banheiros", label: "Quantidade de Banheiros", type: "number", required: true },
-      { key: "varanda", label: "Quantidade de Varandas", type: "number" },
-      { key: "lavanderia", label: "Quantidade de Lavanderias", type: "number" },
-      { key: "despensa", label: "Quantidade de Despensas", type: "number" },
-      { key: "outros", label: "Outros cômodos", type: "text" }
-    ],
-    caregivers: [
-      { key: "totalProfissionais", label: "Total de Profissionais", type: "number", required: true },
-      { key: "totalCuidadores", label: "Total de Cuidadores", type: "number", required: true },
-      { key: "totalTecnicos", label: "Total de Técnicos", type: "number", required: true },
-      { key: "totalEnfermeiros", label: "Total de Enfermeiros", type: "number", required: true },
-      { key: "totalOutros", label: "Total de Outros", type: "number" },
-      { key: "escalaTrabalho", label: "Escala de Trabalho", type: "textarea", required: true },
-      { key: "relacaoCuidadorMorador", label: "Relação Cuidador/Morador", type: "text", required: true },
-      { key: "cuidadoresPorTurno", label: "Número de Cuidadores por Turno", type: "number", required: true },
-      { key: "participaEducacao", label: "Participa de Educação Permanente?", type: "select", options: ["Sim", "Não"], required: true },
-      { key: "quemPromoveEducacao", label: "Se sim, promovido por quem/frequência/temas", type: "textarea" },
-      { key: "reunioesRegulares", label: "Reuniões de equipe regulares?", type: "select", options: ["Sim", "Não"], required: true }
-    ],
-    residentFields: [
-      { key: "nomeCompleto", label: "Nome completo", type: "text", required: true },
-      { key: "nomeSocial", label: "Nome social", type: "text" },
-      { key: "dataNascimento", label: "Data de Nascimento", type: "date", required: true },
-      { key: "idade", label: "Idade", type: "number", required: true },
-      { key: "instituicaoOrigem", label: "Instituição psiquiátrica de origem", type: "text", required: true },
-      { key: "cnesOrigem", label: "CNES da Instituição de origem", type: "text" },
-      { key: "tempoInternacao", label: "Tempo de internação (anos)", type: "number", required: true },
-      { key: "racaCor", label: "Raça/Cor", type: "select", options: ["Branca", "Preta", "Parda", "Amarela", "Indígena", "Não declarada"], required: true },
-      { key: "generoNascimento", label: "Sexo biológico", type: "select", options: ["Masculino", "Feminino"], required: true },
-      { key: "identidadeGenero", label: "Identidade de gênero", type: "select", options: ["Homem cis", "Mulher cis", "Homem trans", "Mulher trans", "Não-binário", "Outro"] },
-      { key: "origemTerritorial", label: "Origem territorial", type: "text", required: true },
-      { key: "vinculoMunicipio", label: "Vínculo com o município atual", type: "text" },
-      { key: "participaPVC", label: "Participa do Programa de Volta para Casa?", type: "select", options: ["Sim", "Não"], required: true },
-      { key: "vinculoFamiliar", label: "Possui vínculo familiar ativo?", type: "select", options: ["Sim", "Não"], required: true },
-      { key: "descricaoVinculo", label: "Se sim, descreva o vínculo", type: "textarea" },
-      { key: "frequenciaCaps", label: "Frequência no CAPS", type: "select", options: ["Diária", "Semanal", "Quinzenal", "Mensal", "Não frequenta"], required: true },
-      { key: "frequenciaUBS", label: "Frequência na UBS", type: "select", options: ["Regular", "Esporádica", "Não frequenta"], required: true },
-      { key: "escola", label: "Frequenta instituição de ensino?", type: "select", options: ["Sim", "Não"], required: true },
-      { key: "qualEscola", label: "Se sim, qual?", type: "text" },
-      { key: "crasCreas", label: "Frequenta CRAS/CREAS?", type: "select", options: ["Sim", "Não"], required: true }
-    ]
-  };
-  
-  document.getElementById('configJSON').value = JSON.stringify(defaultConfig, null, 2);
-  updateLineNumbers();
-  updatePreview();
-  renderConfigFields();
-  showToast('Configuração padrão restaurada!');
-});
 
 document.getElementById('generateReportBtn').addEventListener('click', async () => {
   const startDate = document.getElementById('startDate').value;
