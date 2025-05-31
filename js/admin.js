@@ -607,15 +607,18 @@ const updateFieldCount = (section) => {
   countElement.textContent = `${count} campo${count !== 1 ? 's' : ''}`;
 };
 
-document.getElementById('addFieldBtn').addEventListener('click', () => {
-  editingField = null;
-  editingFieldIndex = null;
-  editingFieldSection = null;
-  document.getElementById('fieldModalTitle').textContent = 'Adicionar Campo';
-  document.getElementById('fieldForm').reset();
-  document.getElementById('fieldModal').style.display = 'block';
-  updateFieldTypeUI();
-});
+const addFieldBtn = document.getElementById('addFieldBtn');
+if (addFieldBtn) {
+  addFieldBtn.addEventListener('click', () => {
+    editingField = null;
+    editingFieldIndex = null;
+    editingFieldSection = null;
+    document.getElementById('fieldModalTitle').textContent = 'Adicionar Campo';
+    document.getElementById('fieldForm').reset();
+    document.getElementById('fieldModal').style.display = 'block';
+    updateFieldTypeUI();
+  });
+}
 
 const editField = (section, index) => {
   const field = currentConfig[section][index];
@@ -656,20 +659,26 @@ const deleteField = async (section, index) => {
   showToast('Campo excluído com sucesso!');
 };
 
-document.getElementById('fieldLabel').addEventListener('input', (e) => {
-  const label = e.target.value;
-  const key = label
-    .toLowerCase()
-    .normalize('NFD')
-    .replace(/[\u0300-\u036f]/g, '')
-    .replace(/[^a-z0-9\s]/g, '')
-    .replace(/\s+/g, '_')
-    .replace(/^_+|_+$/g, '');
-  
-  document.getElementById('fieldKey').value = key;
-});
+const fieldLabel = document.getElementById('fieldLabel');
+if (fieldLabel) {
+  fieldLabel.addEventListener('input', (e) => {
+    const label = e.target.value;
+    const key = label
+      .toLowerCase()
+      .normalize('NFD')
+      .replace(/[\u0300-\u036f]/g, '')
+      .replace(/[^a-z0-9\s]/g, '')
+      .replace(/\s+/g, '_')
+      .replace(/^_+|_+$/g, '');
+    
+    document.getElementById('fieldKey').value = key;
+  });
+}
 
-document.getElementById('fieldType').addEventListener('change', updateFieldTypeUI);
+const fieldType = document.getElementById('fieldType');
+if (fieldType) {
+  fieldType.addEventListener('change', updateFieldTypeUI);
+}
 
 function updateFieldTypeUI() {
   const type = document.getElementById('fieldType').value;
@@ -681,10 +690,12 @@ function updateFieldTypeUI() {
     type === 'number' ? 'block' : 'none';
 }
 
-document.getElementById('addOptionBtn').addEventListener('click', () => {
-  addOption();
-});
-
+const addOptionBtn = document.getElementById('addOptionBtn');
+if (addOptionBtn) {
+  addOptionBtn.addEventListener('click', () => {
+    addOption();
+  });
+}
 const addOption = (value = '') => {
   const optionsList = document.getElementById('optionsList');
   const optionDiv = document.createElement('div');
@@ -782,8 +793,15 @@ window.editField = editField;
 window.deleteField = deleteField;
 window.removeOption = removeOption;
 
-document.querySelector('#fieldModal .modal-close').addEventListener('click', closeFieldModal);
-document.querySelector('#fieldModal .modal-backdrop').addEventListener('click', closeFieldModal);
+const fieldModalClose = document.querySelector('#fieldModal .modal-close');
+if (fieldModalClose) {
+  fieldModalClose.addEventListener('click', closeFieldModal);
+}
+
+const fieldModalBackdrop = document.querySelector('#fieldModal .modal-backdrop');
+if (fieldModalBackdrop) {
+  fieldModalBackdrop.addEventListener('click', closeFieldModal);
+}
 
 const updateLineNumbers = () => {
   const textarea = document.getElementById('configJSON');
