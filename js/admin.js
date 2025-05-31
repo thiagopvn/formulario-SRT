@@ -631,70 +631,143 @@ document.getElementById('exportBtn').addEventListener('click', async () => {
   try {
     const rows = [];
     
-    // Adiciona um cabeçalho/título à planilha
-    rows.push({
-      'ID da Casa': 'RELATÓRIO DE RESIDÊNCIAS TERAPÊUTICAS - SRT',
-      'Nome da Residência': '',
-      'CAPS Vinculado': '',
-      'CNES do CAPS': '',
-      'Tipo SRT': '',
-      'Data de Preenchimento': `Gerado em: ${new Date().toLocaleDateString('pt-BR')}`,
-    });
+    // Estilos comuns
+    const styles = {
+      // Estilo do título principal
+      title: {
+        font: { bold: true, sz: 18, color: { rgb: "FFFFFF" } },
+        fill: { fgColor: { rgb: "3B82F6" } },
+        alignment: { horizontal: "center", vertical: "center" },
+        border: {
+          top: { style: "medium", color: { rgb: "2563EB" } },
+          bottom: { style: "medium", color: { rgb: "2563EB" } },
+          left: { style: "medium", color: { rgb: "2563EB" } },
+          right: { style: "medium", color: { rgb: "2563EB" } }
+        }
+      },
+      // Estilo do subtítulo (data)
+      subtitle: {
+        font: { sz: 12, color: { rgb: "1F2937" } },
+        fill: { fgColor: { rgb: "E5E7EB" } },
+        alignment: { horizontal: "right", vertical: "center" }
+      },
+      // Estilo do resumo
+      summary: {
+        font: { bold: true, sz: 14, color: { rgb: "FFFFFF" } },
+        fill: { fgColor: { rgb: "8B5CF6" } },
+        alignment: { horizontal: "left", vertical: "center" },
+        border: {
+          top: { style: "thin", color: { rgb: "7C3AED" } },
+          bottom: { style: "thin", color: { rgb: "7C3AED" } },
+          left: { style: "thin", color: { rgb: "7C3AED" } },
+          right: { style: "thin", color: { rgb: "7C3AED" } }
+        }
+      },
+      // Estilo dos valores do resumo
+      summaryValue: {
+        font: { sz: 12, color: { rgb: "1F2937" } },
+        fill: { fgColor: { rgb: "F3E8FF" } },
+        alignment: { horizontal: "left", vertical: "center" },
+        border: {
+          top: { style: "thin", color: { rgb: "E9D5FF" } },
+          bottom: { style: "thin", color: { rgb: "E9D5FF" } },
+          left: { style: "thin", color: { rgb: "E9D5FF" } },
+          right: { style: "thin", color: { rgb: "E9D5FF" } }
+        }
+      },
+      // Estilo do cabeçalho da tabela
+      header: {
+        font: { bold: true, sz: 11, color: { rgb: "FFFFFF" } },
+        fill: { fgColor: { rgb: "1F2937" } },
+        alignment: { horizontal: "center", vertical: "center", wrapText: true },
+        border: {
+          top: { style: "medium", color: { rgb: "111827" } },
+          bottom: { style: "medium", color: { rgb: "111827" } },
+          left: { style: "thin", color: { rgb: "374151" } },
+          right: { style: "thin", color: { rgb: "374151" } }
+        }
+      },
+      // Estilo das células de dados normais
+      cell: {
+        font: { sz: 10, color: { rgb: "1F2937" } },
+        alignment: { vertical: "center" },
+        border: {
+          top: { style: "thin", color: { rgb: "E5E7EB" } },
+          bottom: { style: "thin", color: { rgb: "E5E7EB" } },
+          left: { style: "thin", color: { rgb: "E5E7EB" } },
+          right: { style: "thin", color: { rgb: "E5E7EB" } }
+        }
+      },
+      // Estilo das células de dados com fundo alternado
+      cellAlt: {
+        font: { sz: 10, color: { rgb: "1F2937" } },
+        fill: { fgColor: { rgb: "F9FAFB" } },
+        alignment: { vertical: "center" },
+        border: {
+          top: { style: "thin", color: { rgb: "E5E7EB" } },
+          bottom: { style: "thin", color: { rgb: "E5E7EB" } },
+          left: { style: "thin", color: { rgb: "E5E7EB" } },
+          right: { style: "thin", color: { rgb: "E5E7EB" } }
+        }
+      },
+      // Estilo para números
+      number: {
+        font: { sz: 10, color: { rgb: "1F2937" } },
+        alignment: { horizontal: "center", vertical: "center" },
+        numFmt: "#,##0"
+      },
+      // Estilo para porcentagem
+      percentage: {
+        font: { sz: 10, color: { rgb: "059669" }, bold: true },
+        alignment: { horizontal: "center", vertical: "center" },
+        numFmt: "0.0%"
+      },
+      // Estilo para datas
+      date: {
+        font: { sz: 10, color: { rgb: "1F2937" } },
+        alignment: { horizontal: "center", vertical: "center" },
+        numFmt: "dd/mm/yyyy"
+      }
+    };
     
-    // Linha vazia para separação
-    rows.push({});
+    // Adiciona o título
+    rows.push(['RELATÓRIO DE RESIDÊNCIAS TERAPÊUTICAS - SRT']);
     
-    // Linha com estatísticas gerais
-    rows.push({
-      'ID da Casa': 'RESUMO GERAL',
-      'Nome da Residência': `Total de Casas: ${allHouses.length}`,
-      'CAPS Vinculado': `Total de Moradores: ${allHouses.reduce((sum, house) => sum + (house.residents?.length || 0), 0)}`,
-      'CNES do CAPS': `Taxa de Ocupação Média: ${(allHouses.reduce((sum, house) => {
-        const taxa = house.vagasTotais > 0 ? (house.vagasOcupadas / house.vagasTotais * 100) : 0;
-        return sum + taxa;
-      }, 0) / allHouses.length).toFixed(1)}%`,
-    });
+    // Adiciona a data
+    rows.push([`Gerado em: ${new Date().toLocaleDateString('pt-BR')}`]);
     
     // Linha vazia
-    rows.push({});
+    rows.push([]);
     
-    // Cabeçalho dos dados (será formatado depois)
-    rows.push({
-      'ID da Casa': 'ID da Casa',
-      'Nome da Residência': 'Nome da Residência',
-      'CAPS Vinculado': 'CAPS Vinculado',
-      'CNES do CAPS': 'CNES do CAPS',
-      'Tipo SRT': 'Tipo SRT',
-      'Data de Preenchimento': 'Data de Preenchimento',
-      'Responsável': 'Responsável',
-      'Cargo': 'Cargo',
-      'Contato': 'Contato',
-      'Endereço': 'Endereço',
-      'Bairro': 'Bairro',
-      'Município': 'Município',
-      'UF': 'UF',
-      'CEP': 'CEP',
-      'Total de Moradores': 'Total de Moradores',
-      'Vagas Totais': 'Vagas Totais',
-      'Vagas Ocupadas': 'Vagas Ocupadas',
-      'Vagas Disponíveis': 'Vagas Disponíveis',
-      'Taxa de Ocupação (%)': 'Taxa de Ocupação (%)',
-      'Morador Nº': 'Morador Nº',
-      'Nome do Morador': 'Nome do Morador',
-      'Nome Social': 'Nome Social',
-      'Data de Nascimento': 'Data de Nascimento',
-      'Idade': 'Idade',
-      'Instituição de Origem': 'Instituição de Origem',
-      'Tempo de Internação': 'Tempo de Internação',
-      'Raça/Cor': 'Raça/Cor',
-      'Sexo Biológico': 'Sexo Biológico',
-      'Identidade de Gênero': 'Identidade de Gênero',
-      'Participa do PVC': 'Participa do PVC',
-      'Vínculo Familiar': 'Vínculo Familiar',
-      'Frequência CAPS': 'Frequência CAPS',
-      'Frequência UBS': 'Frequência UBS'
-    });
+    // Resumo geral
+    const totalMoradores = allHouses.reduce((sum, house) => sum + (house.residents?.length || 0), 0);
+    const taxaMedia = allHouses.reduce((sum, house) => {
+      const taxa = house.vagasTotais > 0 ? (house.vagasOcupadas / house.vagasTotais * 100) : 0;
+      return sum + taxa;
+    }, 0) / (allHouses.length || 1);
     
+    rows.push(['RESUMO GERAL']);
+    rows.push([`Total de Casas: ${allHouses.length}`]);
+    rows.push([`Total de Moradores: ${totalMoradores}`]);
+    rows.push([`Taxa de Ocupação Média: ${taxaMedia.toFixed(1)}%`]);
+    
+    // Linha vazia
+    rows.push([]);
+    
+    // Cabeçalho da tabela
+    const headers = [
+      'ID da Casa', 'Nome da Residência', 'CAPS Vinculado', 'CNES do CAPS',
+      'Tipo SRT', 'Data de Preenchimento', 'Responsável', 'Cargo', 'Contato',
+      'Endereço', 'Bairro', 'Município', 'UF', 'CEP', 'Total de Moradores',
+      'Vagas Totais', 'Vagas Ocupadas', 'Vagas Disponíveis', 'Taxa de Ocupação (%)',
+      'Morador Nº', 'Nome do Morador', 'Nome Social', 'Data de Nascimento',
+      'Idade', 'Instituição de Origem', 'Tempo de Internação', 'Raça/Cor',
+      'Sexo Biológico', 'Identidade de Gênero', 'Participa do PVC',
+      'Vínculo Familiar', 'Frequência CAPS', 'Frequência UBS'
+    ];
+    rows.push(headers);
+    
+    // Dados das casas
     for (const house of allHouses) {
       const taxaOcupacao = house.vagasTotais > 0 ? ((house.vagasOcupadas / house.vagasTotais) * 100).toFixed(1) : '0.0';
       
@@ -717,36 +790,138 @@ document.getElementById('exportBtn').addEventListener('click', async () => {
         'Vagas Totais': parseInt(house.vagasTotais) || 0,
         'Vagas Ocupadas': parseInt(house.vagasOcupadas) || 0,
         'Vagas Disponíveis': parseInt(house.vagasDisponiveis) || 0,
-        'Taxa de Ocupação (%)': parseFloat(taxaOcupacao),
+        'Taxa de Ocupação (%)': parseFloat(taxaOcupacao)
       };
       
       if (house.residents && house.residents.length > 0) {
         house.residents.forEach((resident, index) => {
-          rows.push({
-            ...baseInfo,
-            'Morador Nº': index + 1,
-            'Nome do Morador': resident.nomeCompleto || '',
-            'Nome Social': resident.nomeSocial || '',
-            'Data de Nascimento': resident.dataNascimento || '',
-            'Idade': resident.idade || '',
-            'Instituição de Origem': resident.instituicaoOrigem || '',
-            'Tempo de Internação': resident.tempoInternacao || '',
-            'Raça/Cor': resident.racaCor || '',
-            'Sexo Biológico': resident.generoNascimento || '',
-            'Identidade de Gênero': resident.identidadeGenero || '',
-            'Participa do PVC': resident.participaPVC || '',
-            'Vínculo Familiar': resident.vinculoFamiliar || '',
-            'Frequência CAPS': resident.frequenciaCaps || '',
-            'Frequência UBS': resident.frequenciaUBS || ''
-          });
+          rows.push([
+            baseInfo['ID da Casa'],
+            baseInfo['Nome da Residência'],
+            baseInfo['CAPS Vinculado'],
+            baseInfo['CNES do CAPS'],
+            baseInfo['Tipo SRT'],
+            baseInfo['Data de Preenchimento'],
+            baseInfo['Responsável'],
+            baseInfo['Cargo'],
+            baseInfo['Contato'],
+            baseInfo['Endereço'],
+            baseInfo['Bairro'],
+            baseInfo['Município'],
+            baseInfo['UF'],
+            baseInfo['CEP'],
+            baseInfo['Total de Moradores'],
+            baseInfo['Vagas Totais'],
+            baseInfo['Vagas Ocupadas'],
+            baseInfo['Vagas Disponíveis'],
+            baseInfo['Taxa de Ocupação (%)'],
+            index + 1,
+            resident.nomeCompleto || '',
+            resident.nomeSocial || '',
+            resident.dataNascimento || '',
+            resident.idade || '',
+            resident.instituicaoOrigem || '',
+            resident.tempoInternacao || '',
+            resident.racaCor || '',
+            resident.generoNascimento || '',
+            resident.identidadeGenero || '',
+            resident.participaPVC || '',
+            resident.vinculoFamiliar || '',
+            resident.frequenciaCaps || '',
+            resident.frequenciaUBS || ''
+          ]);
         });
       } else {
-        rows.push(baseInfo);
+        rows.push([
+          baseInfo['ID da Casa'],
+          baseInfo['Nome da Residência'],
+          baseInfo['CAPS Vinculado'],
+          baseInfo['CNES do CAPS'],
+          baseInfo['Tipo SRT'],
+          baseInfo['Data de Preenchimento'],
+          baseInfo['Responsável'],
+          baseInfo['Cargo'],
+          baseInfo['Contato'],
+          baseInfo['Endereço'],
+          baseInfo['Bairro'],
+          baseInfo['Município'],
+          baseInfo['UF'],
+          baseInfo['CEP'],
+          baseInfo['Total de Moradores'],
+          baseInfo['Vagas Totais'],
+          baseInfo['Vagas Ocupadas'],
+          baseInfo['Vagas Disponíveis'],
+          baseInfo['Taxa de Ocupação (%)'],
+          '', '', '', '', '', '', '', '', '', '', '', '', '', ''
+        ]);
       }
     }
     
-    // Criar a planilha com formatação
-    const worksheet = XLSX.utils.json_to_sheet(rows, { skipHeader: true });
+    // Criar a planilha
+    const worksheet = XLSX.utils.aoa_to_sheet(rows);
+    
+    // Aplicar estilos
+    const range = XLSX.utils.decode_range(worksheet['!ref']);
+    
+    // Estilizar título
+    worksheet['A1'].s = styles.title;
+    
+    // Estilizar data
+    worksheet['A2'].s = styles.subtitle;
+    
+    // Estilizar resumo
+    worksheet['A4'].s = styles.summary;
+    for (let i = 5; i <= 7; i++) {
+      worksheet[`A${i}`].s = styles.summaryValue;
+    }
+    
+    // Estilizar cabeçalho
+    for (let C = 0; C <= 32; C++) {
+      const cellAddress = XLSX.utils.encode_cell({ r: 8, c: C });
+      if (worksheet[cellAddress]) {
+        worksheet[cellAddress].s = styles.header;
+      }
+    }
+    
+    // Estilizar dados
+    let isAlternate = false;
+    for (let R = 9; R <= range.e.r; R++) {
+      for (let C = 0; C <= 32; C++) {
+        const cellAddress = XLSX.utils.encode_cell({ r: R, c: C });
+        if (worksheet[cellAddress]) {
+          // Estilo base
+          worksheet[cellAddress].s = isAlternate ? styles.cellAlt : styles.cell;
+          
+          // Estilos específicos por tipo
+          if (C >= 14 && C <= 17) { // Colunas numéricas
+            worksheet[cellAddress].s = {
+              ...worksheet[cellAddress].s,
+              ...styles.number
+            };
+          } else if (C === 18) { // Taxa de ocupação
+            worksheet[cellAddress].s = {
+              ...worksheet[cellAddress].s,
+              ...styles.percentage
+            };
+            worksheet[cellAddress].t = 'n';
+            worksheet[cellAddress].v = worksheet[cellAddress].v / 100; // Converter para decimal
+          } else if (C === 5 || C === 22) { // Datas
+            if (worksheet[cellAddress].v && worksheet[cellAddress].v.includes('-')) {
+              const dateParts = worksheet[cellAddress].v.split('-');
+              if (dateParts.length === 3) {
+                worksheet[cellAddress].v = `${dateParts[2]}/${dateParts[1]}/${dateParts[0]}`;
+              }
+            }
+          }
+          
+          // Destacar células importantes
+          if (C === 1) { // Nome da residência
+            worksheet[cellAddress].s.font = { ...worksheet[cellAddress].s.font, bold: true };
+          }
+        }
+      }
+      isAlternate = !isAlternate;
+    }
     
     // Configurar larguras das colunas
     const colWidths = [
@@ -787,54 +962,45 @@ document.getElementById('exportBtn').addEventListener('click', async () => {
     
     worksheet['!cols'] = colWidths;
     
-    // Adicionar estilos básicos (funciona apenas com xlsx-style ou similar)
-    // Para a versão gratuita, vamos adicionar alguns ajustes de formatação
-    const range = XLSX.utils.decode_range(worksheet['!ref']);
-    
-    // Formatar células específicas
-    for (let R = range.s.r; R <= range.e.r; ++R) {
-      for (let C = range.s.c; C <= range.e.c; ++C) {
-        const cellAddress = XLSX.utils.encode_cell({ r: R, c: C });
-        if (!worksheet[cellAddress]) continue;
-        
-        // Formatar números
-        if (C >= 14 && C <= 17 && R > 4) { // Colunas de vagas
-          worksheet[cellAddress].t = 'n';
-        }
-        
-        // Formatar porcentagem
-        if (C === 18 && R > 4) { // Taxa de ocupação
-          worksheet[cellAddress].t = 'n';
-          worksheet[cellAddress].z = '0.0"%"';
-        }
-        
-        // Formatar datas
-        if ((C === 5 || C === 22) && R > 4 && worksheet[cellAddress].v) { // Colunas de data
-          if (worksheet[cellAddress].v.includes('-')) {
-            const dateParts = worksheet[cellAddress].v.split('-');
-            if (dateParts.length === 3) {
-              worksheet[cellAddress].v = `${dateParts[2]}/${dateParts[1]}/${dateParts[0]}`;
-            }
-          }
-        }
-      }
-    }
-    
-    // Mesclar células do título
+    // Mesclar células do título (ocupa toda a largura)
     worksheet['!merges'] = [
-      { s: { r: 0, c: 0 }, e: { r: 0, c: 4 } }, // Título principal
-      { s: { r: 2, c: 0 }, e: { r: 2, c: 0 } }, // Resumo geral
+      { s: { r: 0, c: 0 }, e: { r: 0, c: 32 } }, // Título principal
+      { s: { r: 1, c: 0 }, e: { r: 1, c: 32 } }, // Data
+      { s: { r: 3, c: 0 }, e: { r: 3, c: 4 } },  // Resumo geral
+      { s: { r: 4, c: 0 }, e: { r: 4, c: 4 } },  // Total de casas
+      { s: { r: 5, c: 0 }, e: { r: 5, c: 4 } },  // Total de moradores
+      { s: { r: 6, c: 0 }, e: { r: 6, c: 4 } }   // Taxa média
     ];
+    
+    // Configurar altura das linhas
+    worksheet['!rows'] = [
+      { hpt: 30 }, // Título
+      { hpt: 20 }, // Data
+      { hpt: 15 }, // Vazia
+      { hpt: 25 }, // Resumo
+      { hpt: 20 }, // Valores resumo
+      { hpt: 20 },
+      { hpt: 20 },
+      { hpt: 15 }, // Vazia
+      { hpt: 30 }  // Cabeçalho
+    ];
+    
+    // Congelar painéis (fixar cabeçalho)
+    worksheet['!freeze'] = { xSplit: 0, ySplit: 9, topLeftCell: "A10" };
+    
+    // Adicionar filtros automáticos
+    worksheet['!autofilter'] = { ref: `A9:AG${range.e.r}` };
     
     const workbook = XLSX.utils.book_new();
     XLSX.utils.book_append_sheet(workbook, worksheet, "Casas SRT");
     
     // Adicionar propriedades ao workbook
     workbook.Props = {
-      Title: "Relatório SRT",
-      Subject: "Dados das Residências Terapêuticas",
+      Title: "Relatório SRT - Sistema de Residências Terapêuticas",
+      Subject: "Dados completos das Residências Terapêuticas",
       Author: "Sistema SRT",
-      CreatedDate: new Date()
+      CreatedDate: new Date(),
+      Keywords: "SRT, Residências Terapêuticas, Saúde Mental"
     };
     
     const date = new Date().toISOString().split('T')[0];
