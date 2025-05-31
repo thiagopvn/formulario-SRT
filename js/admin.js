@@ -94,8 +94,31 @@ const updateChartTheme = () => {
   occupancyChart.update();
 };
 
-auth.onAuthStateChanged(user => {
+auth.onAuthStateChanged(async user => {
   if (user) {
+    try {
+      const userDoc = await db.collection('users').doc(user.email).get();
+      
+      if (!userDoc.exists) {
+        await db.collection('users').doc(user.email).set({
+          email: user.email,
+          name: user.displayName || 'Administrador',
+          role: 'admin',
+          status: 'active',
+          createdAt: firebase.firestore.FieldValue.serverTimestamp()
+        });
+      } else {
+        const userData = userDoc.data();
+        if (userData.status !== 'active') {
+          showToast('Sua conta está inativa. Entre em contato com o administrador.', 'error');
+          auth.signOut();
+          return;
+        }
+      }
+    } catch (error) {
+      console.error('Erro ao verificar usuário:', error);
+    }
+    
     document.getElementById('loginDiv').style.display = 'none';
     document.getElementById('adminPanel').style.display = 'flex';
     initializeAdmin();
