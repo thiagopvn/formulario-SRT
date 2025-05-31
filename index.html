@@ -4,177 +4,389 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Cadastro SRT - Residência Terapêutica</title>
-  <link rel="stylesheet" href="css/style.css">
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script src="https://unpkg.com/aos@2.3.1/dist/aos.js"></script>
+  <link href="https://unpkg.com/aos@2.3.1/dist/aos.css" rel="stylesheet">
+  <script src="https://cdn.jsdelivr.net/particles.js/2.0.0/particles.min.js"></script>
   <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-auth-compat.js"></script>
+  <script>
+    tailwind.config = {
+      darkMode: 'class',
+      theme: {
+        extend: {
+          animation: {
+            'float': 'float 20s ease-in-out infinite',
+            'float-slow': 'float 30s ease-in-out infinite',
+            'pulse-slow': 'pulse 4s cubic-bezier(0.4, 0, 0.6, 1) infinite',
+            'gradient': 'gradient 15s ease infinite',
+            'morphing': 'morphing 8s ease-in-out infinite',
+            'slide-up': 'slideUp 0.5s ease-out',
+            'slide-down': 'slideDown 0.5s ease-out',
+            'fade-in': 'fadeIn 0.5s ease-out',
+            'bounce-in': 'bounceIn 0.6s cubic-bezier(0.68, -0.55, 0.265, 1.55)',
+            'shake': 'shake 0.5s cubic-bezier(.36,.07,.19,.97) both',
+            'glow': 'glow 2s ease-in-out infinite',
+            'ripple': 'ripple 0.6s linear',
+            'rotate-scale': 'rotateScale 0.5s ease-in-out',
+          },
+          keyframes: {
+            float: {
+              '0%, 100%': { transform: 'translateY(0px)' },
+              '50%': { transform: 'translateY(-20px)' },
+            },
+            gradient: {
+              '0%, 100%': { backgroundPosition: '0% 50%' },
+              '50%': { backgroundPosition: '100% 50%' },
+            },
+            morphing: {
+              '0%': { borderRadius: '60% 40% 30% 70% / 60% 30% 70% 40%' },
+              '50%': { borderRadius: '30% 60% 70% 40% / 50% 60% 30% 60%' },
+              '100%': { borderRadius: '60% 40% 30% 70% / 60% 30% 70% 40%' },
+            },
+            slideUp: {
+              '0%': { transform: 'translateY(20px)', opacity: '0' },
+              '100%': { transform: 'translateY(0)', opacity: '1' },
+            },
+            slideDown: {
+              '0%': { transform: 'translateY(-20px)', opacity: '0' },
+              '100%': { transform: 'translateY(0)', opacity: '1' },
+            },
+            fadeIn: {
+              '0%': { opacity: '0' },
+              '100%': { opacity: '1' },
+            },
+            bounceIn: {
+              '0%': { opacity: '0', transform: 'scale(0.3)' },
+              '50%': { opacity: '1', transform: 'scale(1.05)' },
+              '70%': { transform: 'scale(0.9)' },
+              '100%': { transform: 'scale(1)' },
+            },
+            shake: {
+              '10%, 90%': { transform: 'translate3d(-1px, 0, 0)' },
+              '20%, 80%': { transform: 'translate3d(2px, 0, 0)' },
+              '30%, 50%, 70%': { transform: 'translate3d(-4px, 0, 0)' },
+              '40%, 60%': { transform: 'translate3d(4px, 0, 0)' },
+            },
+            glow: {
+              '0%, 100%': { boxShadow: '0 0 5px rgba(59, 130, 246, 0.5), 0 0 20px rgba(59, 130, 246, 0.3)' },
+              '50%': { boxShadow: '0 0 20px rgba(59, 130, 246, 0.8), 0 0 40px rgba(59, 130, 246, 0.5)' },
+            },
+            ripple: {
+              '0%': { transform: 'scale(0)', opacity: '1' },
+              '100%': { transform: 'scale(4)', opacity: '0' },
+            },
+            rotateScale: {
+              '0%': { transform: 'rotate(0deg) scale(1)' },
+              '50%': { transform: 'rotate(180deg) scale(1.1)' },
+              '100%': { transform: 'rotate(360deg) scale(1)' },
+            },
+          },
+          backgroundImage: {
+            'gradient-radial': 'radial-gradient(var(--tw-gradient-stops))',
+            'gradient-conic': 'conic-gradient(from 180deg at 50% 50%, var(--tw-gradient-stops))',
+          },
+        },
+      },
+    }
+  </script>
+  <style>
+    @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&display=swap');
+    
+    * {
+      font-family: 'Inter', sans-serif;
+    }
+    
+    .ripple-effect {
+      position: relative;
+      overflow: hidden;
+    }
+    
+    .ripple-effect::before {
+      content: '';
+      position: absolute;
+      top: 50%;
+      left: 50%;
+      width: 0;
+      height: 0;
+      border-radius: 50%;
+      background: rgba(255, 255, 255, 0.5);
+      transform: translate(-50%, -50%);
+      transition: width 0.6s, height 0.6s;
+    }
+    
+    .ripple-effect:active::before {
+      width: 300px;
+      height: 300px;
+    }
+    
+    .glass-morphism {
+      background: rgba(255, 255, 255, 0.1);
+      backdrop-filter: blur(10px);
+      -webkit-backdrop-filter: blur(10px);
+      border: 1px solid rgba(255, 255, 255, 0.2);
+    }
+    
+    .dark .glass-morphism {
+      background: rgba(0, 0, 0, 0.2);
+      border: 1px solid rgba(255, 255, 255, 0.1);
+    }
+    
+    .gradient-text {
+      background: linear-gradient(135deg, #3b82f6 0%, #8b5cf6 100%);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      background-clip: text;
+    }
+    
+    .gradient-bg {
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      background-size: 400% 400%;
+      animation: gradient 15s ease infinite;
+    }
+    
+    #particles-js {
+      position: fixed;
+      width: 100%;
+      height: 100%;
+      top: 0;
+      left: 0;
+      z-index: -1;
+    }
+    
+    .input-glow:focus {
+      box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1), 0 0 20px rgba(59, 130, 246, 0.3);
+    }
+    
+    .hover-lift {
+      transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    }
+    
+    .hover-lift:hover {
+      transform: translateY(-4px);
+      box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04);
+    }
+    
+    .progress-bar-gradient {
+      background: linear-gradient(90deg, #3b82f6 0%, #8b5cf6 50%, #ec4899 100%);
+      background-size: 200% 100%;
+      animation: gradient 3s ease infinite;
+    }
+    
+    .morph-shape {
+      animation: morphing 8s ease-in-out infinite;
+    }
+    
+    .number-input::-webkit-inner-spin-button,
+    .number-input::-webkit-outer-spin-button {
+      -webkit-appearance: none;
+      margin: 0;
+    }
+    
+    .skeleton {
+      background: linear-gradient(90deg, #f3f4f6 25%, #e5e7eb 50%, #f3f4f6 75%);
+      background-size: 200% 100%;
+      animation: loading 1.5s infinite;
+    }
+    
+    @keyframes loading {
+      0% { background-position: 200% 0; }
+      100% { background-position: -200% 0; }
+    }
+    
+    .floating-label {
+      transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    }
+    
+    .input-group:focus-within .floating-label,
+    .input-group input:not(:placeholder-shown) ~ .floating-label,
+    .input-group select:not([value=""]) ~ .floating-label,
+    .input-group textarea:not(:placeholder-shown) ~ .floating-label {
+      transform: translateY(-1.5rem) scale(0.85);
+      color: #3b82f6;
+    }
+    
+    @media (max-width: 768px) {
+      .mobile-bounce {
+        animation: bounce-in 0.6s ease-out;
+      }
+    }
+  </style>
 </head>
-<body>
-  <div class="floating-shapes">
-    <div class="shape shape-1"></div>
-    <div class="shape shape-2"></div>
-    <div class="shape shape-3"></div>
-    <div class="shape shape-4"></div>
+<body class="bg-gray-50 dark:bg-gray-900 transition-colors duration-300">
+  <div id="particles-js"></div>
+  
+  <div class="fixed top-0 left-0 w-full h-full pointer-events-none overflow-hidden">
+    <div class="absolute top-20 left-20 w-72 h-72 bg-purple-300 dark:bg-purple-600 rounded-full mix-blend-multiply dark:mix-blend-screen filter blur-3xl opacity-20 animate-float"></div>
+    <div class="absolute top-40 right-20 w-96 h-96 bg-blue-300 dark:bg-blue-600 rounded-full mix-blend-multiply dark:mix-blend-screen filter blur-3xl opacity-20 animate-float-slow animation-delay-2000"></div>
+    <div class="absolute bottom-20 left-1/2 w-80 h-80 bg-pink-300 dark:bg-pink-600 rounded-full mix-blend-multiply dark:mix-blend-screen filter blur-3xl opacity-20 animate-float animation-delay-4000"></div>
   </div>
 
-  <div class="container">
-    <div class="form-header">
-      <div class="header-content">
-        <h1 class="gradient-text">Cadastro SRT</h1>
-        <p class="subtitle">Sistema de Residências Terapêuticas</p>
+  <div class="container mx-auto px-4 py-8 relative z-10 max-w-6xl">
+    <header class="text-center mb-12 animate-slide-down" data-aos="fade-down" data-aos-duration="1000">
+      <div class="inline-block">
+        <h1 class="text-5xl md:text-6xl font-black gradient-text mb-4 tracking-tight">
+          Cadastro SRT
+        </h1>
+        <p class="text-xl text-gray-600 dark:text-gray-300">
+          Sistema de Residências Terapêuticas
+        </p>
       </div>
-      <button class="theme-toggle" id="themeToggle">
-        <svg class="sun-icon" width="24" height="24" viewBox="0 0 24 24" fill="none">
-          <circle cx="12" cy="12" r="5" stroke="currentColor" stroke-width="2"/>
-          <path d="M12 2v2m0 16v2m10-10h-2M4 12H2m15.364 5.364l-1.414-1.414M7.05 7.05L5.636 5.636m11.314 0l-1.414 1.414M7.05 16.95l-1.414 1.414" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
-        </svg>
-        <svg class="moon-icon" width="24" height="24" viewBox="0 0 24 24" fill="none">
-          <path d="M21 12.79A9 9 0 1111.21 3 7 7 0 0021 12.79z" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+      
+      <button id="themeToggle" class="absolute top-0 right-0 p-3 rounded-xl bg-white dark:bg-gray-800 shadow-lg hover:shadow-xl transform hover:scale-110 transition-all duration-300 hover-lift group">
+        <svg class="w-6 h-6 text-yellow-500 dark:text-purple-400 group-hover:animate-rotate-scale" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+          <path class="sun-icon dark:hidden" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 3v1m0 16v1m9-9h-1M4 12H3m15.364 6.364l-.707-.707M6.343 6.343l-.707-.707m12.728 0l-.707.707M6.343 17.657l-.707.707M16 12a4 4 0 11-8 0 4 4 0 018 0z" />
+          <path class="moon-icon hidden dark:block" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20.354 15.354A9 9 0 018.646 3.646 9.003 9.003 0 0012 21a9.003 9.003 0 008.354-5.646z" />
         </svg>
       </button>
+    </header>
+
+    <div class="mb-8 bg-gray-200 dark:bg-gray-700 rounded-full h-2 overflow-hidden" data-aos="fade-up" data-aos-delay="200">
+      <div id="progressFill" class="h-full progress-bar-gradient transition-all duration-500 ease-out" style="width: 0%"></div>
     </div>
 
-    <div class="progress-bar">
-      <div class="progress-fill" id="progressFill"></div>
-    </div>
-
-    <form id="srtForm" class="modern-form">
-      <section id="generalFields" class="form-section">
-        <div class="section-header">
-          <div class="section-icon">
-            <svg width="24" height="24" viewBox="0 0 24 24" fill="none">
-              <path d="M19 21H5a2 2 0 01-2-2V5a2 2 0 012-2h14a2 2 0 012 2v14a2 2 0 01-2 2z" stroke="currentColor" stroke-width="2"/>
-              <path d="M7 10h10m-10 4h10" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
+    <form id="srtForm" class="bg-white dark:bg-gray-800 rounded-2xl shadow-2xl overflow-hidden">
+      <section id="generalFields" class="p-8 border-b border-gray-100 dark:border-gray-700" data-aos="fade-up" data-aos-delay="300">
+        <div class="flex items-center gap-4 mb-6">
+          <div class="p-4 bg-gradient-to-br from-blue-500 to-blue-600 rounded-xl text-white animate-pulse-slow">
+            <svg class="w-8 h-8" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
             </svg>
           </div>
-          <h2>Dados da SRT</h2>
+          <h2 class="text-2xl font-bold text-gray-800 dark:text-white">Dados da SRT</h2>
         </div>
-        <div class="form-grid"></div>
+        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6"></div>
       </section>
       
-      <section id="residenceFields" class="form-section">
-        <div class="section-header">
-          <div class="section-icon">
-            <svg width="24" height="24" viewBox="0 0 24 24" fill="none">
-              <path d="M3 9l9-7 9 7v11a2 2 0 01-2 2H5a2 2 0 01-2-2z" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
-              <path d="M9 22V12h6v10" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+      <section id="residenceFields" class="p-8 border-b border-gray-100 dark:border-gray-700" data-aos="fade-up" data-aos-delay="400">
+        <div class="flex items-center gap-4 mb-6">
+          <div class="p-4 bg-gradient-to-br from-purple-500 to-purple-600 rounded-xl text-white animate-pulse-slow">
+            <svg class="w-8 h-8" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6" />
             </svg>
           </div>
-          <h2>Dados da Residência</h2>
+          <h2 class="text-2xl font-bold text-gray-800 dark:text-white">Dados da Residência</h2>
         </div>
-        <div class="form-grid"></div>
+        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6"></div>
       </section>
       
-      <section id="generalResidents" class="form-section">
-        <div class="section-header">
-          <div class="section-icon">
-            <svg width="24" height="24" viewBox="0 0 24 24" fill="none">
-              <path d="M17 21v-2a4 4 0 00-4-4H5a4 4 0 00-4 4v2" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
-              <circle cx="9" cy="7" r="4" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
-              <path d="M23 21v-2a4 4 0 00-3-3.87m-4-12a4 4 0 010 7.75" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+      <section id="generalResidents" class="p-8 border-b border-gray-100 dark:border-gray-700" data-aos="fade-up" data-aos-delay="500">
+        <div class="flex items-center gap-4 mb-6">
+          <div class="p-4 bg-gradient-to-br from-green-500 to-green-600 rounded-xl text-white animate-pulse-slow">
+            <svg class="w-8 h-8" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z" />
             </svg>
           </div>
-          <h2>Dados Gerais dos Moradores</h2>
+          <h2 class="text-2xl font-bold text-gray-800 dark:text-white">Dados Gerais dos Moradores</h2>
         </div>
-        <div class="stats-grid">
-          <div class="stat-card">
-            <label for="totalResidents">Total de Moradores</label>
-            <input type="number" id="totalResidents" min="0" required>
-            <div class="stat-icon">
-              <svg width="20" height="20" viewBox="0 0 24 24" fill="none">
-                <path d="M17 21v-2a4 4 0 00-4-4H5a4 4 0 00-4 4v2" stroke="currentColor" stroke-width="2"/>
-                <circle cx="9" cy="7" r="4" stroke="currentColor" stroke-width="2"/>
-              </svg>
+        <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
+          <div class="relative group hover-lift">
+            <div class="absolute inset-0 bg-gradient-to-r from-blue-400 to-blue-600 rounded-xl blur opacity-25 group-hover:opacity-40 transition-opacity"></div>
+            <div class="relative bg-white dark:bg-gray-700 rounded-xl p-6 border border-gray-200 dark:border-gray-600">
+              <label for="totalResidents" class="block text-sm font-medium text-gray-600 dark:text-gray-300 mb-2">Total de Moradores</label>
+              <input type="number" id="totalResidents" min="0" required class="w-full text-2xl font-bold bg-transparent text-gray-800 dark:text-white outline-none input-glow rounded-lg px-3 py-2 transition-all">
+              <div class="absolute top-4 right-4 text-blue-500 opacity-20 group-hover:opacity-40 transition-opacity">
+                <svg class="w-12 h-12" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z" />
+                </svg>
+              </div>
             </div>
           </div>
-          <div class="stat-card">
-            <label for="vagasTotais">Vagas Totais</label>
-            <input type="number" id="vagasTotais" min="0" required>
-            <div class="stat-icon">
-              <svg width="20" height="20" viewBox="0 0 24 24" fill="none">
-                <rect x="3" y="3" width="18" height="18" rx="2" stroke="currentColor" stroke-width="2"/>
-                <path d="M3 9h18M9 21V9" stroke="currentColor" stroke-width="2"/>
-              </svg>
+          
+          <div class="relative group hover-lift">
+            <div class="absolute inset-0 bg-gradient-to-r from-purple-400 to-purple-600 rounded-xl blur opacity-25 group-hover:opacity-40 transition-opacity"></div>
+            <div class="relative bg-white dark:bg-gray-700 rounded-xl p-6 border border-gray-200 dark:border-gray-600">
+              <label for="vagasTotais" class="block text-sm font-medium text-gray-600 dark:text-gray-300 mb-2">Vagas Totais</label>
+              <input type="number" id="vagasTotais" min="0" required class="w-full text-2xl font-bold bg-transparent text-gray-800 dark:text-white outline-none input-glow rounded-lg px-3 py-2 transition-all">
+              <div class="absolute top-4 right-4 text-purple-500 opacity-20 group-hover:opacity-40 transition-opacity">
+                <svg class="w-12 h-12" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1" d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10" />
+                </svg>
+              </div>
             </div>
           </div>
-          <div class="stat-card">
-            <label for="vagasOcupadas">Vagas Ocupadas</label>
-            <input type="number" id="vagasOcupadas" min="0" required>
-            <div class="stat-icon">
-              <svg width="20" height="20" viewBox="0 0 24 24" fill="none">
-                <path d="M9 11l3 3L22 4" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
-                <path d="M21 12v7a2 2 0 01-2 2H5a2 2 0 01-2-2V5a2 2 0 012-2h11" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
-              </svg>
+          
+          <div class="relative group hover-lift">
+            <div class="absolute inset-0 bg-gradient-to-r from-green-400 to-green-600 rounded-xl blur opacity-25 group-hover:opacity-40 transition-opacity"></div>
+            <div class="relative bg-white dark:bg-gray-700 rounded-xl p-6 border border-gray-200 dark:border-gray-600">
+              <label for="vagasOcupadas" class="block text-sm font-medium text-gray-600 dark:text-gray-300 mb-2">Vagas Ocupadas</label>
+              <input type="number" id="vagasOcupadas" min="0" required class="w-full text-2xl font-bold bg-transparent text-gray-800 dark:text-white outline-none input-glow rounded-lg px-3 py-2 transition-all">
+              <div class="absolute top-4 right-4 text-green-500 opacity-20 group-hover:opacity-40 transition-opacity">
+                <svg class="w-12 h-12" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+                </svg>
+              </div>
             </div>
           </div>
-          <div class="stat-card">
-            <label for="vagasDisponiveis">Vagas Disponíveis</label>
-            <input type="number" id="vagasDisponiveis" min="0" required readonly>
-            <div class="stat-icon">
-              <svg width="20" height="20" viewBox="0 0 24 24" fill="none">
-                <circle cx="12" cy="12" r="10" stroke="currentColor" stroke-width="2"/>
-                <path d="M12 6v6l4 2" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
-              </svg>
+          
+          <div class="relative group hover-lift">
+            <div class="absolute inset-0 bg-gradient-to-r from-yellow-400 to-orange-600 rounded-xl blur opacity-25 group-hover:opacity-40 transition-opacity"></div>
+            <div class="relative bg-white dark:bg-gray-700 rounded-xl p-6 border border-gray-200 dark:border-gray-600">
+              <label for="vagasDisponiveis" class="block text-sm font-medium text-gray-600 dark:text-gray-300 mb-2">Vagas Disponíveis</label>
+              <input type="number" id="vagasDisponiveis" min="0" required readonly class="w-full text-2xl font-bold bg-transparent text-gray-800 dark:text-white outline-none rounded-lg px-3 py-2">
+              <div class="absolute top-4 right-4 text-yellow-500 opacity-20 group-hover:opacity-40 transition-opacity">
+                <svg class="w-12 h-12" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
+                </svg>
+              </div>
             </div>
           </div>
         </div>
       </section>
 
-      <section id="caregiverFields" class="form-section">
-        <div class="section-header">
-          <div class="section-icon">
-            <svg width="24" height="24" viewBox="0 0 24 24" fill="none">
-              <path d="M16 21v-2a4 4 0 00-4-4H5a4 4 0 00-4 4v2" stroke="currentColor" stroke-width="2"/>
-              <circle cx="8.5" cy="7" r="4" stroke="currentColor" stroke-width="2"/>
-              <path d="M20 8v6m3-3h-6" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
+      <section id="caregiverFields" class="p-8 border-b border-gray-100 dark:border-gray-700" data-aos="fade-up" data-aos-delay="600">
+        <div class="flex items-center gap-4 mb-6">
+          <div class="p-4 bg-gradient-to-br from-pink-500 to-pink-600 rounded-xl text-white animate-pulse-slow">
+            <svg class="w-8 h-8" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M18 9v3m0 0v3m0-3h3m-3 0h-3m-2-5a4 4 0 11-8 0 4 4 0 018 0zM3 20a6 6 0 0112 0v1H3v-1z" />
             </svg>
           </div>
-          <h2>Dados da Equipe/Cuidadores</h2>
+          <h2 class="text-2xl font-bold text-gray-800 dark:text-white">Dados da Equipe/Cuidadores</h2>
         </div>
-        <div class="form-grid"></div>
+        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6"></div>
       </section>
 
-      <section id="residentCount" class="form-section">
-        <div class="section-header">
-          <div class="section-icon">
-            <svg width="24" height="24" viewBox="0 0 24 24" fill="none">
-              <path d="M17 21v-2a4 4 0 00-4-4H5a4 4 0 00-4 4v2" stroke="currentColor" stroke-width="2"/>
-              <circle cx="9" cy="7" r="4" stroke="currentColor" stroke-width="2"/>
-              <path d="M23 21v-2a4 4 0 00-3-3.87m-4-12a4 4 0 010 7.75" stroke="currentColor" stroke-width="2"/>
+      <section id="residentCount" class="p-8 border-b border-gray-100 dark:border-gray-700" data-aos="fade-up" data-aos-delay="700">
+        <div class="flex items-center gap-4 mb-6">
+          <div class="p-4 bg-gradient-to-br from-indigo-500 to-indigo-600 rounded-xl text-white animate-pulse-slow">
+            <svg class="w-8 h-8" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z" />
             </svg>
           </div>
-          <h2>Dados Individuais dos Moradores</h2>
+          <h2 class="text-2xl font-bold text-gray-800 dark:text-white">Dados Individuais dos Moradores</h2>
         </div>
-        <div class="number-selector">
-          <label for="numMoradores">Quantos moradores existem nesta casa?</label>
-          <div class="number-input-wrapper">
-            <button type="button" class="number-btn minus" data-action="minus">
-              <svg width="20" height="20" viewBox="0 0 24 24" fill="none">
-                <path d="M5 12h14" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
+        <div class="text-center mb-8">
+          <label for="numMoradores" class="block text-lg font-medium text-gray-700 dark:text-gray-300 mb-4">
+            Quantos moradores existem nesta casa?
+          </label>
+          <div class="inline-flex items-center gap-4 bg-gray-100 dark:bg-gray-700 rounded-2xl p-2">
+            <button type="button" data-action="minus" class="w-12 h-12 rounded-xl bg-red-500 hover:bg-red-600 text-white flex items-center justify-center transition-all transform hover:scale-110 active:scale-95 ripple-effect">
+              <svg class="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="3" d="M20 12H4" />
               </svg>
             </button>
-            <input type="number" id="numMoradores" min="0" max="20" value="0">
-            <button type="button" class="number-btn plus" data-action="plus">
-              <svg width="20" height="20" viewBox="0 0 24 24" fill="none">
-                <path d="M12 5v14m-7-7h14" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
+            <input type="number" id="numMoradores" min="0" max="20" value="0" class="w-20 text-center text-2xl font-bold bg-transparent text-gray-800 dark:text-white outline-none number-input">
+            <button type="button" data-action="plus" class="w-12 h-12 rounded-xl bg-green-500 hover:bg-green-600 text-white flex items-center justify-center transition-all transform hover:scale-110 active:scale-95 ripple-effect">
+              <svg class="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="3" d="M12 4v16m8-8H4" />
               </svg>
             </button>
           </div>
         </div>
-        <div id="residentsContainer" class="residents-container"></div>
+        <div id="residentsContainer" class="space-y-6"></div>
       </section>
 
-      <div class="form-actions">
-        <button type="button" class="btn btn-secondary" id="clearBtn">
-          <svg width="20" height="20" viewBox="0 0 24 24" fill="none">
-            <path d="M3 6h18m-2 0v14a2 2 0 01-2 2H7a2 2 0 01-2-2V6m3 0V4a2 2 0 012-2h4a2 2 0 012 2v2" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+      <div class="p-8 bg-gray-50 dark:bg-gray-900/50 flex flex-col sm:flex-row gap-4 justify-end">
+        <button type="button" id="clearBtn" class="px-6 py-3 bg-gray-200 dark:bg-gray-700 hover:bg-gray-300 dark:hover:bg-gray-600 text-gray-700 dark:text-gray-300 rounded-xl font-semibold transition-all transform hover:scale-105 active:scale-95 flex items-center justify-center gap-2 ripple-effect">
+          <svg class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
           </svg>
           Limpar Formulário
         </button>
-        <button type="submit" class="btn btn-primary" id="submitBtn">
-          <svg width="20" height="20" viewBox="0 0 24 24" fill="none">
-            <path d="M9 11l3 3L22 4" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
-            <path d="M21 12v7a2 2 0 01-2 2H5a2 2 0 01-2-2V5a2 2 0 012-2h11" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+        <button type="submit" id="submitBtn" class="px-8 py-3 bg-gradient-to-r from-blue-500 to-purple-600 hover:from-blue-600 hover:to-purple-700 text-white rounded-xl font-semibold transition-all transform hover:scale-105 active:scale-95 flex items-center gap-2 shadow-lg hover:shadow-xl ripple-effect">
+          <svg class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
           </svg>
           Enviar Dados
         </button>
@@ -182,16 +394,62 @@
     </form>
   </div>
 
-  <div id="loadingOverlay" class="loading-overlay">
-    <div class="loader">
-      <div class="loader-circle"></div>
-      <div class="loader-circle"></div>
-      <div class="loader-circle"></div>
+  <div id="loadingOverlay" class="fixed inset-0 bg-black/80 backdrop-blur-sm z-50 hidden items-center justify-center">
+    <div class="bg-white dark:bg-gray-800 rounded-2xl p-8 shadow-2xl">
+      <div class="flex space-x-2 justify-center items-center">
+        <div class="w-4 h-4 bg-blue-500 rounded-full animate-bounce" style="animation-delay: -0.3s"></div>
+        <div class="w-4 h-4 bg-purple-500 rounded-full animate-bounce" style="animation-delay: -0.15s"></div>
+        <div class="w-4 h-4 bg-pink-500 rounded-full animate-bounce"></div>
+      </div>
+      <p class="mt-4 text-gray-600 dark:text-gray-300 font-medium">Processando...</p>
     </div>
   </div>
 
-  <div class="toast-container" id="toastContainer"></div>
+  <div id="toastContainer" class="fixed top-4 right-4 z-50 space-y-4"></div>
 
   <script src="js/app.js"></script>
+  <script>
+    particlesJS('particles-js', {
+      particles: {
+        number: { value: 80, density: { enable: true, value_area: 800 } },
+        color: { value: '#3b82f6' },
+        shape: { type: 'circle' },
+        opacity: { value: 0.5, random: false },
+        size: { value: 3, random: true },
+        line_linked: {
+          enable: true,
+          distance: 150,
+          color: '#3b82f6',
+          opacity: 0.4,
+          width: 1
+        },
+        move: {
+          enable: true,
+          speed: 2,
+          direction: 'none',
+          random: false,
+          straight: false,
+          out_mode: 'out',
+          bounce: false
+        }
+      },
+      interactivity: {
+        detect_on: 'canvas',
+        events: {
+          onhover: { enable: true, mode: 'repulse' },
+          onclick: { enable: true, mode: 'push' },
+          resize: true
+        }
+      },
+      retina_detect: true
+    });
+    
+    AOS.init({
+      duration: 800,
+      easing: 'ease-out-cubic',
+      once: true,
+      offset: 50
+    });
+  </script>
 </body>
 </html>

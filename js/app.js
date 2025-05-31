@@ -13,23 +13,46 @@ const db = firebase.firestore();
 
 let currentConfig = null;
 
-const showLoading = () => document.getElementById('loadingOverlay').classList.add('show');
-const hideLoading = () => document.getElementById('loadingOverlay').classList.remove('show');
+const showLoading = () => {
+  const overlay = document.getElementById('loadingOverlay');
+  overlay.style.display = 'flex';
+  overlay.classList.add('animate-fade-in');
+};
+
+const hideLoading = () => {
+  const overlay = document.getElementById('loadingOverlay');
+  overlay.classList.remove('animate-fade-in');
+  setTimeout(() => overlay.style.display = 'none', 300);
+};
 
 const showToast = (message, type = 'success') => {
   const toast = document.createElement('div');
-  toast.className = `toast ${type}`;
+  toast.className = `flex items-center gap-3 px-6 py-4 rounded-xl shadow-lg transform transition-all duration-300 ${
+    type === 'success' 
+      ? 'bg-green-500 text-white' 
+      : 'bg-red-500 text-white'
+  } animate-slide-left`;
+  
+  const icon = type === 'success' 
+    ? '<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7" />'
+    : '<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />';
+  
   toast.innerHTML = `
-    <svg class="toast-icon" width="24" height="24" viewBox="0 0 24 24" fill="none">
-      ${type === 'success' 
-        ? '<path d="M9 11l3 3L22 4" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>' 
-        : '<path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm1 15h-2v-2h2v2zm0-4h-2V7h2v6z" fill="currentColor"/>'}
-    </svg>
-    <span>${message}</span>
+    <div class="flex-shrink-0">
+      <svg class="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+        ${icon}
+      </svg>
+    </div>
+    <p class="font-medium">${message}</p>
   `;
   
-  document.getElementById('toastContainer').appendChild(toast);
-  setTimeout(() => toast.remove(), 3000);
+  const container = document.getElementById('toastContainer');
+  container.appendChild(toast);
+  
+  setTimeout(() => {
+    toast.classList.add('opacity-0', 'translate-x-full');
+    setTimeout(() => toast.remove(), 300);
+  }, 3000);
 };
 
 const updateProgress = () => {
@@ -43,33 +66,46 @@ const updateProgress = () => {
   });
   
   const progress = (filledSections / sections.length) * 100;
-  document.getElementById('progressFill').style.width = `${progress}%`;
+  const progressBar = document.getElementById('progressFill');
+  progressBar.style.width = `${progress}%`;
+  
+  if (progress === 100) {
+    progressBar.classList.add('animate-pulse-glow');
+  } else {
+    progressBar.classList.remove('animate-pulse-glow');
+  }
 };
 
 const initTheme = () => {
   const theme = localStorage.getItem('theme') || 'light';
-  document.documentElement.setAttribute('data-theme', theme);
+  document.documentElement.classList.toggle('dark', theme === 'dark');
   
   document.getElementById('themeToggle').addEventListener('click', () => {
-    const currentTheme = document.documentElement.getAttribute('data-theme');
-    const newTheme = currentTheme === 'light' ? 'dark' : 'light';
-    document.documentElement.setAttribute('data-theme', newTheme);
-    localStorage.setItem('theme', newTheme);
+    const isDark = document.documentElement.classList.toggle('dark');
+    localStorage.setItem('theme', isDark ? 'dark' : 'light');
+    
+    const particles = window.pJSDom && window.pJSDom[0];
+    if (particles) {
+      particles.pJS.particles.color.value = isDark ? '#8b5cf6' : '#3b82f6';
+      particles.pJS.particles.line_linked.color = isDark ? '#8b5cf6' : '#3b82f6';
+      particles.pJS.fn.particlesRefresh();
+    }
   });
 };
 
 const createInputGroup = (field, prefix = '') => {
   const group = document.createElement('div');
-  group.className = 'form-group';
+  group.className = 'form-group input-group relative';
   
-  const label = document.createElement('label');
-  label.textContent = field.label + (field.required ? ' *' : '');
-  label.setAttribute('for', prefix + field.key);
+  const inputId = prefix + field.key;
+  const hasFloatingLabel = field.type !== 'select' && field.type !== 'textarea';
   
   let input;
   
   if (field.type === 'select' && field.options) {
     input = document.createElement('select');
+    input.className = 'w-full px-4 py-3 bg-white dark:bg-gray-700 border-2 border-gray-200 dark:border-gray-600 rounded-xl focus:border-blue-500 dark:focus:border-blue-400 focus:outline-none transition-all appearance-none cursor-pointer';
+    
     const defaultOption = document.createElement('option');
     defaultOption.value = '';
     defaultOption.textContent = 'Selecione...';
@@ -84,66 +120,135 @@ const createInputGroup = (field, prefix = '') => {
   } else if (field.type === 'textarea') {
     input = document.createElement('textarea');
     input.rows = 3;
+    input.className = 'w-full px-4 py-3 bg-white dark:bg-gray-700 border-2 border-gray-200 dark:border-gray-600 rounded-xl focus:border-blue-500 dark:focus:border-blue-400 focus:outline-none transition-all resize-none';
   } else {
     input = document.createElement('input');
     input.type = field.type;
+    input.className = 'w-full px-4 py-3 bg-white dark:bg-gray-700 border-2 border-gray-200 dark:border-gray-600 rounded-xl focus:border-blue-500 dark:focus:border-blue-400 focus:outline-none transition-all peer';
+    if (hasFloatingLabel) input.placeholder = ' ';
     if (field.min !== undefined) input.min = field.min;
     if (field.max !== undefined) input.max = field.max;
     if (field.pattern) input.pattern = field.pattern;
   }
   
-  input.id = prefix + field.key;
-  input.name = prefix + field.key;
+  input.id = inputId;
+  input.name = inputId;
   if (field.required) input.required = true;
   
-  input.addEventListener('input', updateProgress);
+  input.addEventListener('input', () => {
+    updateProgress();
+    if (input.value && !input.classList.contains('border-green-500')) {
+      input.classList.add('border-green-500', 'dark:border-green-400');
+      setTimeout(() => {
+        input.classList.remove('border-green-500', 'dark:border-green-400');
+      }, 2000);
+    }
+  });
   
-  group.appendChild(label);
+  input.addEventListener('focus', () => {
+    group.classList.add('scale-105');
+  });
+  
+  input.addEventListener('blur', () => {
+    group.classList.remove('scale-105');
+  });
+  
   group.appendChild(input);
+  
+  const label = document.createElement('label');
+  label.textContent = field.label + (field.required ? ' *' : '');
+  label.setAttribute('for', inputId);
+  
+  if (hasFloatingLabel) {
+    label.className = 'floating-label absolute left-4 top-3 text-gray-500 dark:text-gray-400 pointer-events-none transition-all';
+  } else {
+    label.className = 'block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2';
+    group.insertBefore(label, input);
+  }
+  
+  if (hasFloatingLabel) {
+    group.appendChild(label);
+  }
+  
+  if (field.type === 'select') {
+    const chevron = document.createElement('div');
+    chevron.className = 'absolute right-4 top-1/2 transform -translate-y-1/2 pointer-events-none text-gray-400';
+    chevron.innerHTML = '<svg class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7" /></svg>';
+    group.appendChild(chevron);
+  }
   
   return group;
 };
 
 const renderFormFields = () => {
-  const generalGrid = document.querySelector('#generalFields .form-grid');
-  currentConfig.general.forEach(field => {
-    generalGrid.appendChild(createInputGroup(field));
+  const generalGrid = document.querySelector('#generalFields .grid');
+  currentConfig.general.forEach((field, index) => {
+    const fieldGroup = createInputGroup(field);
+    fieldGroup.style.animationDelay = `${index * 50}ms`;
+    fieldGroup.classList.add('animate-fade-in');
+    generalGrid.appendChild(fieldGroup);
   });
   
-  const residenceGrid = document.querySelector('#residenceFields .form-grid');
-  currentConfig.residence.forEach(field => {
-    residenceGrid.appendChild(createInputGroup(field));
+  const residenceGrid = document.querySelector('#residenceFields .grid');
+  currentConfig.residence.forEach((field, index) => {
+    const fieldGroup = createInputGroup(field);
+    fieldGroup.style.animationDelay = `${index * 50}ms`;
+    fieldGroup.classList.add('animate-fade-in');
+    residenceGrid.appendChild(fieldGroup);
   });
   
-  const caregiverGrid = document.querySelector('#caregiverFields .form-grid');
-  currentConfig.caregivers.forEach(field => {
-    caregiverGrid.appendChild(createInputGroup(field));
+  const caregiverGrid = document.querySelector('#caregiverFields .grid');
+  currentConfig.caregivers.forEach((field, index) => {
+    const fieldGroup = createInputGroup(field);
+    fieldGroup.style.animationDelay = `${index * 50}ms`;
+    fieldGroup.classList.add('animate-fade-in');
+    caregiverGrid.appendChild(fieldGroup);
   });
 };
 
 const updateResidentBlocks = () => {
   const count = parseInt(document.getElementById('numMoradores').value) || 0;
   const container = document.getElementById('residentsContainer');
-  container.innerHTML = '';
   
-  for (let i = 1; i <= count; i++) {
-    const block = document.createElement('div');
-    block.className = 'resident-block';
-    block.style.animationDelay = `${i * 0.1}s`;
-    
-    const header = document.createElement('h3');
-    header.textContent = `Morador ${i}`;
-    block.appendChild(header);
-    
-    const grid = document.createElement('div');
-    grid.className = 'form-grid';
-    
-    currentConfig.residentFields.forEach(field => {
-      grid.appendChild(createInputGroup(field, `${field.key}_${i}_`));
-    });
-    
-    block.appendChild(grid);
-    container.appendChild(block);
+  const currentBlocks = container.children.length;
+  
+  if (count > currentBlocks) {
+    for (let i = currentBlocks + 1; i <= count; i++) {
+      const block = document.createElement('div');
+      block.className = 'bg-white dark:bg-gray-700 rounded-xl p-6 shadow-lg border-2 border-gray-200 dark:border-gray-600 relative overflow-hidden group hover-lift animate-slide-up';
+      block.style.animationDelay = `${(i - currentBlocks - 1) * 100}ms`;
+      
+      const accentBar = document.createElement('div');
+      accentBar.className = 'absolute top-0 left-0 w-1 h-full bg-gradient-to-b from-blue-500 to-purple-600 transition-all group-hover:w-2';
+      block.appendChild(accentBar);
+      
+      const header = document.createElement('h3');
+      header.className = 'text-xl font-bold text-gray-800 dark:text-white mb-4 flex items-center gap-2';
+      header.innerHTML = `
+        <span class="w-8 h-8 bg-gradient-to-br from-blue-500 to-purple-600 rounded-full flex items-center justify-center text-white text-sm font-bold">${i}</span>
+        Morador ${i}
+      `;
+      block.appendChild(header);
+      
+      const grid = document.createElement('div');
+      grid.className = 'grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4';
+      
+      currentConfig.residentFields.forEach((field, index) => {
+        const fieldGroup = createInputGroup(field, `${field.key}_${i}_`);
+        fieldGroup.style.animationDelay = `${index * 30}ms`;
+        fieldGroup.classList.add('animate-fade-in');
+        grid.appendChild(fieldGroup);
+      });
+      
+      block.appendChild(grid);
+      container.appendChild(block);
+    }
+  } else if (count < currentBlocks) {
+    while (container.children.length > count) {
+      const lastChild = container.lastElementChild;
+      lastChild.classList.add('animate-fade-out');
+      setTimeout(() => lastChild.remove(), 300);
+    }
   }
   
   updateProgress();
@@ -152,7 +257,15 @@ const updateResidentBlocks = () => {
 const updateVagasDisponiveis = () => {
   const total = parseInt(document.getElementById('vagasTotais').value) || 0;
   const ocupadas = parseInt(document.getElementById('vagasOcupadas').value) || 0;
-  document.getElementById('vagasDisponiveis').value = Math.max(0, total - ocupadas);
+  const disponiveis = Math.max(0, total - ocupadas);
+  document.getElementById('vagasDisponiveis').value = disponiveis;
+  
+  const disponiveisCard = document.getElementById('vagasDisponiveis').closest('.group');
+  if (disponiveis === 0) {
+    disponiveisCard.classList.add('animate-pulse');
+  } else {
+    disponiveisCard.classList.remove('animate-pulse');
+  }
 };
 
 const clearForm = () => {
@@ -160,6 +273,13 @@ const clearForm = () => {
     document.getElementById('srtForm').reset();
     document.getElementById('residentsContainer').innerHTML = '';
     updateProgress();
+    
+    const inputs = document.querySelectorAll('input, select, textarea');
+    inputs.forEach(input => {
+      input.classList.add('animate-shake');
+      setTimeout(() => input.classList.remove('animate-shake'), 500);
+    });
+    
     showToast('Formulário limpo com sucesso!');
   }
 };
@@ -169,6 +289,16 @@ const validateForm = () => {
   const vagasOcupadas = parseInt(document.getElementById('vagasOcupadas').value) || 0;
   
   if (numMoradores !== vagasOcupadas) {
+    const moradoresInput = document.getElementById('numMoradores');
+    const vagasInput = document.getElementById('vagasOcupadas');
+    
+    [moradoresInput, vagasInput].forEach(input => {
+      input.classList.add('border-red-500', 'animate-shake');
+      setTimeout(() => {
+        input.classList.remove('border-red-500', 'animate-shake');
+      }, 1000);
+    });
+    
     showToast('O número de moradores deve ser igual ao número de vagas ocupadas.', 'error');
     return false;
   }
@@ -180,6 +310,15 @@ const submitForm = async (event) => {
   event.preventDefault();
   
   if (!validateForm()) return;
+  
+  const submitBtn = document.getElementById('submitBtn');
+  submitBtn.disabled = true;
+  submitBtn.innerHTML = `
+    <svg class="animate-spin w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
+    </svg>
+    <span>Enviando...</span>
+  `;
   
   showLoading();
   
@@ -224,19 +363,38 @@ const submitForm = async (event) => {
     
     showToast('Dados salvos com sucesso!');
     
+    const celebration = document.createElement('div');
+    celebration.className = 'fixed inset-0 pointer-events-none z-50';
+    celebration.innerHTML = `
+      <div class="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2">
+        <svg class="w-32 h-32 text-green-500 animate-bounce-in" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+        </svg>
+      </div>
+    `;
+    document.body.appendChild(celebration);
+    
     setTimeout(() => {
+      celebration.remove();
       if (confirm('Deseja cadastrar outra residência?')) {
         clearForm();
       } else {
         window.location.href = 'admin.html';
       }
-    }, 1000);
+    }, 2000);
     
   } catch (error) {
     console.error('Erro ao salvar:', error);
     showToast('Erro ao salvar dados. Tente novamente.', 'error');
   } finally {
     hideLoading();
+    submitBtn.disabled = false;
+    submitBtn.innerHTML = `
+      <svg class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+      </svg>
+      Enviar Dados
+    `;
   }
 };
 
@@ -334,7 +492,7 @@ const initializeApp = async () => {
     document.getElementById('clearBtn').addEventListener('click', clearForm);
     document.getElementById('srtForm').addEventListener('submit', submitForm);
     
-    document.querySelectorAll('.number-btn').forEach(btn => {
+    document.querySelectorAll('[data-action]').forEach(btn => {
       btn.addEventListener('click', () => {
         const input = document.getElementById('numMoradores');
         const current = parseInt(input.value) || 0;
@@ -342,16 +500,32 @@ const initializeApp = async () => {
         
         if (action === 'plus' && current < 20) {
           input.value = current + 1;
+          btn.classList.add('animate-bounce');
         } else if (action === 'minus' && current > 0) {
           input.value = current - 1;
+          btn.classList.add('animate-bounce');
         }
         
+        setTimeout(() => btn.classList.remove('animate-bounce'), 500);
         input.dispatchEvent(new Event('change'));
       });
     });
     
     document.querySelectorAll('input, select, textarea').forEach(element => {
       element.addEventListener('input', updateProgress);
+    });
+    
+    const observer = new IntersectionObserver((entries) => {
+      entries.forEach(entry => {
+        if (entry.isIntersecting) {
+          entry.target.classList.add('animate-fade-in');
+          observer.unobserve(entry.target);
+        }
+      });
+    }, { threshold: 0.1 });
+    
+    document.querySelectorAll('.form-section').forEach(section => {
+      observer.observe(section);
     });
     
   } catch (error) {

@@ -19,35 +19,79 @@ let editingField = null;
 let editingFieldIndex = null;
 let editingFieldSection = null;
 
-const showLoading = () => document.getElementById('loadingOverlay').classList.add('show');
-const hideLoading = () => document.getElementById('loadingOverlay').classList.remove('show');
+const showLoading = () => {
+  const overlay = document.getElementById('loadingOverlay');
+  overlay.style.display = 'flex';
+  overlay.classList.add('animate-fade-in');
+};
+
+const hideLoading = () => {
+  const overlay = document.getElementById('loadingOverlay');
+  overlay.classList.remove('animate-fade-in');
+  setTimeout(() => overlay.style.display = 'none', 300);
+};
 
 const showToast = (message, type = 'success') => {
   const toast = document.createElement('div');
-  toast.className = `toast ${type}`;
+  toast.className = `flex items-center gap-3 px-6 py-4 rounded-xl shadow-lg transform transition-all duration-300 ${
+    type === 'success' 
+      ? 'bg-green-500 text-white' 
+      : 'bg-red-500 text-white'
+  } animate-slide-left`;
+  
+  const icon = type === 'success' 
+    ? '<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7" />'
+    : '<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />';
+  
   toast.innerHTML = `
-    <svg class="toast-icon" width="24" height="24" viewBox="0 0 24 24" fill="none">
-      ${type === 'success' 
-        ? '<path d="M9 11l3 3L22 4" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>' 
-        : '<path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm1 15h-2v-2h2v2zm0-4h-2V7h2v6z" fill="currentColor"/>'}
-    </svg>
-    <span>${message}</span>
+    <div class="flex-shrink-0">
+      <svg class="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+        ${icon}
+      </svg>
+    </div>
+    <p class="font-medium">${message}</p>
   `;
   
-  document.getElementById('toastContainer').appendChild(toast);
-  setTimeout(() => toast.remove(), 3000);
+  const container = document.getElementById('toastContainer');
+  container.appendChild(toast);
+  
+  setTimeout(() => {
+    toast.classList.add('opacity-0', 'translate-x-full');
+    setTimeout(() => toast.remove(), 300);
+  }, 3000);
 };
 
 const initTheme = () => {
   const theme = localStorage.getItem('theme') || 'light';
-  document.documentElement.setAttribute('data-theme', theme);
+  document.documentElement.classList.toggle('dark', theme === 'dark');
   
   document.getElementById('themeToggle').addEventListener('click', () => {
-    const currentTheme = document.documentElement.getAttribute('data-theme');
-    const newTheme = currentTheme === 'light' ? 'dark' : 'light';
-    document.documentElement.setAttribute('data-theme', newTheme);
-    localStorage.setItem('theme', newTheme);
+    const isDark = document.documentElement.classList.toggle('dark');
+    localStorage.setItem('theme', isDark ? 'dark' : 'light');
+    
+    const particles = window.pJSDom && window.pJSDom[0];
+    if (particles) {
+      particles.pJS.particles.color.value = isDark ? '#8b5cf6' : '#3b82f6';
+      particles.pJS.particles.line_linked.color = isDark ? '#8b5cf6' : '#3b82f6';
+      particles.pJS.fn.particlesRefresh();
+    }
+    
+    if (occupancyChart) {
+      updateChartTheme();
+    }
   });
+};
+
+const updateChartTheme = () => {
+  const isDark = document.documentElement.classList.contains('dark');
+  const textColor = isDark ? '#e5e7eb' : '#4b5563';
+  const gridColor = isDark ? '#374151' : '#f3f4f6';
+  
+  occupancyChart.options.plugins.legend.labels.color = textColor;
+  occupancyChart.options.scales.y.ticks.color = textColor;
+  occupancyChart.options.scales.x.ticks.color = textColor;
+  occupancyChart.options.scales.y.grid.color = gridColor;
+  occupancyChart.update();
 };
 
 auth.onAuthStateChanged(user => {
@@ -65,6 +109,15 @@ document.getElementById('loginForm').addEventListener('submit', async (e) => {
   e.preventDefault();
   const email = document.getElementById('loginEmail').value;
   const password = document.getElementById('loginPassword').value;
+  const loginBtn = document.getElementById('loginBtn');
+  
+  loginBtn.disabled = true;
+  loginBtn.innerHTML = `
+    <svg class="animate-spin w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
+    </svg>
+    <span>Entrando...</span>
+  `;
   
   showLoading();
   document.getElementById('loginError').textContent = '';
@@ -91,8 +144,17 @@ document.getElementById('loginForm').addEventListener('submit', async (e) => {
     }
     
     document.getElementById('loginError').textContent = errorMessage;
+    document.getElementById('loginForm').classList.add('animate-shake');
+    setTimeout(() => document.getElementById('loginForm').classList.remove('animate-shake'), 500);
   } finally {
     hideLoading();
+    loginBtn.disabled = false;
+    loginBtn.innerHTML = `
+      <span>Entrar</span>
+      <svg class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M14 5l7 7m0 0l-7 7m7-7H3" />
+      </svg>
+    `;
   }
 });
 
@@ -104,24 +166,36 @@ document.getElementById('logoutBtn').addEventListener('click', () => {
 });
 
 document.getElementById('mobileMenuToggle').addEventListener('click', () => {
-  document.querySelector('.sidebar').classList.toggle('active');
+  const sidebar = document.getElementById('sidebar');
+  sidebar.classList.toggle('translate-x-0');
+  sidebar.classList.toggle('-translate-x-full');
 });
 
 document.querySelectorAll('.nav-item').forEach(item => {
   item.addEventListener('click', function() {
-    document.querySelectorAll('.nav-item').forEach(i => i.classList.remove('active'));
+    document.querySelectorAll('.nav-item').forEach(i => {
+      i.classList.remove('bg-blue-50', 'dark:bg-blue-900/20', 'text-blue-600', 'dark:text-blue-400');
+      i.classList.add('text-gray-600', 'dark:text-gray-400');
+    });
+    
     document.querySelectorAll('.tab-content').forEach(t => {
       t.classList.remove('active');
       t.style.display = 'none';
     });
     
-    this.classList.add('active');
+    this.classList.remove('text-gray-600', 'dark:text-gray-400');
+    this.classList.add('bg-blue-50', 'dark:bg-blue-900/20', 'text-blue-600', 'dark:text-blue-400');
+    
     const tabId = this.getAttribute('data-tab') + 'Tab';
     const tab = document.getElementById(tabId);
     tab.style.display = 'block';
     setTimeout(() => tab.classList.add('active'), 10);
     
-    document.querySelector('.sidebar').classList.remove('active');
+    const sidebar = document.getElementById('sidebar');
+    if (window.innerWidth < 768) {
+      sidebar.classList.add('-translate-x-full');
+      sidebar.classList.remove('translate-x-0');
+    }
   });
 });
 
@@ -161,10 +235,39 @@ const updateStats = () => {
   const vagasOcupadas = allHouses.reduce((sum, house) => sum + (parseInt(house.vagasOcupadas) || 0), 0);
   const occupancyRate = totalVagas > 0 ? ((vagasOcupadas / totalVagas) * 100).toFixed(1) : 0;
   
-  document.getElementById('totalHouses').textContent = totalHouses;
-  document.getElementById('totalResidentsCount').textContent = totalResidents;
-  document.getElementById('avgResidents').textContent = avgResidents;
-  document.getElementById('occupancyRate').textContent = occupancyRate + '%';
+  const statElements = [
+    { id: 'totalHouses', value: totalHouses },
+    { id: 'totalResidentsCount', value: totalResidents },
+    { id: 'avgResidents', value: avgResidents },
+    { id: 'occupancyRate', value: occupancyRate + '%' }
+  ];
+  
+  statElements.forEach(({ id, value }) => {
+    const element = document.getElementById(id);
+    const current = parseFloat(element.textContent) || 0;
+    const target = parseFloat(value) || 0;
+    
+    const duration = 1000;
+    const startTime = performance.now();
+    
+    const animate = (currentTime) => {
+      const elapsed = currentTime - startTime;
+      const progress = Math.min(elapsed / duration, 1);
+      
+      const easeOutQuart = 1 - Math.pow(1 - progress, 4);
+      const currentValue = current + (target - current) * easeOutQuart;
+      
+      element.textContent = id === 'occupancyRate' 
+        ? currentValue.toFixed(1) + '%' 
+        : Math.round(currentValue);
+      
+      if (progress < 1) {
+        requestAnimationFrame(animate);
+      }
+    };
+    
+    requestAnimationFrame(animate);
+  });
   
   updateChart();
 };
@@ -173,7 +276,7 @@ const initializeChart = () => {
   const ctx = document.getElementById('occupancyChart');
   if (!ctx) return;
   
-  const chartColors = getComputedStyle(document.documentElement);
+  const isDark = document.documentElement.classList.contains('dark');
   
   occupancyChart = new Chart(ctx, {
     type: 'bar',
@@ -182,27 +285,39 @@ const initializeChart = () => {
       datasets: [{
         label: 'Taxa de Ocupação (%)',
         data: [],
-        backgroundColor: chartColors.getPropertyValue('--primary').trim(),
-        borderColor: chartColors.getPropertyValue('--primary-dark').trim(),
-        borderWidth: 0,
-        borderRadius: 8
+        backgroundColor: 'rgba(59, 130, 246, 0.8)',
+        borderColor: 'rgba(59, 130, 246, 1)',
+        borderWidth: 2,
+        borderRadius: 8,
+        hoverBackgroundColor: 'rgba(139, 92, 246, 0.8)',
+        hoverBorderColor: 'rgba(139, 92, 246, 1)',
       }]
     },
     options: {
       responsive: true,
       maintainAspectRatio: false,
+      interaction: {
+        mode: 'index',
+        intersect: false,
+      },
       plugins: {
         legend: {
           display: false
         },
         tooltip: {
-          backgroundColor: chartColors.getPropertyValue('--bg-primary').trim(),
-          titleColor: chartColors.getPropertyValue('--text-primary').trim(),
-          bodyColor: chartColors.getPropertyValue('--text-secondary').trim(),
-          borderColor: chartColors.getPropertyValue('--border').trim(),
+          backgroundColor: isDark ? '#1f2937' : '#ffffff',
+          titleColor: isDark ? '#f3f4f6' : '#111827',
+          bodyColor: isDark ? '#e5e7eb' : '#4b5563',
+          borderColor: isDark ? '#374151' : '#e5e7eb',
           borderWidth: 1,
           cornerRadius: 8,
-          padding: 12
+          padding: 12,
+          displayColors: false,
+          callbacks: {
+            label: function(context) {
+              return `Ocupação: ${context.parsed.y}%`;
+            }
+          }
         }
       },
       scales: {
@@ -210,12 +325,13 @@ const initializeChart = () => {
           beginAtZero: true,
           max: 100,
           grid: {
-            color: chartColors.getPropertyValue('--border-light').trim(),
+            color: isDark ? '#374151' : '#f3f4f6',
             drawBorder: false
           },
           ticks: {
-            color: chartColors.getPropertyValue('--text-secondary').trim(),
-            callback: value => value + '%'
+            color: isDark ? '#e5e7eb' : '#4b5563',
+            callback: value => value + '%',
+            padding: 8
           }
         },
         x: {
@@ -223,9 +339,15 @@ const initializeChart = () => {
             display: false
           },
           ticks: {
-            color: chartColors.getPropertyValue('--text-secondary').trim()
+            color: isDark ? '#e5e7eb' : '#4b5563',
+            maxRotation: 45,
+            minRotation: 45
           }
         }
+      },
+      animation: {
+        duration: 1000,
+        easing: 'easeOutQuart'
       }
     }
   });
@@ -248,28 +370,59 @@ const displayHouses = (houses) => {
   const tbody = document.querySelector('#housesTable tbody');
   tbody.innerHTML = '';
   
-  houses.forEach(house => {
+  houses.forEach((house, index) => {
     const row = document.createElement('tr');
+    row.className = 'table-row-hover transition-all duration-200';
+    row.style.animationDelay = `${index * 50}ms`;
+    row.classList.add('animate-fade-in');
+    
+    const tipoColor = house.tipoSRT === 'Tipo I' 
+      ? 'bg-blue-100 text-blue-800 dark:bg-blue-900/20 dark:text-blue-400' 
+      : 'bg-purple-100 text-purple-800 dark:bg-purple-900/20 dark:text-purple-400';
+    
     row.innerHTML = `
-      <td>${house.nomeResidencia || '(Sem nome)'}</td>
-      <td>${house.nomeCaps || '-'}</td>
-      <td><span class="badge">${house.tipoSRT || '-'}</span></td>
-      <td>${house.residents?.length || 0}</td>
-      <td>${house.vagasDisponiveis || 0}/${house.vagasTotais || 0}</td>
-      <td class="table-actions">
-        <button class="btn btn-sm btn-primary view-btn" data-id="${house.id}">Detalhes</button>
-        <button class="btn btn-sm btn-danger delete-btn" data-id="${house.id}">Excluir</button>
+      <td class="px-6 py-4 whitespace-nowrap">
+        <div class="text-sm font-medium text-gray-900 dark:text-white">${house.nomeResidencia || '(Sem nome)'}</div>
+      </td>
+      <td class="px-6 py-4 whitespace-nowrap">
+        <div class="text-sm text-gray-600 dark:text-gray-300">${house.nomeCaps || '-'}</div>
+      </td>
+      <td class="px-6 py-4 whitespace-nowrap">
+        <span class="px-3 py-1 inline-flex text-xs leading-5 font-semibold rounded-full ${tipoColor}">
+          ${house.tipoSRT || '-'}
+        </span>
+      </td>
+      <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-600 dark:text-gray-300">
+        <div class="flex items-center">
+          <svg class="w-4 h-4 mr-1 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z" />
+          </svg>
+          ${house.residents?.length || 0}
+        </div>
+      </td>
+      <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-600 dark:text-gray-300">
+        <div class="flex items-center">
+          <div class="w-24 bg-gray-200 dark:bg-gray-700 rounded-full h-2 mr-2">
+            <div class="bg-gradient-to-r from-blue-500 to-purple-600 h-2 rounded-full transition-all duration-500" style="width: ${house.vagasTotais > 0 ? (house.vagasOcupadas / house.vagasTotais * 100) : 0}%"></div>
+          </div>
+          <span>${house.vagasOcupadas || 0}/${house.vagasTotais || 0}</span>
+        </div>
+      </td>
+      <td class="px-6 py-4 whitespace-nowrap text-sm font-medium">
+        <button class="text-blue-600 hover:text-blue-900 dark:text-blue-400 dark:hover:text-blue-300 mr-3 transform hover:scale-110 transition-all" onclick="viewHouseDetails('${house.id}')">
+          <svg class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
+          </svg>
+        </button>
+        <button class="text-red-600 hover:text-red-900 dark:text-red-400 dark:hover:text-red-300 transform hover:scale-110 transition-all" onclick="deleteHouse('${house.id}')">
+          <svg class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+          </svg>
+        </button>
       </td>
     `;
     tbody.appendChild(row);
-  });
-  
-  document.querySelectorAll('.view-btn').forEach(btn => {
-    btn.addEventListener('click', (e) => viewHouseDetails(e.target.dataset.id));
-  });
-  
-  document.querySelectorAll('.delete-btn').forEach(btn => {
-    btn.addEventListener('click', (e) => deleteHouse(e.target.dataset.id));
   });
 };
 
@@ -278,59 +431,165 @@ const viewHouseDetails = (houseId) => {
   if (!house) return;
   
   let detailsHTML = `
-    <div class="house-info">
-      <h3>Informações Gerais</h3>
-      <p><strong>Nome:</strong> ${house.nomeResidencia || '-'}</p>
-      <p><strong>CAPS Vinculado:</strong> ${house.nomeCaps || '-'}</p>
-      <p><strong>Tipo SRT:</strong> ${house.tipoSRT || '-'}</p>
-      <p><strong>Responsável:</strong> ${house.responsavelNome || '-'} (${house.responsavelCargo || '-'})</p>
-      <p><strong>Contato:</strong> ${house.contatoResponsavel || '-'}</p>
-      <p><strong>Data de Inauguração:</strong> ${house.dataInauguracao || '-'}</p>
-    </div>
-    
-    <div class="address-info">
-      <h3>Endereço</h3>
-      <p>${house.logradouro || ''} ${house.numero || ''} ${house.complemento || ''}</p>
-      <p>${house.bairro || ''} - ${house.municipio || ''}/${house.uf || ''}</p>
-      <p>CEP: ${house.cep || '-'}</p>
-    </div>
-    
-    <div class="capacity-info">
-      <h3>Capacidade</h3>
-      <p><strong>Vagas Totais:</strong> ${house.vagasTotais || 0}</p>
-      <p><strong>Vagas Ocupadas:</strong> ${house.vagasOcupadas || 0}</p>
-      <p><strong>Vagas Disponíveis:</strong> ${house.vagasDisponiveis || 0}</p>
-    </div>
+    <div class="space-y-6">
+      <div class="bg-gray-50 dark:bg-gray-900 rounded-xl p-6">
+        <h3 class="text-lg font-semibold text-gray-800 dark:text-white mb-4 flex items-center gap-2">
+          <svg class="w-5 h-5 text-blue-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4" />
+          </svg>
+          Informações Gerais
+        </h3>
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <div>
+            <p class="text-sm text-gray-600 dark:text-gray-400">Nome da Residência</p>
+            <p class="font-medium text-gray-900 dark:text-white">${house.nomeResidencia || '-'}</p>
+          </div>
+          <div>
+            <p class="text-sm text-gray-600 dark:text-gray-400">CAPS Vinculado</p>
+            <p class="font-medium text-gray-900 dark:text-white">${house.nomeCaps || '-'}</p>
+          </div>
+          <div>
+            <p class="text-sm text-gray-600 dark:text-gray-400">Tipo SRT</p>
+            <p class="font-medium text-gray-900 dark:text-white">${house.tipoSRT || '-'}</p>
+          </div>
+          <div>
+            <p class="text-sm text-gray-600 dark:text-gray-400">Responsável</p>
+            <p class="font-medium text-gray-900 dark:text-white">${house.responsavelNome || '-'} ${house.responsavelCargo ? `(${house.responsavelCargo})` : ''}</p>
+          </div>
+          <div>
+            <p class="text-sm text-gray-600 dark:text-gray-400">Contato</p>
+            <p class="font-medium text-gray-900 dark:text-white">${house.contatoResponsavel || '-'}</p>
+          </div>
+          <div>
+            <p class="text-sm text-gray-600 dark:text-gray-400">Data de Inauguração</p>
+            <p class="font-medium text-gray-900 dark:text-white">${house.dataInauguracao || '-'}</p>
+          </div>
+        </div>
+      </div>
+      
+      <div class="bg-gray-50 dark:bg-gray-900 rounded-xl p-6">
+        <h3 class="text-lg font-semibold text-gray-800 dark:text-white mb-4 flex items-center gap-2">
+          <svg class="w-5 h-5 text-purple-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z" />
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 11a3 3 0 11-6 0 3 3 0 016 0z" />
+          </svg>
+          Endereço
+        </h3>
+        <div class="space-y-2">
+          <p class="text-gray-700 dark:text-gray-300">
+            ${house.logradouro || ''} ${house.numero || ''} ${house.complemento || ''}
+          </p>
+          <p class="text-gray-700 dark:text-gray-300">
+            ${house.bairro || ''} - ${house.municipio || ''}/${house.uf || ''}
+          </p>
+          <p class="text-gray-700 dark:text-gray-300">
+            CEP: ${house.cep || '-'}
+          </p>
+        </div>
+      </div>
+      
+      <div class="bg-gray-50 dark:bg-gray-900 rounded-xl p-6">
+        <h3 class="text-lg font-semibold text-gray-800 dark:text-white mb-4 flex items-center gap-2">
+          <svg class="w-5 h-5 text-green-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-3 7h3m-3 4h3m-6-4h.01M9 16h.01" />
+          </svg>
+          Capacidade
+        </h3>
+        <div class="grid grid-cols-3 gap-4 text-center">
+          <div class="bg-white dark:bg-gray-800 rounded-lg p-4">
+            <p class="text-2xl font-bold text-blue-600 dark:text-blue-400">${house.vagasTotais || 0}</p>
+            <p class="text-sm text-gray-600 dark:text-gray-400">Vagas Totais</p>
+          </div>
+          <div class="bg-white dark:bg-gray-800 rounded-lg p-4">
+            <p class="text-2xl font-bold text-green-600 dark:text-green-400">${house.vagasOcupadas || 0}</p>
+            <p class="text-sm text-gray-600 dark:text-gray-400">Vagas Ocupadas</p>
+          </div>
+          <div class="bg-white dark:bg-gray-800 rounded-lg p-4">
+            <p class="text-2xl font-bold text-orange-600 dark:text-orange-400">${house.vagasDisponiveis || 0}</p>
+            <p class="text-sm text-gray-600 dark:text-gray-400">Vagas Disponíveis</p>
+          </div>
+        </div>
+      </div>
   `;
   
   if (house.residents && house.residents.length > 0) {
-    detailsHTML += '<div class="residents-info"><h3>Moradores</h3>';
+    detailsHTML += `
+      <div class="bg-gray-50 dark:bg-gray-900 rounded-xl p-6">
+        <h3 class="text-lg font-semibold text-gray-800 dark:text-white mb-4 flex items-center gap-2">
+          <svg class="w-5 h-5 text-indigo-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z" />
+          </svg>
+          Moradores (${house.residents.length})
+        </h3>
+        <div class="space-y-3">
+    `;
+    
     house.residents.forEach((resident, index) => {
       detailsHTML += `
-        <details>
-          <summary>Morador ${index + 1}: ${resident.nomeCompleto || '(Sem nome)'}</summary>
-          <div class="resident-details">
-            <p><strong>Nome Social:</strong> ${resident.nomeSocial || '-'}</p>
-            <p><strong>Data de Nascimento:</strong> ${resident.dataNascimento || '-'}</p>
-            <p><strong>Idade:</strong> ${resident.idade || '-'} anos</p>
-            <p><strong>Instituição de Origem:</strong> ${resident.instituicaoOrigem || '-'}</p>
-            <p><strong>Tempo de Internação:</strong> ${resident.tempoInternacao || '-'} anos</p>
-            <p><strong>Participa do PVC:</strong> ${resident.participaPVC || '-'}</p>
-            <p><strong>Frequência CAPS:</strong> ${resident.frequenciaCaps || '-'}</p>
-            <p><strong>Frequência UBS:</strong> ${resident.frequenciaUBS || '-'}</p>
+        <details class="group">
+          <summary class="cursor-pointer bg-white dark:bg-gray-800 rounded-lg p-4 hover:bg-gray-100 dark:hover:bg-gray-700 transition-all flex items-center justify-between">
+            <div class="flex items-center gap-3">
+              <span class="w-8 h-8 bg-gradient-to-br from-blue-500 to-purple-600 rounded-full flex items-center justify-center text-white text-sm font-bold">${index + 1}</span>
+              <span class="font-medium text-gray-900 dark:text-white">${resident.nomeCompleto || '(Sem nome)'}</span>
+            </div>
+            <svg class="w-5 h-5 text-gray-400 transform transition-transform group-open:rotate-180" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7" />
+            </svg>
+          </summary>
+          <div class="mt-3 bg-white dark:bg-gray-800 rounded-lg p-4 ml-11">
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-3">
+              <div>
+                <p class="text-sm text-gray-600 dark:text-gray-400">Nome Social</p>
+                <p class="font-medium text-gray-900 dark:text-white">${resident.nomeSocial || '-'}</p>
+              </div>
+              <div>
+                <p class="text-sm text-gray-600 dark:text-gray-400">Data de Nascimento</p>
+                <p class="font-medium text-gray-900 dark:text-white">${resident.dataNascimento || '-'}</p>
+              </div>
+              <div>
+                <p class="text-sm text-gray-600 dark:text-gray-400">Idade</p>
+                <p class="font-medium text-gray-900 dark:text-white">${resident.idade || '-'} anos</p>
+              </div>
+              <div>
+                <p class="text-sm text-gray-600 dark:text-gray-400">Instituição de Origem</p>
+                <p class="font-medium text-gray-900 dark:text-white">${resident.instituicaoOrigem || '-'}</p>
+              </div>
+              <div>
+                <p class="text-sm text-gray-600 dark:text-gray-400">Tempo de Internação</p>
+                <p class="font-medium text-gray-900 dark:text-white">${resident.tempoInternacao || '-'} anos</p>
+              </div>
+              <div>
+                <p class="text-sm text-gray-600 dark:text-gray-400">Participa do PVC</p>
+                <p class="font-medium text-gray-900 dark:text-white">${resident.participaPVC || '-'}</p>
+              </div>
+              <div>
+                <p class="text-sm text-gray-600 dark:text-gray-400">Frequência CAPS</p>
+                <p class="font-medium text-gray-900 dark:text-white">${resident.frequenciaCaps || '-'}</p>
+              </div>
+              <div>
+                <p class="text-sm text-gray-600 dark:text-gray-400">Frequência UBS</p>
+                <p class="font-medium text-gray-900 dark:text-white">${resident.frequenciaUBS || '-'}</p>
+              </div>
+            </div>
           </div>
         </details>
       `;
     });
-    detailsHTML += '</div>';
+    
+    detailsHTML += '</div></div>';
   }
+  
+  detailsHTML += '</div>';
   
   document.getElementById('houseDetails').innerHTML = detailsHTML;
   document.getElementById('houseModal').style.display = 'block';
 };
 
 const deleteHouse = async (houseId) => {
-  if (!confirm('Tem certeza que deseja excluir esta casa? Esta ação não pode ser desfeita.')) {
+  const house = allHouses.find(h => h.id === houseId);
+  const houseName = house?.nomeResidencia || 'esta casa';
+  
+  if (!confirm(`Tem certeza que deseja excluir "${houseName}"? Esta ação não pode ser desfeita.`)) {
     return;
   }
   
@@ -347,14 +606,6 @@ const deleteHouse = async (houseId) => {
   }
 };
 
-document.querySelector('.modal-close').addEventListener('click', () => {
-  document.getElementById('houseModal').style.display = 'none';
-});
-
-document.querySelector('.modal-backdrop').addEventListener('click', () => {
-  document.getElementById('houseModal').style.display = 'none';
-});
-
 document.getElementById('searchInput').addEventListener('input', (e) => {
   const searchTerm = e.target.value.toLowerCase();
   const filtered = allHouses.filter(house => 
@@ -366,6 +617,15 @@ document.getElementById('searchInput').addEventListener('input', (e) => {
 });
 
 document.getElementById('exportBtn').addEventListener('click', async () => {
+  const exportBtn = document.getElementById('exportBtn');
+  exportBtn.disabled = true;
+  exportBtn.innerHTML = `
+    <svg class="animate-spin w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
+    </svg>
+    <span>Exportando...</span>
+  `;
+  
   showLoading();
   
   try {
@@ -431,6 +691,13 @@ document.getElementById('exportBtn').addEventListener('click', async () => {
     showToast('Erro ao exportar dados', 'error');
   } finally {
     hideLoading();
+    exportBtn.disabled = false;
+    exportBtn.innerHTML = `
+      <svg class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+      </svg>
+      <span>Exportar</span>
+    `;
   }
 });
 
@@ -549,9 +816,9 @@ const renderConfigFields = () => {
     
     if (fields.length === 0) {
       container.innerHTML = `
-        <div class="empty-fields">
-          <svg width="48" height="48" viewBox="0 0 24 24" fill="none">
-            <path d="M12 5v14m-7-7h14" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
+        <div class="text-center py-12 text-gray-400">
+          <svg class="w-16 h-16 mx-auto mb-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1" d="M12 6v6m0 0v6m0-6h6m-6 0H6" />
           </svg>
           <p>Nenhum campo cadastrado</p>
         </div>
@@ -571,40 +838,51 @@ const renderConfigFields = () => {
 
 const createFieldElement = (field, index, section) => {
   const div = document.createElement('div');
-  div.className = 'field-item';
+  div.className = 'flex items-center gap-3 p-4 bg-white dark:bg-gray-800 rounded-xl border-2 border-gray-200 dark:border-gray-700 hover:border-blue-300 dark:hover:border-blue-600 transition-all cursor-move group';
   div.draggable = true;
   div.dataset.index = index;
   
+  const typeColor = {
+    text: 'bg-blue-100 text-blue-600 dark:bg-blue-900/20 dark:text-blue-400',
+    number: 'bg-green-100 text-green-600 dark:bg-green-900/20 dark:text-green-400',
+    date: 'bg-purple-100 text-purple-600 dark:bg-purple-900/20 dark:text-purple-400',
+    select: 'bg-yellow-100 text-yellow-600 dark:bg-yellow-900/20 dark:text-yellow-400',
+    textarea: 'bg-pink-100 text-pink-600 dark:bg-pink-900/20 dark:text-pink-400',
+    tel: 'bg-indigo-100 text-indigo-600 dark:bg-indigo-900/20 dark:text-indigo-400',
+    email: 'bg-red-100 text-red-600 dark:bg-red-900/20 dark:text-red-400'
+  };
+  
   div.innerHTML = `
-    <svg class="drag-handle" width="20" height="20" viewBox="0 0 24 24" fill="none">
-      <path d="M9 5h2v2H9zM13 5h2v2h-2zM9 9h2v2H9zM13 9h2v2h-2zM9 13h2v2H9zM13 13h2v2h-2zM9 17h2v2H9zM13 17h2v2h-2z" fill="currentColor"/>
-    </svg>
+    <div class="drag-handle text-gray-400 group-hover:text-gray-600 dark:group-hover:text-gray-300">
+      <svg class="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 8h16M4 16h16" />
+      </svg>
+    </div>
     
-    <div class="field-icon">
-      <svg width="20" height="20" viewBox="0 0 24 24" fill="none">
+    <div class="p-2 rounded-lg ${typeColor[field.type] || typeColor.text}">
+      <svg class="w-5 h-5" fill="none" viewBox="0 0 24 24">
         ${fieldTypeIcons[field.type] || fieldTypeIcons.text}
       </svg>
     </div>
     
-    <div class="field-content">
-      <div class="field-name">${field.label}</div>
-      <div class="field-meta">
-        <span class="field-type">${fieldTypeLabels[field.type] || field.type}</span>
-        ${field.required ? '<span class="field-required">Obrigatório</span>' : ''}
+    <div class="flex-1">
+      <div class="font-medium text-gray-900 dark:text-white">${field.label}</div>
+      <div class="flex items-center gap-2 text-xs text-gray-500 dark:text-gray-400">
+        <span class="px-2 py-0.5 bg-gray-100 dark:bg-gray-700 rounded">${fieldTypeLabels[field.type] || field.type}</span>
+        ${field.required ? '<span class="text-red-500 font-medium">Obrigatório</span>' : ''}
         ${field.options ? `<span>${field.options.length} opções</span>` : ''}
       </div>
     </div>
     
-    <div class="field-actions">
-      <button class="field-action-btn edit" onclick="editField('${section}', ${index})">
-        <svg width="20" height="20" viewBox="0 0 24 24" fill="none">
-          <path d="M11 4H4a2 2 0 00-2 2v14a2 2 0 002 2h14a2 2 0 002-2v-7" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
-          <path d="M18.5 2.5a2.121 2.121 0 013 3L12 15l-4 1 1-4 9.5-9.5z" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+    <div class="flex items-center gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
+      <button class="p-2 hover:bg-blue-100 dark:hover:bg-blue-900/20 rounded-lg text-blue-600 dark:text-blue-400 transition-colors" onclick="editField('${section}', ${index})">
+        <svg class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
         </svg>
       </button>
-      <button class="field-action-btn delete" onclick="deleteField('${section}', ${index})">
-        <svg width="20" height="20" viewBox="0 0 24 24" fill="none">
-          <path d="M3 6h18m-2 0v14a2 2 0 01-2 2H7a2 2 0 01-2-2V6m3 0V4a2 2 0 012-2h4a2 2 0 012 2v2" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+      <button class="p-2 hover:bg-red-100 dark:hover:bg-red-900/20 rounded-lg text-red-600 dark:text-red-400 transition-colors" onclick="deleteField('${section}', ${index})">
+        <svg class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
         </svg>
       </button>
     </div>
@@ -617,15 +895,15 @@ const setupDragAndDrop = (container, section) => {
   let draggedElement = null;
   
   container.addEventListener('dragstart', (e) => {
-    if (e.target.classList.contains('field-item')) {
+    if (e.target.draggable) {
       draggedElement = e.target;
-      e.target.classList.add('dragging');
+      e.target.classList.add('opacity-50');
     }
   });
   
   container.addEventListener('dragend', (e) => {
-    if (e.target.classList.contains('field-item')) {
-      e.target.classList.remove('dragging');
+    if (e.target.draggable) {
+      e.target.classList.remove('opacity-50');
     }
   });
   
@@ -643,7 +921,7 @@ const setupDragAndDrop = (container, section) => {
     e.preventDefault();
     if (!draggedElement) return;
     
-    const newOrder = [...container.querySelectorAll('.field-item')].map(el => 
+    const newOrder = [...container.querySelectorAll('[draggable="true"]')].map(el => 
       parseInt(el.dataset.index)
     );
     
@@ -656,7 +934,7 @@ const setupDragAndDrop = (container, section) => {
 };
 
 const getDragAfterElement = (container, y) => {
-  const draggableElements = [...container.querySelectorAll('.field-item:not(.dragging)')];
+  const draggableElements = [...container.querySelectorAll('[draggable="true"]:not(.opacity-50)')];
   
   return draggableElements.reduce((closest, child) => {
     const box = child.getBoundingClientRect();
@@ -677,20 +955,17 @@ const updateFieldCount = (section) => {
   countElement.textContent = `${count} campo${count !== 1 ? 's' : ''}`;
 };
 
-const addFieldBtn = document.getElementById('addFieldBtn');
-if (addFieldBtn) {
-  addFieldBtn.addEventListener('click', () => {
-    editingField = null;
-    editingFieldIndex = null;
-    editingFieldSection = null;
-    document.getElementById('fieldModalTitle').textContent = 'Adicionar Campo';
-    document.getElementById('fieldForm').reset();
-    document.getElementById('fieldModal').style.display = 'block';
-    updateFieldTypeUI();
-  });
-}
+document.getElementById('addFieldBtn').addEventListener('click', () => {
+  editingField = null;
+  editingFieldIndex = null;
+  editingFieldSection = null;
+  document.getElementById('fieldModalTitle').textContent = 'Adicionar Campo';
+  document.getElementById('fieldForm').reset();
+  document.getElementById('fieldModal').style.display = 'block';
+  updateFieldTypeUI();
+});
 
-const editField = (section, index) => {
+window.editField = (section, index) => {
   const field = currentConfig[section][index];
   editingField = field;
   editingFieldIndex = index;
@@ -716,7 +991,7 @@ const editField = (section, index) => {
   document.getElementById('fieldModal').style.display = 'block';
 };
 
-const deleteField = async (section, index) => {
+window.deleteField = async (section, index) => {
   const field = currentConfig[section][index];
   
   if (!confirm(`Tem certeza que deseja excluir o campo "${field.label}"?`)) {
@@ -729,54 +1004,42 @@ const deleteField = async (section, index) => {
   showToast('Campo excluído com sucesso!');
 };
 
-const fieldLabel = document.getElementById('fieldLabel');
-if (fieldLabel) {
-  fieldLabel.addEventListener('input', (e) => {
-    const label = e.target.value;
-    const key = label
-      .toLowerCase()
-      .normalize('NFD')
-      .replace(/[\u0300-\u036f]/g, '')
-      .replace(/[^a-z0-9\s]/g, '')
-      .replace(/\s+/g, '_')
-      .replace(/^_+|_+$/g, '');
-    
-    document.getElementById('fieldKey').value = key;
-  });
-}
+document.getElementById('fieldLabel').addEventListener('input', (e) => {
+  const label = e.target.value;
+  const key = label
+    .toLowerCase()
+    .normalize('NFD')
+    .replace(/[\u0300-\u036f]/g, '')
+    .replace(/[^a-z0-9\s]/g, '')
+    .replace(/\s+/g, '_')
+    .replace(/^_+|_+$/g, '');
+  
+  document.getElementById('fieldKey').value = key;
+});
 
-const fieldType = document.getElementById('fieldType');
-if (fieldType) {
-  fieldType.addEventListener('change', updateFieldTypeUI);
-}
+document.getElementById('fieldType').addEventListener('change', updateFieldTypeUI);
 
 function updateFieldTypeUI() {
   const type = document.getElementById('fieldType').value;
   
-  document.getElementById('optionsContainer').style.display = 
-    type === 'select' ? 'block' : 'none';
-  
-  document.getElementById('numberConstraints').style.display = 
-    type === 'number' ? 'block' : 'none';
+  document.getElementById('optionsContainer').classList.toggle('hidden', type !== 'select');
+  document.getElementById('numberConstraints').classList.toggle('hidden', type !== 'number');
 }
 
-const addOptionBtn = document.getElementById('addOptionBtn');
-if (addOptionBtn) {
-  addOptionBtn.addEventListener('click', () => {
-    addOption();
-  });
-}
+document.getElementById('addOptionBtn').addEventListener('click', () => {
+  addOption();
+});
 
 const addOption = (value = '') => {
   const optionsList = document.getElementById('optionsList');
   const optionDiv = document.createElement('div');
-  optionDiv.className = 'option-item';
+  optionDiv.className = 'flex gap-2';
   
   optionDiv.innerHTML = `
-    <input type="text" placeholder="Digite uma opção" value="${value}" required>
-    <button type="button" onclick="removeOption(this)">
-      <svg width="20" height="20" viewBox="0 0 24 24" fill="none">
-        <path d="M18 6L6 18M6 6l12 12" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
+    <input type="text" placeholder="Digite uma opção" value="${value}" required class="flex-1 px-4 py-2 bg-gray-100 dark:bg-gray-700 border-0 rounded-xl focus:ring-2 focus:ring-blue-500 transition-all">
+    <button type="button" onclick="removeOption(this)" class="p-2 bg-red-100 dark:bg-red-900/20 hover:bg-red-200 dark:hover:bg-red-900/30 rounded-xl text-red-600 dark:text-red-400 transition-colors">
+      <svg class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
       </svg>
     </button>
   `;
@@ -784,7 +1047,7 @@ const addOption = (value = '') => {
   optionsList.appendChild(optionDiv);
 };
 
-const removeOption = (button) => {
+window.removeOption = (button) => {
   button.parentElement.remove();
 };
 
@@ -794,57 +1057,54 @@ const renderOptions = (options) => {
   options.forEach(option => addOption(option));
 };
 
-const fieldForm = document.getElementById('fieldForm');
-if (fieldForm) {
-  fieldForm.addEventListener('submit', async (e) => {
-    e.preventDefault();
+document.getElementById('fieldForm').addEventListener('submit', async (e) => {
+  e.preventDefault();
+  
+  const section = document.getElementById('fieldSection').value;
+  const fieldData = {
+    key: document.getElementById('fieldKey').value,
+    label: document.getElementById('fieldLabel').value,
+    type: document.getElementById('fieldType').value,
+    required: document.getElementById('fieldRequired').checked
+  };
+  
+  if (fieldData.type === 'select') {
+    const options = [...document.querySelectorAll('#optionsList input')]
+      .map(input => input.value)
+      .filter(value => value.trim());
     
-    const section = document.getElementById('fieldSection').value;
-    const fieldData = {
-      key: document.getElementById('fieldKey').value,
-      label: document.getElementById('fieldLabel').value,
-      type: document.getElementById('fieldType').value,
-      required: document.getElementById('fieldRequired').checked
-    };
-    
-    if (fieldData.type === 'select') {
-      const options = [...document.querySelectorAll('#optionsList input')]
-        .map(input => input.value)
-        .filter(value => value.trim());
-      
-      if (options.length === 0) {
-        showToast('Adicione pelo menos uma opção para a lista', 'error');
-        return;
-      }
-      
-      fieldData.options = options;
+    if (options.length === 0) {
+      showToast('Adicione pelo menos uma opção para a lista', 'error');
+      return;
     }
     
-    if (fieldData.type === 'number') {
-      const min = document.getElementById('fieldMin').value;
-      const max = document.getElementById('fieldMax').value;
-      
-      if (min) fieldData.min = parseInt(min);
-      if (max) fieldData.max = parseInt(max);
-    }
+    fieldData.options = options;
+  }
+  
+  if (fieldData.type === 'number') {
+    const min = document.getElementById('fieldMin').value;
+    const max = document.getElementById('fieldMax').value;
     
-    if (editingField !== null) {
-      currentConfig[editingFieldSection][editingFieldIndex] = fieldData;
-    } else {
-      if (!currentConfig[section]) {
-        currentConfig[section] = [];
-      }
-      currentConfig[section].push(fieldData);
+    if (min) fieldData.min = parseInt(min);
+    if (max) fieldData.max = parseInt(max);
+  }
+  
+  if (editingField !== null) {
+    currentConfig[editingFieldSection][editingFieldIndex] = fieldData;
+  } else {
+    if (!currentConfig[section]) {
+      currentConfig[section] = [];
     }
-    
-    await saveConfig();
-    renderConfigFields();
-    closeFieldModal();
-    showToast(editingField ? 'Campo atualizado com sucesso!' : 'Campo adicionado com sucesso!');
-  });
-}
+    currentConfig[section].push(fieldData);
+  }
+  
+  await saveConfig();
+  renderConfigFields();
+  closeFieldModal();
+  showToast(editingField ? 'Campo atualizado com sucesso!' : 'Campo adicionado com sucesso!');
+});
 
-const closeFieldModal = () => {
+window.closeFieldModal = () => {
   document.getElementById('fieldModal').style.display = 'none';
   document.getElementById('fieldForm').reset();
   document.getElementById('optionsList').innerHTML = '';
@@ -861,21 +1121,6 @@ const saveConfig = async () => {
     showToast('Erro ao salvar configuração', 'error');
   }
 };
-
-window.closeFieldModal = closeFieldModal;
-window.editField = editField;
-window.deleteField = deleteField;
-window.removeOption = removeOption;
-
-const fieldModalClose = document.querySelector('#fieldModal .modal-close');
-if (fieldModalClose) {
-  fieldModalClose.addEventListener('click', closeFieldModal);
-}
-
-const fieldModalBackdrop = document.querySelector('#fieldModal .modal-backdrop');
-if (fieldModalBackdrop) {
-  fieldModalBackdrop.addEventListener('click', closeFieldModal);
-}
 
 document.getElementById('generateReportBtn').addEventListener('click', async () => {
   const startDate = document.getElementById('startDate').value;
@@ -946,73 +1191,63 @@ const generateSummaryReport = (houses, startDate, endDate) => {
   }, {});
   
   return `
-    <div class="report-summary">
-      <div class="report-header">
-        <h3>Relatório Resumido</h3>
-        <p class="text-muted">Período: ${startDate.toLocaleDateString('pt-BR')} a ${endDate.toLocaleDateString('pt-BR')}</p>
+    <div class="space-y-6 animate-fade-in">
+      <div class="text-center mb-8">
+        <h3 class="text-2xl font-bold text-gray-800 dark:text-white mb-2">Relatório Resumido</h3>
+        <p class="text-gray-600 dark:text-gray-400">Período: ${startDate.toLocaleDateString('pt-BR')} a ${endDate.toLocaleDateString('pt-BR')}</p>
       </div>
       
-      <div class="report-stats">
-        <div class="report-stat-card">
-          <h4>${totalHouses}</h4>
-          <p>Total de Casas</p>
+      <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
+        <div class="bg-gradient-to-br from-blue-500 to-blue-600 rounded-xl p-6 text-white">
+          <h4 class="text-3xl font-bold mb-2">${totalHouses}</h4>
+          <p class="text-blue-100">Total de Casas</p>
         </div>
-        <div class="report-stat-card">
-          <h4>${totalResidents}</h4>
-          <p>Total de Moradores</p>
+        <div class="bg-gradient-to-br from-purple-500 to-purple-600 rounded-xl p-6 text-white">
+          <h4 class="text-3xl font-bold mb-2">${totalResidents}</h4>
+          <p class="text-purple-100">Total de Moradores</p>
         </div>
-        <div class="report-stat-card">
-          <h4>${totalVagas}</h4>
-          <p>Total de Vagas</p>
+        <div class="bg-gradient-to-br from-green-500 to-green-600 rounded-xl p-6 text-white">
+          <h4 class="text-3xl font-bold mb-2">${totalVagas}</h4>
+          <p class="text-green-100">Total de Vagas</p>
         </div>
-        <div class="report-stat-card">
-          <h4>${totalVagas ? ((vagasOcupadas/totalVagas)*100).toFixed(1) : 0}%</h4>
-          <p>Taxa de Ocupação</p>
+        <div class="bg-gradient-to-br from-orange-500 to-orange-600 rounded-xl p-6 text-white">
+          <h4 class="text-3xl font-bold mb-2">${totalVagas ? ((vagasOcupadas/totalVagas)*100).toFixed(1) : 0}%</h4>
+          <p class="text-orange-100">Taxa de Ocupação</p>
         </div>
       </div>
       
-      <div class="report-section">
-        <h4>Distribuição por Tipo</h4>
-        <table class="report-table">
-          <thead>
-            <tr>
-              <th>Tipo SRT</th>
-              <th>Quantidade</th>
-              <th>Percentual</th>
-            </tr>
-          </thead>
-          <tbody>
+      <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+        <div class="bg-white dark:bg-gray-800 rounded-xl p-6 shadow-lg">
+          <h4 class="text-lg font-semibold text-gray-800 dark:text-white mb-4">Distribuição por Tipo</h4>
+          <div class="space-y-3">
             ${Object.entries(tipoCount).map(([tipo, count]) => `
-              <tr>
-                <td>${tipo}</td>
-                <td>${count}</td>
-                <td>${totalHouses ? ((count/totalHouses)*100).toFixed(1) : 0}%</td>
-              </tr>
+              <div class="flex items-center justify-between">
+                <span class="text-gray-600 dark:text-gray-300">${tipo}</span>
+                <div class="flex items-center gap-2">
+                  <div class="w-32 bg-gray-200 dark:bg-gray-700 rounded-full h-2">
+                    <div class="bg-gradient-to-r from-blue-500 to-purple-600 h-2 rounded-full" style="width: ${totalHouses ? ((count/totalHouses)*100) : 0}%"></div>
+                  </div>
+                  <span class="text-sm font-medium text-gray-800 dark:text-white">${count} (${totalHouses ? ((count/totalHouses)*100).toFixed(1) : 0}%)</span>
+                </div>
+              </div>
             `).join('')}
-          </tbody>
-        </table>
-      </div>
-      
-      <div class="report-section">
-        <h4>Distribuição por Município</h4>
-        <table class="report-table">
-          <thead>
-            <tr>
-              <th>Município</th>
-              <th>Quantidade</th>
-              <th>Percentual</th>
-            </tr>
-          </thead>
-          <tbody>
-            ${Object.entries(municipioCount).sort((a, b) => b[1] - a[1]).slice(0, 10).map(([municipio, count]) => `
-              <tr>
-                <td>${municipio}</td>
-                <td>${count}</td>
-                <td>${totalHouses ? ((count/totalHouses)*100).toFixed(1) : 0}%</td>
-              </tr>
+          </div>
+        </div>
+        
+        <div class="bg-white dark:bg-gray-800 rounded-xl p-6 shadow-lg">
+          <h4 class="text-lg font-semibold text-gray-800 dark:text-white mb-4">Top 5 Municípios</h4>
+          <div class="space-y-3">
+            ${Object.entries(municipioCount).sort((a, b) => b[1] - a[1]).slice(0, 5).map(([municipio, count], index) => `
+              <div class="flex items-center justify-between">
+                <div class="flex items-center gap-2">
+                  <span class="w-6 h-6 bg-gradient-to-br from-blue-500 to-purple-600 rounded-full flex items-center justify-center text-white text-xs font-bold">${index + 1}</span>
+                  <span class="text-gray-600 dark:text-gray-300">${municipio}</span>
+                </div>
+                <span class="text-sm font-medium text-gray-800 dark:text-white">${count} casas</span>
+              </div>
             `).join('')}
-          </tbody>
-        </table>
+          </div>
+        </div>
       </div>
     </div>
   `;
@@ -1038,65 +1273,69 @@ const generateOccupancyReport = (houses, startDate, endDate) => {
   const lowOccupancy = occupancyData.filter(h => h.taxaOcupacao < 50).length;
   
   return `
-    <div class="report-occupancy">
-      <div class="report-header">
-        <h3>Análise de Ocupação</h3>
-        <p class="text-muted">Período: ${startDate.toLocaleDateString('pt-BR')} a ${endDate.toLocaleDateString('pt-BR')}</p>
+    <div class="space-y-6 animate-fade-in">
+      <div class="text-center mb-8">
+        <h3 class="text-2xl font-bold text-gray-800 dark:text-white mb-2">Análise de Ocupação</h3>
+        <p class="text-gray-600 dark:text-gray-400">Período: ${startDate.toLocaleDateString('pt-BR')} a ${endDate.toLocaleDateString('pt-BR')}</p>
       </div>
       
-      <div class="report-stats">
-        <div class="report-stat-card">
-          <h4>${avgOccupancy.toFixed(1)}%</h4>
-          <p>Taxa Média de Ocupação</p>
+      <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
+        <div class="bg-white dark:bg-gray-800 rounded-xl p-6 shadow-lg text-center">
+          <div class="text-3xl font-bold text-blue-600 dark:text-blue-400 mb-2">${avgOccupancy.toFixed(1)}%</div>
+          <p class="text-gray-600 dark:text-gray-400">Taxa Média</p>
         </div>
-        <div class="report-stat-card high">
-          <h4>${highOccupancy}</h4>
-          <p>Alta Ocupação (≥80%)</p>
+        <div class="bg-white dark:bg-gray-800 rounded-xl p-6 shadow-lg text-center">
+          <div class="text-3xl font-bold text-green-600 dark:text-green-400 mb-2">${highOccupancy}</div>
+          <p class="text-gray-600 dark:text-gray-400">Alta Ocupação</p>
         </div>
-        <div class="report-stat-card medium">
-          <h4>${mediumOccupancy}</h4>
-          <p>Média Ocupação (50-79%)</p>
+        <div class="bg-white dark:bg-gray-800 rounded-xl p-6 shadow-lg text-center">
+          <div class="text-3xl font-bold text-yellow-600 dark:text-yellow-400 mb-2">${mediumOccupancy}</div>
+          <p class="text-gray-600 dark:text-gray-400">Média Ocupação</p>
         </div>
-        <div class="report-stat-card low">
-          <h4>${lowOccupancy}</h4>
-          <p>Baixa Ocupação (<50%)</p>
+        <div class="bg-white dark:bg-gray-800 rounded-xl p-6 shadow-lg text-center">
+          <div class="text-3xl font-bold text-red-600 dark:text-red-400 mb-2">${lowOccupancy}</div>
+          <p class="text-gray-600 dark:text-gray-400">Baixa Ocupação</p>
         </div>
       </div>
       
-      <div class="report-section">
-        <h4>Detalhamento por Casa</h4>
-        <table class="report-table">
-          <thead>
-            <tr>
-              <th>Casa</th>
-              <th>Município</th>
-              <th>Tipo</th>
-              <th>Vagas Totais</th>
-              <th>Ocupadas</th>
-              <th>Disponíveis</th>
-              <th>Taxa de Ocupação</th>
-            </tr>
-          </thead>
-          <tbody>
-            ${occupancyData.map(house => `
+      <div class="bg-white dark:bg-gray-800 rounded-xl shadow-lg overflow-hidden">
+        <div class="p-6">
+          <h4 class="text-lg font-semibold text-gray-800 dark:text-white mb-4">Detalhamento por Casa</h4>
+        </div>
+        <div class="overflow-x-auto">
+          <table class="w-full">
+            <thead class="bg-gray-50 dark:bg-gray-900">
               <tr>
-                <td>${house.nome}</td>
-                <td>${house.municipio}</td>
-                <td><span class="badge">${house.tipo}</span></td>
-                <td>${house.vagasTotais}</td>
-                <td>${house.vagasOcupadas}</td>
-                <td>${house.vagasDisponiveis}</td>
-                <td>
-                  <div class="occupancy-bar">
-                    <div class="occupancy-fill ${house.taxaOcupacao >= 80 ? 'high' : house.taxaOcupacao >= 50 ? 'medium' : 'low'}" 
-                         style="width: ${house.taxaOcupacao}%"></div>
-                    <span>${house.taxaOcupacao.toFixed(1)}%</span>
-                  </div>
-                </td>
+                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">Casa</th>
+                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">Município</th>
+                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">Tipo</th>
+                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">Vagas</th>
+                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">Taxa de Ocupação</th>
               </tr>
-            `).join('')}
-          </tbody>
-        </table>
+            </thead>
+            <tbody class="divide-y divide-gray-200 dark:divide-gray-700">
+              ${occupancyData.map(house => {
+                const color = house.taxaOcupacao >= 80 ? 'green' : house.taxaOcupacao >= 50 ? 'yellow' : 'red';
+                return `
+                  <tr>
+                    <td class="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900 dark:text-white">${house.nome}</td>
+                    <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-600 dark:text-gray-300">${house.municipio}</td>
+                    <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-600 dark:text-gray-300">${house.tipo}</td>
+                    <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-600 dark:text-gray-300">${house.vagasOcupadas}/${house.vagasTotais}</td>
+                    <td class="px-6 py-4 whitespace-nowrap">
+                      <div class="flex items-center gap-2">
+                        <div class="w-24 bg-gray-200 dark:bg-gray-700 rounded-full h-2">
+                          <div class="bg-gradient-to-r from-${color}-400 to-${color}-600 h-2 rounded-full transition-all duration-500" style="width: ${house.taxaOcupacao}%"></div>
+                        </div>
+                        <span class="text-sm font-medium text-${color}-600 dark:text-${color}-400">${house.taxaOcupacao.toFixed(1)}%</span>
+                      </div>
+                    </td>
+                  </tr>
+                `;
+              }).join('')}
+            </tbody>
+          </table>
+        </div>
       </div>
     </div>
   `;
@@ -1147,291 +1386,59 @@ const generateResidentsReport = (houses, startDate, endDate) => {
     return acc;
   }, {});
   
-  const vinculoCount = allResidents.reduce((acc, resident) => {
-    const vinculo = resident.vinculoFamiliar || 'Não informado';
-    acc[vinculo] = (acc[vinculo] || 0) + 1;
-    return acc;
-  }, {});
-  
   return `
-    <div class="report-residents">
-      <div class="report-header">
-        <h3>Perfil dos Moradores</h3>
-        <p class="text-muted">Período: ${startDate.toLocaleDateString('pt-BR')} a ${endDate.toLocaleDateString('pt-BR')}</p>
+    <div class="space-y-6 animate-fade-in">
+      <div class="text-center mb-8">
+        <h3 class="text-2xl font-bold text-gray-800 dark:text-white mb-2">Perfil dos Moradores</h3>
+        <p class="text-gray-600 dark:text-gray-400">Período: ${startDate.toLocaleDateString('pt-BR')} a ${endDate.toLocaleDateString('pt-BR')}</p>
       </div>
       
-      <div class="report-stats">
-        <div class="report-stat-card">
-          <h4>${totalResidents}</h4>
-          <p>Total de Moradores</p>
+      <div class="grid grid-cols-1 sm:grid-cols-2 gap-6 mb-8">
+        <div class="bg-gradient-to-br from-indigo-500 to-indigo-600 rounded-xl p-6 text-white text-center">
+          <h4 class="text-4xl font-bold mb-2">${totalResidents}</h4>
+          <p class="text-indigo-100">Total de Moradores</p>
         </div>
-        <div class="report-stat-card">
-          <h4>${houses.length > 0 ? (totalResidents / houses.length).toFixed(1) : 0}</h4>
-          <p>Média por Casa</p>
+        <div class="bg-gradient-to-br from-pink-500 to-pink-600 rounded-xl p-6 text-white text-center">
+          <h4 class="text-4xl font-bold mb-2">${houses.length > 0 ? (totalResidents / houses.length).toFixed(1) : 0}</h4>
+          <p class="text-pink-100">Média por Casa</p>
         </div>
       </div>
       
-      <div class="report-grid">
-        <div class="report-section">
-          <h4>Distribuição por Faixa Etária</h4>
-          <table class="report-table">
-            <thead>
-              <tr>
-                <th>Faixa Etária</th>
-                <th>Quantidade</th>
-                <th>Percentual</th>
-              </tr>
-            </thead>
-            <tbody>
-              ${Object.entries(ageGroups).map(([group, count]) => `
-                <tr>
-                  <td>${group} anos</td>
-                  <td>${count}</td>
-                  <td>${totalResidents ? ((count/totalResidents)*100).toFixed(1) : 0}%</td>
-                </tr>
-              `).join('')}
-            </tbody>
-          </table>
+      <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+        <div class="bg-white dark:bg-gray-800 rounded-xl p-6 shadow-lg">
+          <h4 class="text-lg font-semibold text-gray-800 dark:text-white mb-4">Distribuição por Faixa Etária</h4>
+          <div class="space-y-3">
+            ${Object.entries(ageGroups).map(([group, count]) => `
+              <div class="flex items-center justify-between">
+                <span class="text-gray-600 dark:text-gray-300">${group} anos</span>
+                <div class="flex items-center gap-2">
+                  <div class="w-32 bg-gray-200 dark:bg-gray-700 rounded-full h-2">
+                    <div class="bg-gradient-to-r from-indigo-500 to-pink-600 h-2 rounded-full" style="width: ${totalResidents ? ((count/totalResidents)*100) : 0}%"></div>
+                  </div>
+                  <span class="text-sm font-medium text-gray-800 dark:text-white">${count} (${totalResidents ? ((count/totalResidents)*100).toFixed(1) : 0}%)</span>
+                </div>
+              </div>
+            `).join('')}
+          </div>
         </div>
         
-        <div class="report-section">
-          <h4>Distribuição por Gênero</h4>
-          <table class="report-table">
-            <thead>
-              <tr>
-                <th>Gênero</th>
-                <th>Quantidade</th>
-                <th>Percentual</th>
-              </tr>
-            </thead>
-            <tbody>
-              ${Object.entries(genderCount).map(([gender, count]) => `
-                <tr>
-                  <td>${gender}</td>
-                  <td>${count}</td>
-                  <td>${totalResidents ? ((count/totalResidents)*100).toFixed(1) : 0}%</td>
-                </tr>
-              `).join('')}
-            </tbody>
-          </table>
-        </div>
-        
-        <div class="report-section">
-          <h4>Programa de Volta para Casa</h4>
-          <table class="report-table">
-            <thead>
-              <tr>
-                <th>Participa do PVC</th>
-                <th>Quantidade</th>
-                <th>Percentual</th>
-              </tr>
-            </thead>
-            <tbody>
-              ${Object.entries(pvcCount).map(([pvc, count]) => `
-                <tr>
-                  <td>${pvc}</td>
-                  <td>${count}</td>
-                  <td>${totalResidents ? ((count/totalResidents)*100).toFixed(1) : 0}%</td>
-                </tr>
-              `).join('')}
-            </tbody>
-          </table>
-        </div>
-        
-        <div class="report-section">
-          <h4>Vínculo Familiar</h4>
-          <table class="report-table">
-            <thead>
-              <tr>
-                <th>Possui Vínculo</th>
-                <th>Quantidade</th>
-                <th>Percentual</th>
-              </tr>
-            </thead>
-            <tbody>
-              ${Object.entries(vinculoCount).map(([vinculo, count]) => `
-                <tr>
-                  <td>${vinculo}</td>
-                  <td>${count}</td>
-                  <td>${totalResidents ? ((count/totalResidents)*100).toFixed(1) : 0}%</td>
-                </tr>
-              `).join('')}
-            </tbody>
-          </table>
+        <div class="bg-white dark:bg-gray-800 rounded-xl p-6 shadow-lg">
+          <h4 class="text-lg font-semibold text-gray-800 dark:text-white mb-4">Programa de Volta para Casa</h4>
+          <div class="grid grid-cols-2 gap-4">
+            ${Object.entries(pvcCount).map(([pvc, count]) => {
+              const percentage = totalResidents ? ((count/totalResidents)*100).toFixed(1) : 0;
+              const color = pvc === 'Sim' ? 'green' : 'gray';
+              return `
+                <div class="bg-${color}-50 dark:bg-${color}-900/20 rounded-lg p-4 text-center">
+                  <div class="text-2xl font-bold text-${color}-600 dark:text-${color}-400">${percentage}%</div>
+                  <p class="text-sm text-${color}-700 dark:text-${color}-300">${pvc}</p>
+                  <p class="text-xs text-${color}-600 dark:text-${color}-400 mt-1">${count} moradores</p>
+                </div>
+              `;
+            }).join('')}
+          </div>
         </div>
       </div>
     </div>
   `;
 };
-
-const style = document.createElement('style');
-style.textContent = `
-  .badge {
-    display: inline-block;
-    padding: 0.25rem 0.75rem;
-    font-size: 0.75rem;
-    font-weight: 600;
-    border-radius: 9999px;
-    background: var(--primary-light);
-    color: var(--primary);
-  }
-  
-  .report-summary, .report-occupancy, .report-residents {
-    animation: fadeIn 0.3s ease-out;
-  }
-  
-  .report-header {
-    margin-bottom: 2rem;
-  }
-  
-  .report-header h3 {
-    font-size: 1.5rem;
-    font-weight: 700;
-    color: var(--text-primary);
-    margin-bottom: 0.5rem;
-  }
-  
-  .report-stats {
-    display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
-    gap: 1.5rem;
-    margin-bottom: 3rem;
-  }
-  
-  .report-stat-card {
-    background: var(--bg-secondary);
-    padding: 1.5rem;
-    border-radius: var(--radius-lg);
-    text-align: center;
-  }
-  
-  .report-stat-card h4 {
-    font-size: 2rem;
-    font-weight: 800;
-    color: var(--primary);
-    margin-bottom: 0.5rem;
-  }
-  
-  .report-stat-card.high h4 {
-    color: var(--success);
-  }
-  
-  .report-stat-card.medium h4 {
-    color: var(--warning);
-  }
-  
-  .report-stat-card.low h4 {
-    color: var(--danger);
-  }
-  
-  .report-section {
-    margin-bottom: 2rem;
-  }
-  
-  .report-section h4 {
-    font-size: 1.125rem;
-    font-weight: 600;
-    color: var(--text-primary);
-    margin-bottom: 1rem;
-  }
-  
-  .report-table {
-    width: 100%;
-    background: var(--bg-secondary);
-    border-radius: var(--radius);
-    overflow: hidden;
-  }
-  
-  .report-table th {
-    background: var(--bg-tertiary);
-    padding: 0.75rem;
-    text-align: left;
-    font-weight: 600;
-    color: var(--text-secondary);
-    font-size: 0.875rem;
-  }
-  
-  .report-table td {
-    padding: 0.75rem;
-    border-bottom: 1px solid var(--border-light);
-  }
-  
-  .report-table tbody tr:last-child td {
-    border-bottom: none;
-  }
-  
-  .occupancy-bar {
-    position: relative;
-    height: 24px;
-    background: var(--bg-tertiary);
-    border-radius: var(--radius-sm);
-    overflow: hidden;
-  }
-  
-  .occupancy-fill {
-    position: absolute;
-    top: 0;
-    left: 0;
-    height: 100%;
-    transition: width 0.3s ease-out;
-  }
-  
-  .occupancy-fill.high {
-    background: var(--success);
-  }
-  
-  .occupancy-fill.medium {
-    background: var(--warning);
-  }
-  
-  .occupancy-fill.low {
-    background: var(--danger);
-  }
-  
-  .occupancy-bar span {
-    position: relative;
-    z-index: 1;
-    display: block;
-    text-align: center;
-    line-height: 24px;
-    font-size: 0.75rem;
-    font-weight: 600;
-  }
-  
-  .report-grid {
-    display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
-    gap: 2rem;
-  }
-  
-  .preview-sections {
-    display: grid;
-    gap: 1.5rem;
-  }
-  
-  .preview-section h4 {
-    font-size: 1rem;
-    font-weight: 600;
-    color: var(--primary);
-    margin-bottom: 0.5rem;
-    text-transform: capitalize;
-  }
-  
-  .preview-section ul {
-    list-style: none;
-    padding: 0;
-  }
-  
-  .preview-section li {
-    padding: 0.5rem 0;
-    border-bottom: 1px solid var(--border-light);
-    font-size: 0.875rem;
-    color: var(--text-secondary);
-  }
-  
-  .preview-section li:last-child {
-    border-bottom: none;
-  }
-`;
-
-document.head.appendChild(style);
