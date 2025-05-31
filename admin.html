@@ -1,0 +1,123 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Painel Administrativo - SRT</title>
+  <link rel="stylesheet" href="css/style.css">
+  <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-auth-compat.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+</head>
+<body>
+  <div id="loginDiv" class="login-container">
+    <div class="login-box">
+      <h2>Login do Administrador</h2>
+      <div class="form-group">
+        <label for="loginEmail">E-mail:</label>
+        <input type="email" id="loginEmail" placeholder="admin@srt.com" required>
+      </div>
+      <div class="form-group">
+        <label for="loginPassword">Senha:</label>
+        <input type="password" id="loginPassword" placeholder="Digite sua senha" required>
+      </div>
+      <button id="loginBtn" class="btn-primary">Entrar</button>
+      <div id="loginError" class="error-message"></div>
+    </div>
+  </div>
+
+  <div id="adminPanel" class="admin-container" style="display:none;">
+    <header class="admin-header">
+      <h1>Painel Administrativo - SRT</h1>
+      <button id="logoutBtn" class="btn-secondary">Sair</button>
+    </header>
+
+    <nav class="admin-nav">
+      <button class="nav-tab active" data-tab="houses">Casas Cadastradas</button>
+      <button class="nav-tab" data-tab="config">Configurar Formulário</button>
+      <button class="nav-tab" data-tab="reports">Relatórios</button>
+    </nav>
+
+    <div class="tab-content" id="housesTab">
+      <div class="actions-bar">
+        <h2>Casas Cadastradas</h2>
+        <div>
+          <input type="text" id="searchInput" placeholder="Buscar casa..." class="search-input">
+          <button class="btn-success" id="exportBtn">Exportar para Excel</button>
+        </div>
+      </div>
+      
+      <div class="stats-cards">
+        <div class="stat-card">
+          <h3 id="totalHouses">0</h3>
+          <p>Total de Casas</p>
+        </div>
+        <div class="stat-card">
+          <h3 id="totalResidentsCount">0</h3>
+          <p>Total de Moradores</p>
+        </div>
+        <div class="stat-card">
+          <h3 id="avgResidents">0</h3>
+          <p>Média por Casa</p>
+        </div>
+      </div>
+
+      <table id="housesTable" class="data-table">
+        <thead>
+          <tr>
+            <th>Nome da Casa</th>
+            <th>CAPS Vinculado</th>
+            <th>Tipo SRT</th>
+            <th>Nº Moradores</th>
+            <th>Vagas Disponíveis</th>
+            <th>Ações</th>
+          </tr>
+        </thead>
+        <tbody></tbody>
+      </table>
+    </div>
+
+    <div class="tab-content" id="configTab" style="display:none;">
+      <h2>Configurar Estrutura do Formulário</h2>
+      <div class="config-section">
+        <div class="config-header">
+          <h3>Configuração em JSON</h3>
+          <button id="resetConfigBtn" class="btn-warning">Restaurar Padrão</button>
+        </div>
+        <textarea id="configJSON" class="config-textarea"></textarea>
+        <div class="config-actions">
+          <button id="validateBtn" class="btn-secondary">Validar JSON</button>
+          <button id="saveConfigBtn" class="btn-primary">Salvar Alterações</button>
+        </div>
+      </div>
+    </div>
+
+    <div class="tab-content" id="reportsTab" style="display:none;">
+      <h2>Relatórios e Estatísticas</h2>
+      <div class="report-filters">
+        <label>Período:</label>
+        <input type="date" id="startDate">
+        <span>até</span>
+        <input type="date" id="endDate">
+        <button id="generateReportBtn" class="btn-primary">Gerar Relatório</button>
+      </div>
+      <div id="reportContent"></div>
+    </div>
+  </div>
+
+  <div id="loadingOverlay" class="loading-overlay">
+    <div class="spinner"></div>
+  </div>
+
+  <div id="houseModal" class="modal" style="display:none;">
+    <div class="modal-content">
+      <span class="close">&times;</span>
+      <h2>Detalhes da Casa</h2>
+      <div id="houseDetails"></div>
+    </div>
+  </div>
+
+  <script src="js/admin.js"></script>
+</body>
+</html>
