@@ -1079,87 +1079,839 @@ const fieldTypeLabels = {
   email: 'E-mail'
 };
 
+// Substitua a função getDefaultConfig() em js/app.js e js/admin.js por esta versão melhorada:
+
 const getDefaultConfig = () => ({
   municipio: [
-    { key: "regiaoSaude", label: "Região de Saúde", type: "text", required: true },
-    { key: "municipio", label: "Município", type: "text", required: true },
-    { key: "coordenacaoSaudeMental", label: "Coordenação do Programa de Saúde Mental", type: "text", required: true },
-    { key: "responsavelPreenchimento", label: "Responsável pelo preenchimento do formulário", type: "text", required: true },
-    { key: "telefoneResponsavelPreenchimento", label: "Telefone do responsável pelo preenchimento", type: "tel", required: true },
-    { key: "emailResponsavelPreenchimento", label: "E-mail do responsável pelo preenchimento", type: "email", required: true },
-    { key: "dataPreenchimentoMunicipio", label: "Data do preenchimento", type: "date", required: true },
-    { key: "capsVinculadaSRT", label: "CAPS em que a SRT está vinculada", type: "text", required: true },
-    { key: "cnesCapsVinculada", label: "CNES do CAPS", type: "text", required: true }
+    { 
+      key: "regiaoSaude", 
+      label: "Região de Saúde", 
+      type: "text", 
+      required: true,
+      placeholder: "Ex: Metropolitana I, Baixada Litorânea",
+      helpText: "Digite o nome da região de saúde conforme divisão estadual",
+      maxLength: 100
+    },
+    { 
+      key: "municipio", 
+      label: "Nome do Município", 
+      type: "text", 
+      required: true,
+      placeholder: "Ex: Rio de Janeiro, Niterói",
+      helpText: "Nome completo do município sem abreviações",
+      maxLength: 100
+    },
+    { 
+      key: "coordenacaoSaudeMental", 
+      label: "Coordenação de Saúde Mental Municipal", 
+      type: "text", 
+      required: true,
+      placeholder: "Nome completo da coordenação",
+      helpText: "Informe o nome oficial da coordenação responsável pela saúde mental",
+      maxLength: 200
+    },
+    { 
+      key: "responsavelPreenchimento", 
+      label: "Responsável pelo Preenchimento", 
+      type: "text", 
+      required: true,
+      placeholder: "Nome completo do responsável",
+      helpText: "Pessoa responsável pelas informações fornecidas",
+      maxLength: 150
+    },
+    { 
+      key: "telefoneResponsavelPreenchimento", 
+      label: "Telefone do Responsável", 
+      type: "tel", 
+      required: true,
+      placeholder: "(21) 99999-9999",
+      helpText: "Telefone com DDD para contato",
+      mask: "(99) 99999-9999",
+      pattern: "\\([0-9]{2}\\) [0-9]{4,5}-[0-9]{4}"
+    },
+    { 
+      key: "emailResponsavelPreenchimento", 
+      label: "E-mail do Responsável", 
+      type: "email", 
+      required: true,
+      placeholder: "exemplo@prefeitura.rj.gov.br",
+      helpText: "E-mail institucional válido para contato",
+      maxLength: 150
+    },
+    { 
+      key: "dataPreenchimentoMunicipio", 
+      label: "Data do Preenchimento", 
+      type: "date", 
+      required: true,
+      helpText: "Data em que este formulário está sendo preenchido",
+      max: "today" // Não permite datas futuras
+    },
+    { 
+      key: "capsVinculadaSRT", 
+      label: "CAPS de Referência da SRT", 
+      type: "text", 
+      required: true,
+      placeholder: "Ex: CAPS III João Ferreira da Silva",
+      helpText: "Nome completo do CAPS que acompanha esta residência",
+      maxLength: 200
+    },
+    { 
+      key: "cnesCapsVinculada", 
+      label: "CNES do CAPS", 
+      type: "text", 
+      required: true,
+      placeholder: "0000000",
+      helpText: "Código CNES com 7 dígitos",
+      mask: "9999999",
+      pattern: "[0-9]{7}",
+      maxLength: 7
+    }
   ],
+  
   general: [
-    { key: "dataPreenchimento", label: "Data do Preenchimento", type: "date", required: true },
-    { key: "responsavelNome", label: "Nome do Responsável", type: "text", required: true },
-    { key: "responsavelCargo", label: "Cargo do Responsável", type: "text", required: true },
-    { key: "contatoResponsavel", label: "Contato do Responsável", type: "tel", required: true },
-    { key: "nomeCaps", label: "Nome do CAPS Vinculado", type: "text", required: true },
-    { key: "cnesCaps", label: "CNES do CAPS", type: "text", required: true },
-    { key: "nomeResidencia", label: "Nome da Residência Terapêutica", type: "text", required: true },
-    { key: "tipoSRT", label: "Tipo de SRT", type: "select", options: ["Tipo I", "Tipo II"], required: true },
-    { key: "esferaGestao", label: "Esfera de Gestão Pública", type: "select", options: ["Municipal", "Estadual", "Federal"], required: true },
-    { key: "situacaoHabilitacao", label: "Situação da Habilitação", type: "select", options: ["Habilitada", "Em processo", "Não habilitada"], required: true },
-    { key: "numeroPortaria", label: "Número da Portaria", type: "text" },
-    { key: "dataPortaria", label: "Data da Portaria", type: "date" },
-    { key: "dataInauguracao", label: "Data de Inauguração", type: "date", required: true }
+    { 
+      key: "dataPreenchimento", 
+      label: "Data do Preenchimento", 
+      type: "date", 
+      required: true,
+      helpText: "Data atual do preenchimento deste cadastro",
+      max: "today"
+    },
+    { 
+      key: "responsavelNome", 
+      label: "Responsável pela Residência", 
+      type: "text", 
+      required: true,
+      placeholder: "Nome completo do coordenador/responsável",
+      helpText: "Profissional responsável pela gestão da residência",
+      maxLength: 150
+    },
+    { 
+      key: "responsavelCargo", 
+      label: "Cargo/Função", 
+      type: "text", 
+      required: true,
+      placeholder: "Ex: Coordenador, Enfermeiro RT",
+      helpText: "Cargo ou função do responsável na residência",
+      maxLength: 100
+    },
+    { 
+      key: "contatoResponsavel", 
+      label: "Telefone de Contato", 
+      type: "tel", 
+      required: true,
+      placeholder: "(21) 99999-9999",
+      helpText: "Telefone direto do responsável",
+      mask: "(99) 99999-9999"
+    },
+    { 
+      key: "nomeCaps", 
+      label: "Nome Completo do CAPS", 
+      type: "text", 
+      required: true,
+      placeholder: "CAPS + tipo + nome (Ex: CAPS III Centro)",
+      helpText: "Identificação completa do CAPS vinculado",
+      maxLength: 200
+    },
+    { 
+      key: "cnesCaps", 
+      label: "Código CNES do CAPS", 
+      type: "text", 
+      required: true,
+      placeholder: "0000000",
+      helpText: "Cadastro Nacional de Estabelecimentos de Saúde - 7 dígitos",
+      mask: "9999999",
+      maxLength: 7
+    },
+    { 
+      key: "nomeResidencia", 
+      label: "Nome da Residência Terapêutica", 
+      type: "text", 
+      required: true,
+      placeholder: "Ex: Residência Terapêutica Esperança",
+      helpText: "Nome pelo qual a residência é conhecida",
+      maxLength: 200
+    },
+    { 
+      key: "tipoSRT", 
+      label: "Modalidade da SRT", 
+      type: "select", 
+      options: ["Tipo I", "Tipo II"], 
+      required: true,
+      helpText: "Tipo I: até 8 moradores | Tipo II: até 10 moradores com maior necessidade de cuidados"
+    },
+    { 
+      key: "esferaGestao", 
+      label: "Esfera de Gestão", 
+      type: "select", 
+      options: ["Municipal", "Estadual", "Federal"], 
+      required: true,
+      helpText: "Nível administrativo responsável pela gestão"
+    },
+    { 
+      key: "situacaoHabilitacao", 
+      label: "Situação da Habilitação no MS", 
+      type: "select", 
+      options: ["Habilitada", "Em processo de habilitação", "Não habilitada"], 
+      required: true,
+      helpText: "Status atual junto ao Ministério da Saúde"
+    },
+    { 
+      key: "numeroPortaria", 
+      label: "Número da Portaria de Habilitação", 
+      type: "text",
+      placeholder: "Ex: Portaria nº 123/2023",
+      helpText: "Preencher apenas se habilitada",
+      conditional: { field: "situacaoHabilitacao", value: "Habilitada" }
+    },
+    { 
+      key: "dataPortaria", 
+      label: "Data da Portaria", 
+      type: "date",
+      helpText: "Data de publicação da portaria",
+      conditional: { field: "situacaoHabilitacao", value: "Habilitada" }
+    },
+    { 
+      key: "dataInauguracao", 
+      label: "Data de Início do Funcionamento", 
+      type: "date", 
+      required: true,
+      helpText: "Quando a residência começou a receber moradores",
+      max: "today"
+    }
   ],
+  
   residence: [
-    { key: "logradouro", label: "Logradouro", type: "text", required: true },
-    { key: "numero", label: "Número", type: "text", required: true },
-    { key: "complemento", label: "Complemento", type: "text" },
-    { key: "bairro", label: "Bairro", type: "text", required: true },
-    { key: "cep", label: "CEP", type: "text", required: true },
-    { key: "municipio", label: "Município", type: "text", required: true },
-    { key: "uf", label: "UF", type: "select", options: ["AC","AL","AP","AM","BA","CE","DF","ES","GO","MA","MT","MS","MG","PA","PB","PR","PE","PI","RJ","RN","RS","RO","RR","SC","SP","SE","TO"], required: true },
-    { key: "localizacao", label: "Localização", type: "select", options: ["Urbana", "Rural"], required: true },
-    { key: "quartos", label: "Quantidade de Quartos", type: "number", required: true },
-    { key: "salas", label: "Quantidade de Salas", type: "number", required: true },
-    { key: "cozinhas", label: "Quantidade de Cozinhas", type: "number", required: true },
-    { key: "banheiros", label: "Quantidade de Banheiros", type: "number", required: true },
-    { key: "varanda", label: "Quantidade de Varandas", type: "number" },
-    { key: "lavanderia", label: "Quantidade de Lavanderias", type: "number" },
-    { key: "despensa", label: "Quantidade de Despensas", type: "number" },
-    { key: "outros", label: "Outros cômodos", type: "text" }
+    { 
+      key: "logradouro", 
+      label: "Endereço (Rua/Avenida)", 
+      type: "text", 
+      required: true,
+      placeholder: "Ex: Rua das Flores, Avenida Brasil",
+      helpText: "Nome completo do logradouro",
+      maxLength: 200
+    },
+    { 
+      key: "numero", 
+      label: "Número", 
+      type: "text", 
+      required: true,
+      placeholder: "Ex: 123, S/N",
+      helpText: "Número do imóvel ou S/N",
+      maxLength: 20
+    },
+    { 
+      key: "complemento", 
+      label: "Complemento", 
+      type: "text",
+      placeholder: "Ex: Casa 2, Fundos, Bloco A",
+      helpText: "Informações adicionais do endereço (opcional)",
+      maxLength: 100
+    },
+    { 
+      key: "bairro", 
+      label: "Bairro", 
+      type: "text", 
+      required: true,
+      placeholder: "Nome do bairro",
+      helpText: "Bairro onde está localizada a residência",
+      maxLength: 100
+    },
+    { 
+      key: "cep", 
+      label: "CEP", 
+      type: "text", 
+      required: true,
+      placeholder: "00000-000",
+      helpText: "Código Postal com 8 dígitos",
+      mask: "99999-999",
+      pattern: "[0-9]{5}-[0-9]{3}"
+    },
+    { 
+      key: "municipio", 
+      label: "Município", 
+      type: "text", 
+      required: true,
+      placeholder: "Nome do município",
+      helpText: "Município onde está localizada a residência",
+      maxLength: 100
+    },
+    { 
+      key: "uf", 
+      label: "Estado", 
+      type: "select", 
+      options: ["AC","AL","AP","AM","BA","CE","DF","ES","GO","MA","MT","MS","MG","PA","PB","PR","PE","PI","RJ","RN","RS","RO","RR","SC","SP","SE","TO"], 
+      required: true,
+      helpText: "Unidade Federativa",
+      defaultValue: "RJ"
+    },
+    { 
+      key: "localizacao", 
+      label: "Zona", 
+      type: "select", 
+      options: ["Urbana", "Rural"], 
+      required: true,
+      helpText: "Tipo de área onde está localizada"
+    },
+    { 
+      key: "quartos", 
+      label: "Quantidade de Quartos", 
+      type: "number", 
+      required: true,
+      placeholder: "0",
+      helpText: "Total de quartos disponíveis para moradores",
+      min: 1,
+      max: 20
+    },
+    { 
+      key: "salas", 
+      label: "Quantidade de Salas", 
+      type: "number", 
+      required: true,
+      placeholder: "0",
+      helpText: "Salas de estar/convivência",
+      min: 0,
+      max: 10
+    },
+    { 
+      key: "cozinhas", 
+      label: "Quantidade de Cozinhas", 
+      type: "number", 
+      required: true,
+      placeholder: "0",
+      helpText: "Total de cozinhas na residência",
+      min: 1,
+      max: 5
+    },
+    { 
+      key: "banheiros", 
+      label: "Quantidade de Banheiros", 
+      type: "number", 
+      required: true,
+      placeholder: "0",
+      helpText: "Total de banheiros completos",
+      min: 1,
+      max: 10
+    },
+    { 
+      key: "varanda", 
+      label: "Quantidade de Varandas/Áreas Externas", 
+      type: "number",
+      placeholder: "0",
+      helpText: "Espaços externos cobertos (opcional)",
+      min: 0,
+      max: 5
+    },
+    { 
+      key: "lavanderia", 
+      label: "Quantidade de Lavanderias", 
+      type: "number",
+      placeholder: "0",
+      helpText: "Áreas de serviço (opcional)",
+      min: 0,
+      max: 5
+    },
+    { 
+      key: "despensa", 
+      label: "Quantidade de Despensas", 
+      type: "number",
+      placeholder: "0",
+      helpText: "Espaços para armazenamento (opcional)",
+      min: 0,
+      max: 5
+    },
+    { 
+      key: "outros", 
+      label: "Outros Cômodos", 
+      type: "text",
+      placeholder: "Ex: Escritório, sala de TV, quintal",
+      helpText: "Descreva outros espaços disponíveis (opcional)",
+      maxLength: 200
+    }
   ],
+  
   caregivers: [
-    { key: "totalProfissionais", label: "Total de Profissionais", type: "number", required: true },
-    { key: "totalCuidadores", label: "Total de Cuidadores", type: "number", required: true },
-    { key: "totalTecnicos", label: "Total de Técnicos", type: "number", required: true },
-    { key: "totalEnfermeiros", label: "Total de Enfermeiros", type: "number", required: true },
-    { key: "totalOutros", label: "Total de Outros", type: "number" },
-    { key: "escalaTrabalho", label: "Escala de Trabalho", type: "textarea", required: true },
-    { key: "relacaoCuidadorMorador", label: "Relação Cuidador/Morador", type: "text", required: true },
-    { key: "cuidadoresPorTurno", label: "Número de Cuidadores por Turno", type: "number", required: true },
-    { key: "participaEducacao", label: "Participa de Educação Permanente?", type: "select", options: ["Sim", "Não"], required: true },
-    { key: "quemPromoveEducacao", label: "Se sim, promovido por quem/frequência/temas", type: "textarea" },
-    { key: "reunioesRegulares", label: "Reuniões de equipe regulares?", type: "select", options: ["Sim", "Não"], required: true }
+    { 
+      key: "totalProfissionais", 
+      label: "Total de Profissionais na Equipe", 
+      type: "number", 
+      required: true,
+      placeholder: "0",
+      helpText: "Soma de todos os profissionais que atuam na residência",
+      min: 1,
+      max: 50
+    },
+    { 
+      key: "totalCuidadores", 
+      label: "Número de Cuidadores", 
+      type: "number", 
+      required: true,
+      placeholder: "0",
+      helpText: "Cuidadores diretos dos moradores",
+      min: 0,
+      max: 30
+    },
+    { 
+      key: "totalTecnicos", 
+      label: "Número de Técnicos de Enfermagem", 
+      type: "number", 
+      required: true,
+      placeholder: "0",
+      helpText: "Técnicos de enfermagem na equipe",
+      min: 0,
+      max: 20
+    },
+    { 
+      key: "totalEnfermeiros", 
+      label: "Número de Enfermeiros", 
+      type: "number", 
+      required: true,
+      placeholder: "0",
+      helpText: "Enfermeiros com nível superior",
+      min: 0,
+      max: 10
+    },
+    { 
+      key: "totalOutros", 
+      label: "Outros Profissionais", 
+      type: "number",
+      placeholder: "0",
+      helpText: "Psicólogos, assistentes sociais, terapeutas, etc.",
+      min: 0,
+      max: 20
+    },
+    { 
+      key: "escalaTrabalho", 
+      label: "Descrição da Escala de Trabalho", 
+      type: "textarea", 
+      required: true,
+      placeholder: "Ex: Plantões 12x36h com 2 cuidadores por turno. Enfermeiro disponível de segunda a sexta das 8h às 17h",
+      helpText: "Detalhe como funciona a escala da equipe",
+      maxLength: 500
+    },
+    { 
+      key: "relacaoCuidadorMorador", 
+      label: "Proporção Cuidador/Morador", 
+      type: "text", 
+      required: true,
+      placeholder: "Ex: 1:4 (1 cuidador para 4 moradores)",
+      helpText: "Quantos moradores cada cuidador acompanha",
+      pattern: "[0-9]+:[0-9]+"
+    },
+    { 
+      key: "cuidadoresPorTurno", 
+      label: "Cuidadores por Turno", 
+      type: "number", 
+      required: true,
+      placeholder: "0",
+      helpText: "Quantidade mínima de cuidadores em cada plantão",
+      min: 1,
+      max: 10
+    },
+    { 
+      key: "participaEducacao", 
+      label: "A equipe participa de Educação Permanente?", 
+      type: "select", 
+      options: ["Sim", "Não"], 
+      required: true,
+      helpText: "Capacitações e treinamentos regulares"
+    },
+    { 
+      key: "quemPromoveEducacao", 
+      label: "Detalhes da Educação Permanente", 
+      type: "textarea",
+      placeholder: "Ex: Capacitações mensais promovidas pela SMS sobre manejo de crise, medicação, direitos dos usuários",
+      helpText: "Quem promove, frequência e principais temas (preencher se respondeu Sim)",
+      conditional: { field: "participaEducacao", value: "Sim" },
+      maxLength: 500
+    },
+    { 
+      key: "reunioesRegulares", 
+      label: "Realiza reuniões de equipe regulares?", 
+      type: "select", 
+      options: ["Sim", "Não"], 
+      required: true,
+      helpText: "Reuniões para discussão de casos e planejamento"
+    }
   ],
+  
   residentFields: [
-    { key: "nomeCompleto", label: "Nome completo", type: "text", required: true },
-    { key: "nomeSocial", label: "Nome social", type: "text" },
-    { key: "dataNascimento", label: "Data de Nascimento", type: "date", required: true },
-    { key: "idade", label: "Idade", type: "number", required: true },
-    { key: "instituicaoOrigem", label: "Instituição psiquiátrica de origem", type: "text", required: true },
-    { key: "cnesOrigem", label: "CNES da Instituição de origem", type: "text" },
-    { key: "tempoInternacao", label: "Tempo de internação (anos)", type: "number", required: true },
-    { key: "racaCor", label: "Raça/Cor", type: "select", options: ["Branca", "Preta", "Parda", "Amarela", "Indígena", "Não declarada"], required: true },
-    { key: "generoNascimento", label: "Sexo biológico", type: "select", options: ["Masculino", "Feminino"], required: true },
-    { key: "identidadeGenero", label: "Identidade de gênero", type: "select", options: ["Homem cis", "Mulher cis", "Homem trans", "Mulher trans", "Não-binário", "Outro"] },
-    { key: "origemTerritorial", label: "Origem territorial", type: "text", required: true },
-    { key: "vinculoMunicipio", label: "Vínculo com o município atual", type: "text" },
-    { key: "participaPVC", label: "Participa do Programa de Volta para Casa?", type: "select", options: ["Sim", "Não"], required: true },
-    { key: "vinculoFamiliar", label: "Possui vínculo familiar ativo?", type: "select", options: ["Sim", "Não"], required: true },
-    { key: "descricaoVinculo", label: "Se sim, descreva o vínculo", type: "textarea" },
-    { key: "frequenciaCaps", label: "Frequência no CAPS", type: "select", options: ["Diária", "Semanal", "Quinzenal", "Mensal", "Não frequenta"], required: true },
-    { key: "frequenciaUBS", label: "Frequência na UBS", type: "select", options: ["Regular", "Esporádica", "Não frequenta"], required: true },
-    { key: "escola", label: "Frequenta instituição de ensino?", type: "select", options: ["Sim", "Não"], required: true },
-    { key: "qualEscola", label: "Se sim, qual?", type: "text" },
-    { key: "crasCreas", label: "Frequenta CRAS/CREAS?", type: "select", options: ["Sim", "Não"], required: true }
+    { 
+      key: "nomeCompleto", 
+      label: "Nome Completo do Morador", 
+      type: "text", 
+      required: true,
+      placeholder: "Nome completo conforme documentos",
+      helpText: "Nome civil completo do morador",
+      maxLength: 200
+    },
+    { 
+      key: "nomeSocial", 
+      label: "Nome Social", 
+      type: "text",
+      placeholder: "Nome pelo qual prefere ser chamado(a)",
+      helpText: "Preencher se diferente do nome civil",
+      maxLength: 200
+    },
+    { 
+      key: "dataNascimento", 
+      label: "Data de Nascimento", 
+      type: "date", 
+      required: true,
+      helpText: "Data completa de nascimento",
+      min: "1900-01-01",
+      max: "today"
+    },
+    { 
+      key: "idade", 
+      label: "Idade Atual", 
+      type: "number", 
+      required: true,
+      placeholder: "0",
+      helpText: "Idade em anos completos",
+      min: 18,
+      max: 120
+    },
+    { 
+      key: "instituicaoOrigem", 
+      label: "Hospital/Instituição de Origem", 
+      type: "text", 
+      required: true,
+      placeholder: "Ex: Hospital Psiquiátrico João de Deus",
+      helpText: "De onde veio antes de morar na SRT",
+      maxLength: 200
+    },
+    { 
+      key: "cnesOrigem", 
+      label: "CNES da Instituição de Origem", 
+      type: "text",
+      placeholder: "0000000",
+      helpText: "Código CNES se disponível (opcional)",
+      mask: "9999999",
+      maxLength: 7
+    },
+    { 
+      key: "tempoInternacao", 
+      label: "Tempo de Internação Anterior (anos)", 
+      type: "number", 
+      required: true,
+      placeholder: "0",
+      helpText: "Quantos anos ficou internado antes da SRT",
+      min: 0,
+      max: 80
+    },
+    { 
+      key: "racaCor", 
+      label: "Raça/Cor", 
+      type: "select", 
+      options: ["Branca", "Preta", "Parda", "Amarela", "Indígena", "Não declarada"], 
+      required: true,
+      helpText: "Autodeclaração conforme IBGE"
+    },
+    { 
+      key: "generoNascimento", 
+      label: "Sexo Biológico", 
+      type: "select", 
+      options: ["Masculino", "Feminino"], 
+      required: true,
+      helpText: "Sexo designado ao nascimento"
+    },
+    { 
+      key: "identidadeGenero", 
+      label: "Identidade de Gênero", 
+      type: "select", 
+      options: ["Homem cisgênero", "Mulher cisgênero", "Homem trans", "Mulher trans", "Não-binário", "Outro", "Prefere não informar"],
+      helpText: "Como a pessoa se identifica",
+      defaultValue: "Prefere não informar"
+    },
+    { 
+      key: "origemTerritorial", 
+      label: "Município de Origem", 
+      type: "text", 
+      required: true,
+      placeholder: "Ex: Rio de Janeiro, Niterói",
+      helpText: "Cidade natal ou de origem do morador",
+      maxLength: 100
+    },
+    { 
+      key: "vinculoMunicipio", 
+      label: "Vínculo com o Município Atual", 
+      type: "text",
+      placeholder: "Ex: Nasceu aqui, tem família na cidade",
+      helpText: "Relação do morador com o município da SRT",
+      maxLength: 200
+    },
+    { 
+      key: "participaPVC", 
+      label: "Beneficiário do Programa de Volta para Casa?", 
+      type: "select", 
+      options: ["Sim", "Não", "Em processo"], 
+      required: true,
+      helpText: "Recebe o auxílio-reabilitação psicossocial"
+    },
+    { 
+      key: "vinculoFamiliar", 
+      label: "Mantém Contato com Familiares?", 
+      type: "select", 
+      options: ["Sim", "Não", "Esporadicamente"], 
+      required: true,
+      helpText: "Se há algum tipo de contato familiar"
+    },
+    { 
+      key: "descricaoVinculo", 
+      label: "Descrição do Vínculo Familiar", 
+      type: "textarea",
+      placeholder: "Ex: Recebe visitas mensais da irmã. Fala por telefone com o filho semanalmente",
+      helpText: "Detalhe o tipo e frequência do contato (se houver)",
+      conditional: { field: "vinculoFamiliar", values: ["Sim", "Esporadicamente"] },
+      maxLength: 300
+    },
+    { 
+      key: "frequenciaCaps", 
+      label: "Frequência de Comparecimento ao CAPS", 
+      type: "select", 
+      options: ["Diária", "2-3x por semana", "Semanal", "Quinzenal", "Mensal", "Não frequenta"], 
+      required: true,
+      helpText: "Com que regularidade vai ao CAPS"
+    },
+    { 
+      key: "frequenciaUBS", 
+      label: "Acompanhamento na Atenção Básica", 
+      type: "select", 
+      options: ["Regular (conforme necessidade)", "Apenas emergências", "Não faz acompanhamento"], 
+      required: true,
+      helpText: "Como é o acompanhamento na UBS/ESF"
+    },
+    { 
+      key: "escola", 
+      label: "Frequenta Alguma Instituição de Ensino?", 
+      type: "select", 
+      options: ["Sim", "Não"], 
+      required: true,
+      helpText: "Escola, EJA, cursos, etc."
+    },
+    { 
+      key: "qualEscola", 
+      label: "Qual Instituição/Curso?", 
+      type: "text",
+      placeholder: "Ex: EJA na Escola Municipal João Silva",
+      helpText: "Nome da escola ou curso que frequenta",
+      conditional: { field: "escola", value: "Sim" },
+      maxLength: 200
+    },
+    { 
+      key: "crasCreas", 
+      label: "É Acompanhado pelo CRAS/CREAS?", 
+      type: "select", 
+      options: ["Sim - CRAS", "Sim - CREAS", "Sim - Ambos", "Não"], 
+      required: true,
+      helpText: "Se recebe acompanhamento da assistência social"
+    }
   ]
 });
+
+// Adicione também estas funções auxiliares para melhorar a experiência:
+
+// Função para aplicar máscaras nos campos
+const applyInputMask = (input, mask) => {
+  input.addEventListener('input', (e) => {
+    let value = e.target.value.replace(/\D/g, '');
+    let maskedValue = '';
+    let maskIndex = 0;
+    
+    for (let i = 0; i < mask.length && maskIndex < value.length; i++) {
+      if (mask[i] === '9') {
+        maskedValue += value[maskIndex];
+        maskIndex++;
+      } else {
+        maskedValue += mask[i];
+      }
+    }
+    
+    e.target.value = maskedValue;
+  });
+};
+
+// Função para validar campos condicionais
+const handleConditionalFields = (config) => {
+  config.forEach(section => {
+    section.forEach(field => {
+      if (field.conditional) {
+        const dependentField = document.getElementById(field.conditional.field);
+        const fieldElement = document.getElementById(field.key);
+        
+        if (dependentField && fieldElement) {
+          const checkVisibility = () => {
+            const shouldShow = field.conditional.values 
+              ? field.conditional.values.includes(dependentField.value)
+              : dependentField.value === field.conditional.value;
+            
+            fieldElement.closest('.form-group').style.display = shouldShow ? 'block' : 'none';
+            fieldElement.required = shouldShow && field.required;
+          };
+          
+          dependentField.addEventListener('change', checkVisibility);
+          checkVisibility(); // Verificar no carregamento
+        }
+      }
+    });
+  });
+};
+
+// Função melhorada para criar campos com todas as features
+const createEnhancedInputGroup = (field, prefix = '') => {
+  const group = document.createElement('div');
+  group.className = 'form-group input-group relative';
+  
+  const inputId = prefix + field.key;
+  
+  // Container para label com indicador de obrigatório
+  const labelContainer = document.createElement('div');
+  labelContainer.className = 'flex items-center justify-between mb-2';
+  
+  const label = document.createElement('label');
+  label.setAttribute('for', inputId);
+  label.className = 'block text-sm font-medium text-gray-700 dark:text-gray-300';
+  label.innerHTML = field.label + (field.required ? ' <span class="text-red-500">*</span>' : '');
+  
+  // Adicionar ícone de ajuda se houver helpText
+  if (field.helpText) {
+    const helpIcon = document.createElement('span');
+    helpIcon.className = 'inline-flex items-center text-gray-400 hover:text-gray-600 cursor-help ml-2';
+    helpIcon.innerHTML = `
+      <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+      </svg>
+    `;
+    helpIcon.title = field.helpText;
+    label.appendChild(helpIcon);
+  }
+  
+  labelContainer.appendChild(label);
+  
+  // Criar o input apropriado
+  let input;
+  
+  if (field.type === 'select' && field.options) {
+    input = document.createElement('select');
+    input.className = 'w-full px-4 py-3 bg-white dark:bg-gray-700 border-2 border-gray-200 dark:border-gray-600 rounded-xl focus:border-blue-500 dark:focus:border-blue-400 focus:outline-none transition-all';
+    
+    const defaultOption = document.createElement('option');
+    defaultOption.value = '';
+    defaultOption.textContent = field.placeholder || 'Selecione uma opção...';
+    defaultOption.disabled = true;
+    defaultOption.selected = true;
+    input.appendChild(defaultOption);
+    
+    field.options.forEach(opt => {
+      const option = document.createElement('option');
+      option.value = opt;
+      option.textContent = opt;
+      if (field.defaultValue === opt) option.selected = true;
+      input.appendChild(option);
+    });
+  } else if (field.type === 'textarea') {
+    input = document.createElement('textarea');
+    input.rows = 3;
+    input.className = 'w-full px-4 py-3 bg-white dark:bg-gray-700 border-2 border-gray-200 dark:border-gray-600 rounded-xl focus:border-blue-500 dark:focus:border-blue-400 focus:outline-none transition-all resize-none';
+    if (field.placeholder) input.placeholder = field.placeholder;
+  } else {
+    input = document.createElement('input');
+    input.type = field.type;
+    input.className = 'w-full px-4 py-3 bg-white dark:bg-gray-700 border-2 border-gray-200 dark:border-gray-600 rounded-xl focus:border-blue-500 dark:focus:border-blue-400 focus:outline-none transition-all';
+    if (field.placeholder) input.placeholder = field.placeholder;
+    if (field.min !== undefined) input.min = field.min;
+    if (field.max !== undefined) input.max = field.max;
+    if (field.maxLength) input.maxLength = field.maxLength;
+    if (field.pattern) input.pattern = field.pattern;
+    
+    // Aplicar valor máximo especial para datas
+    if (field.type === 'date' && field.max === 'today') {
+      input.max = new Date().toISOString().split('T')[0];
+    }
+  }
+  
+  input.id = inputId;
+  input.name = inputId;
+  if (field.required) input.required = true;
+  
+  // Aplicar máscara se existir
+  if (field.mask) {
+    applyInputMask(input, field.mask);
+  }
+  
+  // Adicionar eventos para feedback visual
+  input.addEventListener('invalid', (e) => {
+    e.preventDefault();
+    input.classList.add('border-red-500', 'dark:border-red-400');
+    
+    // Criar ou atualizar mensagem de erro
+    let errorMsg = group.querySelector('.error-message');
+    if (!errorMsg) {
+      errorMsg = document.createElement('p');
+      errorMsg.className = 'error-message text-sm text-red-500 mt-1';
+      group.appendChild(errorMsg);
+    }
+    
+    if (input.validity.valueMissing) {
+      errorMsg.textContent = 'Este campo é obrigatório';
+    } else if (input.validity.patternMismatch) {
+      errorMsg.textContent = field.helpText || 'Formato inválido';
+    } else if (input.validity.tooShort || input.validity.tooLong) {
+      errorMsg.textContent = `Deve ter entre ${input.minLength || 0} e ${input.maxLength} caracteres`;
+    } else if (input.validity.rangeUnderflow || input.validity.rangeOverflow) {
+      errorMsg.textContent = `Valor deve estar entre ${input.min} e ${input.max}`;
+    } else {
+      errorMsg.textContent = 'Valor inválido';
+    }
+  });
+  
+  input.addEventListener('input', () => {
+    input.classList.remove('border-red-500', 'dark:border-red-400');
+    const errorMsg = group.querySelector('.error-message');
+    if (errorMsg) errorMsg.remove();
+    
+    // Feedback positivo
+    if (input.checkValidity() && input.value) {
+      input.classList.add('border-green-500', 'dark:border-green-400');
+      setTimeout(() => {
+        input.classList.remove('border-green-500', 'dark:border-green-400');
+      }, 2000);
+    }
+  });
+  
+  // Montar o grupo
+  group.appendChild(labelContainer);
+  group.appendChild(input);
+  
+  // Adicionar texto de ajuda
+  if (field.helpText) {
+    const helpText = document.createElement('p');
+    helpText.className = 'text-sm text-gray-500 dark:text-gray-400 mt-1';
+    helpText.textContent = field.helpText;
+    group.appendChild(helpText);
+  }
+  
+  // Adicionar contador de caracteres para campos de texto
+  if ((field.type === 'text' || field.type === 'textarea') && field.maxLength) {
+    const counter = document.createElement('p');
+    counter.className = 'text-xs text-gray-400 text-right mt-1';
+    counter.textContent = `0/${field.maxLength}`;
+    
+    input.addEventListener('input', () => {
+      counter.textContent = `${input.value.length}/${field.maxLength}`;
+      if (input.value.length > field.maxLength * 0.9) {
+        counter.classList.add('text-orange-500');
+      } else {
+        counter.classList.remove('text-orange-500');
+      }
+    });
+    
+    group.appendChild(counter);
+  }
+  
+  return group;
+};
 
 const loadConfigJSON = async () => {
   const configRef = db.collection("config").doc("srt");
