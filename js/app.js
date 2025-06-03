@@ -181,6 +181,14 @@ const createInputGroup = (field, prefix = '') => {
 };
 
 const renderFormFields = () => {
+  const municipioGrid = document.querySelector('#municipioFields .grid');
+  currentConfig.municipio.forEach((field, index) => {
+    const fieldGroup = createInputGroup(field);
+    fieldGroup.style.animationDelay = `${index * 50}ms`;
+    fieldGroup.classList.add('animate-fade-in');
+    municipioGrid.appendChild(fieldGroup);
+  });
+  
   const generalGrid = document.querySelector('#generalFields .grid');
   currentConfig.general.forEach((field, index) => {
     const fieldGroup = createInputGroup(field);
@@ -328,6 +336,10 @@ const submitForm = async (event) => {
       status: 'active'
     };
     
+    document.querySelectorAll('#municipioFields input, #municipioFields select, #municipioFields textarea').forEach(field => {
+      if (field.value) houseData[field.id] = field.value;
+    });
+    
     document.querySelectorAll('#generalFields input, #generalFields select, #generalFields textarea').forEach(field => {
       if (field.value) houseData[field.id] = field.value;
     });
@@ -399,6 +411,17 @@ const submitForm = async (event) => {
 };
 
 const getDefaultConfig = () => ({
+  municipio: [
+    { key: "regiaoSaude", label: "Região de Saúde", type: "text", required: true },
+    { key: "municipio", label: "Município", type: "text", required: true },
+    { key: "coordenacaoSaudeMental", label: "Coordenação do Programa de Saúde Mental", type: "text", required: true },
+    { key: "responsavelPreenchimento", label: "Responsável pelo preenchimento do formulário", type: "text", required: true },
+    { key: "telefoneResponsavelPreenchimento", label: "Telefone do responsável pelo preenchimento", type: "tel", required: true },
+    { key: "emailResponsavelPreenchimento", label: "E-mail do responsável pelo preenchimento", type: "email", required: true },
+    { key: "dataPreenchimentoMunicipio", label: "Data do preenchimento", type: "date", required: true },
+    { key: "capsVinculadaSRT", label: "CAPS em que a SRT está vinculada", type: "text", required: true },
+    { key: "cnesCapsVinculada", label: "CNES do CAPS", type: "text", required: true }
+  ],
   general: [
     { key: "dataPreenchimento", label: "Data do Preenchimento", type: "date", required: true },
     { key: "responsavelNome", label: "Nome do Responsável", type: "text", required: true },
