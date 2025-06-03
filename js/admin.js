@@ -1064,6 +1064,7 @@ const fieldTypeIcons = {
   number: '<path d="M6 20h12M6 12h12M6 4h12" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>',
   date: '<rect x="3" y="4" width="18" height="18" rx="2" stroke="currentColor" stroke-width="2"/><path d="M16 2v4M8 2v4M3 10h18" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>',
   select: '<path d="M4 6h16M4 12h16M4 18h16" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>',
+  multiselect: '<rect x="3" y="3" width="18" height="18" rx="2" stroke="currentColor" stroke-width="2"/><path d="M9 11l3 3L19 7" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>',
   textarea: '<rect x="3" y="3" width="18" height="18" rx="2" stroke="currentColor" stroke-width="2"/><path d="M7 7h10M7 12h10M7 17h4" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>',
   tel: '<path d="M22 16.92v3a2 2 0 01-2.18 2 19.79 19.79 0 01-8.63-3.07 19.5 19.5 0 01-6-6 19.79 19.79 0 01-3.07-8.67A2 2 0 014.11 2h3a2 2 0 012 1.72c.127.96.361 1.903.7 2.81a2 2 0 01-.45 2.11L8.09 9.91a16 16 0 006 6l1.27-1.27a2 2 0 012.11-.45c.907.339 1.85.573 2.81.7A2 2 0 0122 16.92z" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>',
   email: '<path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z" stroke="currentColor" stroke-width="2"/><path d="M22 6l-10 7L2 6" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>'
@@ -1074,6 +1075,7 @@ const fieldTypeLabels = {
   number: 'Número',
   date: 'Data',
   select: 'Lista',
+  multiselect: 'Múltipla Seleção',
   textarea: 'Texto Longo',
   tel: 'Telefone',
   email: 'E-mail'
@@ -1764,8 +1766,7 @@ const createEnhancedInputGroup = (field, prefix = '') => {
   group.className = 'form-group input-group relative';
   
   const inputId = prefix + field.key;
-  
-  // Container para label com indicador de obrigatório
+
   const labelContainer = document.createElement('div');
   labelContainer.className = 'flex items-center justify-between mb-2';
   
@@ -1810,6 +1811,45 @@ const createEnhancedInputGroup = (field, prefix = '') => {
       if (field.defaultValue === opt) option.selected = true;
       input.appendChild(option);
     });
+  } else if (field.type === 'multiselect' && field.options) {
+    // Criar container para checkboxes
+    input = document.createElement('div');
+    input.className = 'space-y-2 p-4 bg-gray-50 dark:bg-gray-700/50 rounded-xl';
+    input.id = inputId;
+    
+    // Criar um checkbox para cada opção
+    field.options.forEach((opt, index) => {
+      const checkboxWrapper = document.createElement('label');
+      checkboxWrapper.className = 'flex items-center gap-3 cursor-pointer hover:bg-white dark:hover:bg-gray-700 p-2 rounded-lg transition-all';
+      
+      const checkbox = document.createElement('input');
+      checkbox.type = 'checkbox';
+      checkbox.name = inputId;
+      checkbox.value = opt;
+      checkbox.className = 'w-5 h-5 text-blue-600 bg-gray-100 border-gray-300 rounded focus:ring-blue-500 dark:focus:ring-blue-600 dark:ring-offset-gray-800 focus:ring-2 dark:bg-gray-700 dark:border-gray-600';
+      checkbox.id = `${inputId}_${index}`;
+      
+      const label = document.createElement('span');
+      label.className = 'text-sm font-medium text-gray-700 dark:text-gray-300';
+      label.textContent = opt;
+      
+      checkboxWrapper.appendChild(checkbox);
+      checkboxWrapper.appendChild(label);
+      input.appendChild(checkboxWrapper);
+    });
+    
+    // Adicionar validação customizada para campos obrigatórios
+    if (field.required) {
+      const checkboxes = input.querySelectorAll('input[type="checkbox"]');
+      checkboxes.forEach(cb => {
+        cb.addEventListener('change', () => {
+          const checked = input.querySelectorAll('input[type="checkbox"]:checked').length > 0;
+          checkboxes.forEach(checkbox => {
+            checkbox.setCustomValidity(checked ? '' : 'Selecione pelo menos uma opção');
+          });
+        });
+      });
+    } 
   } else if (field.type === 'textarea') {
     input = document.createElement('textarea');
     input.rows = 3;
@@ -1976,6 +2016,7 @@ const createFieldElement = (field, index, section) => {
     number: 'bg-green-100 text-green-600 dark:bg-green-900/20 dark:text-green-400',
     date: 'bg-purple-100 text-purple-600 dark:bg-purple-900/20 dark:text-purple-400',
     select: 'bg-yellow-100 text-yellow-600 dark:bg-yellow-900/20 dark:text-yellow-400',
+     multiselect: 'bg-orange-100 text-orange-600 dark:bg-orange-900/20 dark:text-orange-400',
     textarea: 'bg-pink-100 text-pink-600 dark:bg-pink-900/20 dark:text-pink-400',
     tel: 'bg-indigo-100 text-indigo-600 dark:bg-indigo-900/20 dark:text-indigo-400',
     email: 'bg-red-100 text-red-600 dark:bg-red-900/20 dark:text-red-400'
@@ -2152,8 +2193,7 @@ document.getElementById('fieldType').addEventListener('change', updateFieldTypeU
 
 function updateFieldTypeUI() {
   const type = document.getElementById('fieldType').value;
-  
-  document.getElementById('optionsContainer').classList.toggle('hidden', type !== 'select');
+  document.getElementById('optionsContainer').classList.toggle('hidden', type !== 'select' && type !== 'multiselect');
   document.getElementById('numberConstraints').classList.toggle('hidden', type !== 'number');
 }
 

@@ -217,7 +217,49 @@ const createEnhancedInputGroup = (field, prefix = '') => {
       if (field.defaultValue === opt) option.selected = true;
       input.appendChild(option);
     });
-  } else if (field.type === 'textarea') {
+  } 
+
+   else if (field.type === 'multiselect' && field.options) {
+    // Criar container para checkboxes
+    input = document.createElement('div');
+    input.className = 'space-y-2 p-4 bg-gray-50 dark:bg-gray-700/50 rounded-xl';
+    input.id = inputId;
+    
+    // Criar um checkbox para cada opção
+    field.options.forEach((opt, index) => {
+      const checkboxWrapper = document.createElement('label');
+      checkboxWrapper.className = 'flex items-center gap-3 cursor-pointer hover:bg-white dark:hover:bg-gray-700 p-2 rounded-lg transition-all';
+      
+      const checkbox = document.createElement('input');
+      checkbox.type = 'checkbox';
+      checkbox.name = inputId;
+      checkbox.value = opt;
+      checkbox.className = 'w-5 h-5 text-blue-600 bg-gray-100 border-gray-300 rounded focus:ring-blue-500 dark:focus:ring-blue-600 dark:ring-offset-gray-800 focus:ring-2 dark:bg-gray-700 dark:border-gray-600';
+      checkbox.id = `${inputId}_${index}`;
+      
+      const label = document.createElement('span');
+      label.className = 'text-sm font-medium text-gray-700 dark:text-gray-300';
+      label.textContent = opt;
+      
+      checkboxWrapper.appendChild(checkbox);
+      checkboxWrapper.appendChild(label);
+      input.appendChild(checkboxWrapper);
+    });
+    
+    // Adicionar validação customizada para campos obrigatórios
+    if (field.required) {
+      const checkboxes = input.querySelectorAll('input[type="checkbox"]');
+      checkboxes.forEach(cb => {
+        cb.addEventListener('change', () => {
+          const checked = input.querySelectorAll('input[type="checkbox"]:checked').length > 0;
+          checkboxes.forEach(checkbox => {
+            checkbox.setCustomValidity(checked ? '' : 'Selecione pelo menos uma opção');
+          });
+        });
+      });
+    }
+   }
+  else if (field.type === 'textarea') {
     input = document.createElement('textarea');
     input.rows = 3;
     input.className = 'w-full px-4 py-3 bg-white dark:bg-gray-700 border-2 border-gray-200 dark:border-gray-600 rounded-xl focus:border-blue-500 dark:focus:border-blue-400 focus:outline-none transition-all resize-none';
@@ -1320,19 +1362,59 @@ const submitForm = async (event) => {
     };
     
     document.querySelectorAll('#municipioFields input, #municipioFields select, #municipioFields textarea').forEach(field => {
-      if (field.value) houseData[field.id] = field.value;
+      if (field.type === 'checkbox') {
+    const fieldName = field.name;
+    if (!houseData[fieldName]) {
+      houseData[fieldName] = [];
+    }
+    if (field.checked) {
+      houseData[fieldName].push(field.value);
+    }
+  } else if (field.value) {
+    houseData[field.id] = field.value;
+  }
     });
     
     document.querySelectorAll('#generalFields input, #generalFields select, #generalFields textarea').forEach(field => {
-      if (field.value) houseData[field.id] = field.value;
+      if (field.type === 'checkbox') {
+    const fieldName = field.name;
+    if (!houseData[fieldName]) {
+      houseData[fieldName] = [];
+    }
+    if (field.checked) {
+      houseData[fieldName].push(field.value);
+    }
+  } else if (field.value) {
+    houseData[field.id] = field.value;
+  }
     });
     
     document.querySelectorAll('#residenceFields input, #residenceFields select, #residenceFields textarea').forEach(field => {
-      if (field.value) houseData[field.id] = field.value;
+      if (field.type === 'checkbox') {
+    const fieldName = field.name;
+    if (!houseData[fieldName]) {
+      houseData[fieldName] = [];
+    }
+    if (field.checked) {
+      houseData[fieldName].push(field.value);
+    }
+  } else if (field.value) {
+    houseData[field.id] = field.value;
+  }
     });
     
     document.querySelectorAll('#caregiverFields input, #caregiverFields select, #caregiverFields textarea').forEach(field => {
-      if (field.value) houseData[field.id] = field.value;
+      if (field.type === 'checkbox') {
+    const fieldName = field.name;
+    if (!houseData[fieldName]) {
+      houseData[fieldName] = [];
+    }
+    if (field.checked) {
+      houseData[fieldName].push(field.value);
+    }
+  } else if (field.value) {
+    houseData[field.id] = field.value;
+  }
     });
     
     houseData.totalMoradores = document.getElementById('totalResidents').value;
