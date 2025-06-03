@@ -1057,65 +1057,87 @@ const setupConditionalFields = () => {
   });
 };
 
+let updateResidentBlocksTimeout = null;
+
 const updateResidentBlocks = () => {
-  const count = parseInt(document.getElementById('numMoradores').value) || 0;
-  const container = document.getElementById('residentsContainer');
+  if (updateResidentBlocksTimeout) {
+    clearTimeout(updateResidentBlocksTimeout);
+  }
   
-  const currentBlocks = container.children.length;
-  
-  if (count > currentBlocks) {
-    for (let i = currentBlocks + 1; i <= count; i++) {
-      const block = document.createElement('div');
-      block.className = 'bg-white dark:bg-gray-700 rounded-xl p-6 shadow-lg border-2 border-gray-200 dark:border-gray-600 relative overflow-hidden group hover-lift animate-slide-up';
-      block.style.animationDelay = `${(i - currentBlocks - 1) * 100}ms`;
+  updateResidentBlocksTimeout = setTimeout(() => {
+    const countInput = document.getElementById('numMoradores');
+    if (!countInput) return;
+    
+    const count = parseInt(countInput.value) || 0;
+    const container = document.getElementById('residentsContainer');
+    if (!container) return;
+    
+    const currentBlocks = container.children.length;
+    
+    if (count > currentBlocks) {
+      for (let i = currentBlocks + 1; i <= count; i++) {
+        const block = document.createElement('div');
+        block.className = 'bg-white dark:bg-gray-700 rounded-xl p-6 shadow-lg border-2 border-gray-200 dark:border-gray-600 relative overflow-hidden group hover-lift animate-slide-up';
+        block.style.animationDelay = `${(i - currentBlocks - 1) * 100}ms`;
+        block.dataset.residentNumber = i;
+        
+        const accentBar = document.createElement('div');
+        accentBar.className = 'absolute top-0 left-0 w-1 h-full bg-gradient-to-b from-blue-500 to-purple-600 transition-all group-hover:w-2';
+        block.appendChild(accentBar);
+        
+        const header = document.createElement('h3');
+        header.className = 'text-xl font-bold text-gray-800 dark:text-white mb-4 flex items-center gap-2';
+        header.innerHTML = `
+          <span class="w-8 h-8 bg-gradient-to-br from-blue-500 to-purple-600 rounded-full flex items-center justify-center text-white text-sm font-bold">${i}</span>
+          Morador ${i}
+        `;
+        block.appendChild(header);
+        
+        const progressDiv = document.createElement('div');
+        progressDiv.className = 'section-progress mb-4';
+        progressDiv.innerHTML = `
+          <span class="section-progress-text">Progresso do morador:</span>
+          <div class="section-progress-bar">
+            <div class="section-progress-fill" data-section="resident-${i}" style="width: 0%"></div>
+          </div>
+          <span class="section-progress-text" data-section-percent="resident-${i}">0%</span>
+        `;
+        block.appendChild(progressDiv);
+        
+        const grid = document.createElement('div');
+        grid.className = 'grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4';
+        
+        currentConfig.residentFields.forEach((field, index) => {
+          const fieldGroup = createEnhancedInputGroup(field, `resident_${i}_`);
+          fieldGroup.style.animationDelay = `${index * 30}ms`;
+          fieldGroup.classList.add('animate-fade-in');
+          grid.appendChild(fieldGroup);
+        });
+        
+        block.appendChild(grid);
+        container.appendChild(block);
+        
+        setupConditionalFieldsForResident(i);
+        updateProgress();
+      }
+    } else if (count < currentBlocks) {
+      const blocksToRemove = [];
+      let childIndex = container.children.length - 1;
       
-      const accentBar = document.createElement('div');
-      accentBar.className = 'absolute top-0 left-0 w-1 h-full bg-gradient-to-b from-blue-500 to-purple-600 transition-all group-hover:w-2';
-      block.appendChild(accentBar);
+      while (container.children.length > count && childIndex >= 0) {
+        blocksToRemove.push(container.children[childIndex]);
+        childIndex--;
+      }
       
-      const header = document.createElement('h3');
-      header.className = 'text-xl font-bold text-gray-800 dark:text-white mb-4 flex items-center gap-2';
-      header.innerHTML = `
-        <span class="w-8 h-8 bg-gradient-to-br from-blue-500 to-purple-600 rounded-full flex items-center justify-center text-white text-sm font-bold">${i}</span>
-        Morador ${i}
-      `;
-      block.appendChild(header);
-      
-      const progressDiv = document.createElement('div');
-      progressDiv.className = 'section-progress mb-4';
-      progressDiv.innerHTML = `
-        <span class="section-progress-text">Progresso do morador:</span>
-        <div class="section-progress-bar">
-          <div class="section-progress-fill" data-section="resident-${i}" style="width: 0%"></div>
-        </div>
-        <span class="section-progress-text" data-section-percent="resident-${i}">0%</span>
-      `;
-      block.appendChild(progressDiv);
-      
-      const grid = document.createElement('div');
-      grid.className = 'grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4';
-      
-      currentConfig.residentFields.forEach((field, index) => {
-        const fieldGroup = createEnhancedInputGroup(field, `resident_${i}_`);
-        fieldGroup.style.animationDelay = `${index * 30}ms`;
-        fieldGroup.classList.add('animate-fade-in');
-        grid.appendChild(fieldGroup);
+      blocksToRemove.forEach((block) => {
+        if (block && block.parentNode) {
+          block.remove();
+        }
       });
       
-      block.appendChild(grid);
-      container.appendChild(block);
-      
-      setupConditionalFieldsForResident(i);
       updateProgress();
     }
-  } else if (count < currentBlocks) {
-    while (container.children.length > count) {
-      const lastChild = container.lastElementChild;
-      lastChild.classList.add('animate-fade-out');
-      setTimeout(() => lastChild.remove(), 300);
-    }
-    updateProgress();
-  }
+  }, 100);
 };
 
 const setupConditionalFieldsForResident = (residentNum) => {
