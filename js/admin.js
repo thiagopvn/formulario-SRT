@@ -408,7 +408,7 @@ const displayHouses = (houses) => {
         <div class="text-sm font-medium text-gray-900 dark:text-white">${house.nomeResidencia || '(Sem nome)'}</div>
       </td>
       <td class="px-6 py-4 whitespace-nowrap">
-        <div class="text-sm text-gray-600 dark:text-gray-300">${house.nomeCaps || '-'}</div>
+        <div class="text-sm text-gray-600 dark:text-gray-300">${house.nomeCaps || house.capsVinculadaSRT || '-'}</div>
       </td>
       <td class="px-6 py-4 whitespace-nowrap">
         <span class="px-3 py-1 inline-flex text-xs leading-5 font-semibold rounded-full ${tipoColor}">
@@ -455,6 +455,57 @@ const viewHouseDetails = (houseId) => {
   
   let detailsHTML = `
     <div class="space-y-6">
+  `;
+  
+  if (house.regiaoSaude || house.municipio || house.responsavelPreenchimento) {
+    detailsHTML += `
+      <div class="bg-gray-50 dark:bg-gray-900 rounded-xl p-6">
+        <h3 class="text-lg font-semibold text-gray-800 dark:text-white mb-4 flex items-center gap-2">
+          <svg class="w-5 h-5 text-teal-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z" />
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 11a3 3 0 11-6 0 3 3 0 016 0z" />
+          </svg>
+          Informações do Município
+        </h3>
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <div>
+            <p class="text-sm text-gray-600 dark:text-gray-400">Região de Saúde</p>
+            <p class="font-medium text-gray-900 dark:text-white">${house.regiaoSaude || '-'}</p>
+          </div>
+          <div>
+            <p class="text-sm text-gray-600 dark:text-gray-400">Município</p>
+            <p class="font-medium text-gray-900 dark:text-white">${house.municipio || '-'}</p>
+          </div>
+          <div>
+            <p class="text-sm text-gray-600 dark:text-gray-400">Coordenação de Saúde Mental</p>
+            <p class="font-medium text-gray-900 dark:text-white">${house.coordenacaoSaudeMental || '-'}</p>
+          </div>
+          <div>
+            <p class="text-sm text-gray-600 dark:text-gray-400">Responsável pelo Preenchimento</p>
+            <p class="font-medium text-gray-900 dark:text-white">${house.responsavelPreenchimento || '-'}</p>
+          </div>
+          <div>
+            <p class="text-sm text-gray-600 dark:text-gray-400">Telefone do Responsável</p>
+            <p class="font-medium text-gray-900 dark:text-white">${house.telefoneResponsavelPreenchimento || '-'}</p>
+          </div>
+          <div>
+            <p class="text-sm text-gray-600 dark:text-gray-400">E-mail do Responsável</p>
+            <p class="font-medium text-gray-900 dark:text-white">${house.emailResponsavelPreenchimento || '-'}</p>
+          </div>
+          <div>
+            <p class="text-sm text-gray-600 dark:text-gray-400">CAPS Vinculada</p>
+            <p class="font-medium text-gray-900 dark:text-white">${house.capsVinculadaSRT || '-'}</p>
+          </div>
+          <div>
+            <p class="text-sm text-gray-600 dark:text-gray-400">CNES do CAPS</p>
+            <p class="font-medium text-gray-900 dark:text-white">${house.cnesCapsVinculada || '-'}</p>
+          </div>
+        </div>
+      </div>
+    `;
+  }
+  
+  detailsHTML += `
       <div class="bg-gray-50 dark:bg-gray-900 rounded-xl p-6">
         <h3 class="text-lg font-semibold text-gray-800 dark:text-white mb-4 flex items-center gap-2">
           <svg class="w-5 h-5 text-blue-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -469,7 +520,7 @@ const viewHouseDetails = (houseId) => {
           </div>
           <div>
             <p class="text-sm text-gray-600 dark:text-gray-400">CAPS Vinculado</p>
-            <p class="font-medium text-gray-900 dark:text-white">${house.nomeCaps || '-'}</p>
+            <p class="font-medium text-gray-900 dark:text-white">${house.nomeCaps || house.capsVinculadaSRT || '-'}</p>
           </div>
           <div>
             <p class="text-sm text-gray-600 dark:text-gray-400">Tipo SRT</p>
@@ -634,6 +685,7 @@ document.getElementById('searchInput').addEventListener('input', (e) => {
   const filtered = allHouses.filter(house => 
     house.nomeResidencia?.toLowerCase().includes(searchTerm) ||
     house.nomeCaps?.toLowerCase().includes(searchTerm) ||
+    house.capsVinculadaSRT?.toLowerCase().includes(searchTerm) ||
     house.municipio?.toLowerCase().includes(searchTerm)
   );
   displayHouses(filtered);
@@ -654,9 +706,7 @@ document.getElementById('exportBtn').addEventListener('click', async () => {
   try {
     const rows = [];
     
-    // Estilos comuns
     const styles = {
-      // Estilo do título principal
       title: {
         font: { bold: true, sz: 18, color: { rgb: "FFFFFF" } },
         fill: { fgColor: { rgb: "3B82F6" } },
@@ -668,13 +718,11 @@ document.getElementById('exportBtn').addEventListener('click', async () => {
           right: { style: "medium", color: { rgb: "2563EB" } }
         }
       },
-      // Estilo do subtítulo (data)
       subtitle: {
         font: { sz: 12, color: { rgb: "1F2937" } },
         fill: { fgColor: { rgb: "E5E7EB" } },
         alignment: { horizontal: "right", vertical: "center" }
       },
-      // Estilo do resumo
       summary: {
         font: { bold: true, sz: 14, color: { rgb: "FFFFFF" } },
         fill: { fgColor: { rgb: "8B5CF6" } },
@@ -686,7 +734,6 @@ document.getElementById('exportBtn').addEventListener('click', async () => {
           right: { style: "thin", color: { rgb: "7C3AED" } }
         }
       },
-      // Estilo dos valores do resumo
       summaryValue: {
         font: { sz: 12, color: { rgb: "1F2937" } },
         fill: { fgColor: { rgb: "F3E8FF" } },
@@ -698,7 +745,6 @@ document.getElementById('exportBtn').addEventListener('click', async () => {
           right: { style: "thin", color: { rgb: "E9D5FF" } }
         }
       },
-      // Estilo do cabeçalho da tabela
       header: {
         font: { bold: true, sz: 11, color: { rgb: "FFFFFF" } },
         fill: { fgColor: { rgb: "1F2937" } },
@@ -710,7 +756,6 @@ document.getElementById('exportBtn').addEventListener('click', async () => {
           right: { style: "thin", color: { rgb: "374151" } }
         }
       },
-      // Estilo das células de dados normais
       cell: {
         font: { sz: 10, color: { rgb: "1F2937" } },
         alignment: { vertical: "center" },
@@ -721,7 +766,6 @@ document.getElementById('exportBtn').addEventListener('click', async () => {
           right: { style: "thin", color: { rgb: "E5E7EB" } }
         }
       },
-      // Estilo das células de dados com fundo alternado
       cellAlt: {
         font: { sz: 10, color: { rgb: "1F2937" } },
         fill: { fgColor: { rgb: "F9FAFB" } },
@@ -733,19 +777,16 @@ document.getElementById('exportBtn').addEventListener('click', async () => {
           right: { style: "thin", color: { rgb: "E5E7EB" } }
         }
       },
-      // Estilo para números
       number: {
         font: { sz: 10, color: { rgb: "1F2937" } },
         alignment: { horizontal: "center", vertical: "center" },
         numFmt: "#,##0"
       },
-      // Estilo para porcentagem
       percentage: {
         font: { sz: 10, color: { rgb: "059669" }, bold: true },
         alignment: { horizontal: "center", vertical: "center" },
         numFmt: "0.0%"
       },
-      // Estilo para datas
       date: {
         font: { sz: 10, color: { rgb: "1F2937" } },
         alignment: { horizontal: "center", vertical: "center" },
@@ -753,16 +794,10 @@ document.getElementById('exportBtn').addEventListener('click', async () => {
       }
     };
     
-    // Adiciona o título
     rows.push(['RELATÓRIO DE RESIDÊNCIAS TERAPÊUTICAS - SRT']);
-    
-    // Adiciona a data
     rows.push([`Gerado em: ${new Date().toLocaleDateString('pt-BR')}`]);
-    
-    // Linha vazia
     rows.push([]);
     
-    // Resumo geral
     const totalMoradores = allHouses.reduce((sum, house) => sum + (house.residents?.length || 0), 0);
     const taxaMedia = allHouses.reduce((sum, house) => {
       const taxa = house.vagasTotais > 0 ? (house.vagasOcupadas / house.vagasTotais * 100) : 0;
@@ -774,12 +809,14 @@ document.getElementById('exportBtn').addEventListener('click', async () => {
     rows.push([`Total de Moradores: ${totalMoradores}`]);
     rows.push([`Taxa de Ocupação Média: ${taxaMedia.toFixed(1)}%`]);
     
-    // Linha vazia
     rows.push([]);
     
-    // Cabeçalho da tabela
     const headers = [
-      'ID da Casa', 'Nome da Residência', 'CAPS Vinculado', 'CNES do CAPS',
+      'ID da Casa', 'Região de Saúde', 'Município', 'Coordenação Saúde Mental',
+      'Responsável Preenchimento Municipal', 'Telefone Responsável Municipal',
+      'E-mail Responsável Municipal', 'Data Preenchimento Municipal',
+      'CAPS Vinculada SRT', 'CNES CAPS Vinculada',
+      'Nome da Residência', 'CAPS Vinculado', 'CNES do CAPS',
       'Tipo SRT', 'Data de Preenchimento', 'Responsável', 'Cargo', 'Contato',
       'Endereço', 'Bairro', 'Município', 'UF', 'CEP', 'Total de Moradores',
       'Vagas Totais', 'Vagas Ocupadas', 'Vagas Disponíveis', 'Taxa de Ocupação (%)',
@@ -790,12 +827,20 @@ document.getElementById('exportBtn').addEventListener('click', async () => {
     ];
     rows.push(headers);
     
-    // Dados das casas
     for (const house of allHouses) {
       const taxaOcupacao = house.vagasTotais > 0 ? ((house.vagasOcupadas / house.vagasTotais) * 100).toFixed(1) : '0.0';
       
       const baseInfo = {
         'ID da Casa': house.id,
+        'Região de Saúde': house.regiaoSaude || '',
+        'Município': house.municipio || '',
+        'Coordenação Saúde Mental': house.coordenacaoSaudeMental || '',
+        'Responsável Preenchimento Municipal': house.responsavelPreenchimento || '',
+        'Telefone Responsável Municipal': house.telefoneResponsavelPreenchimento || '',
+        'E-mail Responsável Municipal': house.emailResponsavelPreenchimento || '',
+        'Data Preenchimento Municipal': house.dataPreenchimentoMunicipio || '',
+        'CAPS Vinculada SRT': house.capsVinculadaSRT || '',
+        'CNES CAPS Vinculada': house.cnesCapsVinculada || '',
         'Nome da Residência': house.nomeResidencia || '',
         'CAPS Vinculado': house.nomeCaps || '',
         'CNES do CAPS': house.cnesCaps || '',
@@ -820,6 +865,15 @@ document.getElementById('exportBtn').addEventListener('click', async () => {
         house.residents.forEach((resident, index) => {
           rows.push([
             baseInfo['ID da Casa'],
+            baseInfo['Região de Saúde'],
+            baseInfo['Município'],
+            baseInfo['Coordenação Saúde Mental'],
+            baseInfo['Responsável Preenchimento Municipal'],
+            baseInfo['Telefone Responsável Municipal'],
+            baseInfo['E-mail Responsável Municipal'],
+            baseInfo['Data Preenchimento Municipal'],
+            baseInfo['CAPS Vinculada SRT'],
+            baseInfo['CNES CAPS Vinculada'],
             baseInfo['Nome da Residência'],
             baseInfo['CAPS Vinculado'],
             baseInfo['CNES do CAPS'],
@@ -857,6 +911,15 @@ document.getElementById('exportBtn').addEventListener('click', async () => {
       } else {
         rows.push([
           baseInfo['ID da Casa'],
+          baseInfo['Região de Saúde'],
+          baseInfo['Município'],
+          baseInfo['Coordenação Saúde Mental'],
+          baseInfo['Responsável Preenchimento Municipal'],
+          baseInfo['Telefone Responsável Municipal'],
+          baseInfo['E-mail Responsável Municipal'],
+          baseInfo['Data Preenchimento Municipal'],
+          baseInfo['CAPS Vinculada SRT'],
+          baseInfo['CNES CAPS Vinculada'],
           baseInfo['Nome da Residência'],
           baseInfo['CAPS Vinculado'],
           baseInfo['CNES do CAPS'],
@@ -880,55 +943,43 @@ document.getElementById('exportBtn').addEventListener('click', async () => {
       }
     }
     
-    // Criar a planilha
     const worksheet = XLSX.utils.aoa_to_sheet(rows);
-    
-    // Aplicar estilos
     const range = XLSX.utils.decode_range(worksheet['!ref']);
     
-    // Estilizar título
     worksheet['A1'].s = styles.title;
-    
-    // Estilizar data
     worksheet['A2'].s = styles.subtitle;
-    
-    // Estilizar resumo
     worksheet['A4'].s = styles.summary;
     for (let i = 5; i <= 7; i++) {
       worksheet[`A${i}`].s = styles.summaryValue;
     }
     
-    // Estilizar cabeçalho
-    for (let C = 0; C <= 32; C++) {
+    for (let C = 0; C <= 41; C++) {
       const cellAddress = XLSX.utils.encode_cell({ r: 8, c: C });
       if (worksheet[cellAddress]) {
         worksheet[cellAddress].s = styles.header;
       }
     }
     
-    // Estilizar dados
     let isAlternate = false;
     for (let R = 9; R <= range.e.r; R++) {
-      for (let C = 0; C <= 32; C++) {
+      for (let C = 0; C <= 41; C++) {
         const cellAddress = XLSX.utils.encode_cell({ r: R, c: C });
         if (worksheet[cellAddress]) {
-          // Estilo base
           worksheet[cellAddress].s = isAlternate ? styles.cellAlt : styles.cell;
           
-          // Estilos específicos por tipo
-          if (C >= 14 && C <= 17) { // Colunas numéricas
+          if (C >= 23 && C <= 26) {
             worksheet[cellAddress].s = {
               ...worksheet[cellAddress].s,
               ...styles.number
             };
-          } else if (C === 18) { // Taxa de ocupação
+          } else if (C === 27) {
             worksheet[cellAddress].s = {
               ...worksheet[cellAddress].s,
               ...styles.percentage
             };
             worksheet[cellAddress].t = 'n';
-            worksheet[cellAddress].v = worksheet[cellAddress].v / 100; // Converter para decimal
-          } else if (C === 5 || C === 22) { // Datas
+            worksheet[cellAddress].v = worksheet[cellAddress].v / 100;
+          } else if (C === 7 || C === 14 || C === 31) {
             if (worksheet[cellAddress].v && worksheet[cellAddress].v.includes('-')) {
               const dateParts = worksheet[cellAddress].v.split('-');
               if (dateParts.length === 3) {
@@ -937,8 +988,7 @@ document.getElementById('exportBtn').addEventListener('click', async () => {
             }
           }
           
-          // Destacar células importantes
-          if (C === 1) { // Nome da residência
+          if (C === 10) {
             worksheet[cellAddress].s.font = { ...worksheet[cellAddress].s.font, bold: true };
           }
         }
@@ -946,78 +996,42 @@ document.getElementById('exportBtn').addEventListener('click', async () => {
       isAlternate = !isAlternate;
     }
     
-    // Configurar larguras das colunas
     const colWidths = [
-      { wch: 15 }, // ID da Casa
-      { wch: 30 }, // Nome da Residência
-      { wch: 25 }, // CAPS Vinculado
-      { wch: 15 }, // CNES do CAPS
-      { wch: 12 }, // Tipo SRT
-      { wch: 18 }, // Data de Preenchimento
-      { wch: 25 }, // Responsável
-      { wch: 20 }, // Cargo
-      { wch: 18 }, // Contato
-      { wch: 35 }, // Endereço
-      { wch: 20 }, // Bairro
-      { wch: 20 }, // Município
-      { wch: 8 },  // UF
-      { wch: 12 }, // CEP
-      { wch: 18 }, // Total de Moradores
-      { wch: 15 }, // Vagas Totais
-      { wch: 15 }, // Vagas Ocupadas
-      { wch: 18 }, // Vagas Disponíveis
-      { wch: 20 }, // Taxa de Ocupação
-      { wch: 12 }, // Morador Nº
-      { wch: 30 }, // Nome do Morador
-      { wch: 25 }, // Nome Social
-      { wch: 18 }, // Data de Nascimento
-      { wch: 10 }, // Idade
-      { wch: 30 }, // Instituição de Origem
-      { wch: 20 }, // Tempo de Internação
-      { wch: 15 }, // Raça/Cor
-      { wch: 15 }, // Sexo Biológico
-      { wch: 20 }, // Identidade de Gênero
-      { wch: 15 }, // Participa do PVC
-      { wch: 18 }, // Vínculo Familiar
-      { wch: 18 }, // Frequência CAPS
-      { wch: 18 }  // Frequência UBS
+      { wch: 15 }, { wch: 20 }, { wch: 20 }, { wch: 30 },
+      { wch: 30 }, { wch: 20 }, { wch: 30 }, { wch: 18 },
+      { wch: 25 }, { wch: 15 }, { wch: 30 }, { wch: 25 },
+      { wch: 15 }, { wch: 12 }, { wch: 18 }, { wch: 25 },
+      { wch: 20 }, { wch: 18 }, { wch: 35 }, { wch: 20 },
+      { wch: 20 }, { wch: 8 }, { wch: 12 }, { wch: 18 },
+      { wch: 15 }, { wch: 15 }, { wch: 18 }, { wch: 20 },
+      { wch: 12 }, { wch: 30 }, { wch: 25 }, { wch: 18 },
+      { wch: 10 }, { wch: 30 }, { wch: 20 }, { wch: 15 },
+      { wch: 15 }, { wch: 20 }, { wch: 15 }, { wch: 18 },
+      { wch: 18 }, { wch: 18 }
     ];
     
     worksheet['!cols'] = colWidths;
     
-    // Mesclar células do título (ocupa toda a largura)
     worksheet['!merges'] = [
-      { s: { r: 0, c: 0 }, e: { r: 0, c: 32 } }, // Título principal
-      { s: { r: 1, c: 0 }, e: { r: 1, c: 32 } }, // Data
-      { s: { r: 3, c: 0 }, e: { r: 3, c: 4 } },  // Resumo geral
-      { s: { r: 4, c: 0 }, e: { r: 4, c: 4 } },  // Total de casas
-      { s: { r: 5, c: 0 }, e: { r: 5, c: 4 } },  // Total de moradores
-      { s: { r: 6, c: 0 }, e: { r: 6, c: 4 } }   // Taxa média
+      { s: { r: 0, c: 0 }, e: { r: 0, c: 41 } },
+      { s: { r: 1, c: 0 }, e: { r: 1, c: 41 } },
+      { s: { r: 3, c: 0 }, e: { r: 3, c: 4 } },
+      { s: { r: 4, c: 0 }, e: { r: 4, c: 4 } },
+      { s: { r: 5, c: 0 }, e: { r: 5, c: 4 } },
+      { s: { r: 6, c: 0 }, e: { r: 6, c: 4 } }
     ];
     
-    // Configurar altura das linhas
     worksheet['!rows'] = [
-      { hpt: 30 }, // Título
-      { hpt: 20 }, // Data
-      { hpt: 15 }, // Vazia
-      { hpt: 25 }, // Resumo
-      { hpt: 20 }, // Valores resumo
-      { hpt: 20 },
-      { hpt: 20 },
-      { hpt: 15 }, // Vazia
-      { hpt: 30 }  // Cabeçalho
+      { hpt: 30 }, { hpt: 20 }, { hpt: 15 }, { hpt: 25 },
+      { hpt: 20 }, { hpt: 20 }, { hpt: 20 }, { hpt: 15 }, { hpt: 30 }
     ];
     
-    // Congelar painéis (fixar cabeçalho)
     worksheet['!freeze'] = { xSplit: 0, ySplit: 9, topLeftCell: "A10" };
-    
-    // Adicionar filtros automáticos
-    worksheet['!autofilter'] = { ref: `A9:AG${range.e.r}` };
+    worksheet['!autofilter'] = { ref: `A9:AP${range.e.r}` };
     
     const workbook = XLSX.utils.book_new();
     XLSX.utils.book_append_sheet(workbook, worksheet, "Casas SRT");
     
-    // Adicionar propriedades ao workbook
     workbook.Props = {
       Title: "Relatório SRT - Sistema de Residências Terapêuticas",
       Subject: "Dados completos das Residências Terapêuticas",
@@ -1066,6 +1080,17 @@ const fieldTypeLabels = {
 };
 
 const getDefaultConfig = () => ({
+  municipio: [
+    { key: "regiaoSaude", label: "Região de Saúde", type: "text", required: true },
+    { key: "municipio", label: "Município", type: "text", required: true },
+    { key: "coordenacaoSaudeMental", label: "Coordenação do Programa de Saúde Mental", type: "text", required: true },
+    { key: "responsavelPreenchimento", label: "Responsável pelo preenchimento do formulário", type: "text", required: true },
+    { key: "telefoneResponsavelPreenchimento", label: "Telefone do responsável pelo preenchimento", type: "tel", required: true },
+    { key: "emailResponsavelPreenchimento", label: "E-mail do responsável pelo preenchimento", type: "email", required: true },
+    { key: "dataPreenchimentoMunicipio", label: "Data do preenchimento", type: "date", required: true },
+    { key: "capsVinculadaSRT", label: "CAPS em que a SRT está vinculada", type: "text", required: true },
+    { key: "cnesCapsVinculada", label: "CNES do CAPS", type: "text", required: true }
+  ],
   general: [
     { key: "dataPreenchimento", label: "Data do Preenchimento", type: "date", required: true },
     { key: "responsavelNome", label: "Nome do Responsável", type: "text", required: true },
@@ -1142,6 +1167,10 @@ const loadConfigJSON = async () => {
   
   if (configSnap.exists) {
     currentConfig = configSnap.data();
+    if (!currentConfig.municipio) {
+      currentConfig.municipio = getDefaultConfig().municipio;
+      await configRef.set(currentConfig);
+    }
   } else {
     currentConfig = getDefaultConfig();
     await configRef.set(currentConfig);
@@ -1152,13 +1181,17 @@ const loadConfigJSON = async () => {
 const renderConfigFields = () => {
   if (!currentConfig) return;
   
-  Object.entries(currentConfig).forEach(([section, fields]) => {
+  const sections = ['municipio', 'general', 'residence', 'caregivers', 'residentFields'];
+  
+  sections.forEach(section => {
+    if (!currentConfig[section]) return;
+    
     const container = document.getElementById(`${section}FieldsList`);
     if (!container) return;
     
     container.innerHTML = '';
     
-    if (fields.length === 0) {
+    if (currentConfig[section].length === 0) {
       container.innerHTML = `
         <div class="text-center py-12 text-gray-400">
           <svg class="w-16 h-16 mx-auto mb-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -1170,7 +1203,7 @@ const renderConfigFields = () => {
       return;
     }
     
-    fields.forEach((field, index) => {
+    currentConfig[section].forEach((field, index) => {
       const fieldElement = createFieldElement(field, index, section);
       container.appendChild(fieldElement);
     });
@@ -1294,7 +1327,9 @@ const getDragAfterElement = (container, y) => {
 
 const updateFieldCount = (section) => {
   const card = document.querySelector(`[data-section="${section}"]`);
+  if (!card) return;
   const countElement = card.querySelector('.field-count');
+  if (!countElement) return;
   const count = currentConfig[section].length;
   countElement.textContent = `${count} campo${count !== 1 ? 's' : ''}`;
 };
