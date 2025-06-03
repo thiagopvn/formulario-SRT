@@ -181,37 +181,45 @@ const createInputGroup = (field, prefix = '') => {
 };
 
 const renderFormFields = () => {
-  const municipioGrid = document.querySelector('#municipioFields .grid');
-  currentConfig.municipio.forEach((field, index) => {
-    const fieldGroup = createInputGroup(field);
-    fieldGroup.style.animationDelay = `${index * 50}ms`;
-    fieldGroup.classList.add('animate-fade-in');
-    municipioGrid.appendChild(fieldGroup);
-  });
+  if (currentConfig.municipio) {
+    const municipioGrid = document.querySelector('#municipioFields .grid');
+    currentConfig.municipio.forEach((field, index) => {
+      const fieldGroup = createInputGroup(field);
+      fieldGroup.style.animationDelay = `${index * 50}ms`;
+      fieldGroup.classList.add('animate-fade-in');
+      municipioGrid.appendChild(fieldGroup);
+    });
+  }
   
-  const generalGrid = document.querySelector('#generalFields .grid');
-  currentConfig.general.forEach((field, index) => {
-    const fieldGroup = createInputGroup(field);
-    fieldGroup.style.animationDelay = `${index * 50}ms`;
-    fieldGroup.classList.add('animate-fade-in');
-    generalGrid.appendChild(fieldGroup);
-  });
+  if (currentConfig.general) {
+    const generalGrid = document.querySelector('#generalFields .grid');
+    currentConfig.general.forEach((field, index) => {
+      const fieldGroup = createInputGroup(field);
+      fieldGroup.style.animationDelay = `${index * 50}ms`;
+      fieldGroup.classList.add('animate-fade-in');
+      generalGrid.appendChild(fieldGroup);
+    });
+  }
   
-  const residenceGrid = document.querySelector('#residenceFields .grid');
-  currentConfig.residence.forEach((field, index) => {
-    const fieldGroup = createInputGroup(field);
-    fieldGroup.style.animationDelay = `${index * 50}ms`;
-    fieldGroup.classList.add('animate-fade-in');
-    residenceGrid.appendChild(fieldGroup);
-  });
+  if (currentConfig.residence) {
+    const residenceGrid = document.querySelector('#residenceFields .grid');
+    currentConfig.residence.forEach((field, index) => {
+      const fieldGroup = createInputGroup(field);
+      fieldGroup.style.animationDelay = `${index * 50}ms`;
+      fieldGroup.classList.add('animate-fade-in');
+      residenceGrid.appendChild(fieldGroup);
+    });
+  }
   
-  const caregiverGrid = document.querySelector('#caregiverFields .grid');
-  currentConfig.caregivers.forEach((field, index) => {
-    const fieldGroup = createInputGroup(field);
-    fieldGroup.style.animationDelay = `${index * 50}ms`;
-    fieldGroup.classList.add('animate-fade-in');
-    caregiverGrid.appendChild(fieldGroup);
-  });
+  if (currentConfig.caregivers) {
+    const caregiverGrid = document.querySelector('#caregiverFields .grid');
+    currentConfig.caregivers.forEach((field, index) => {
+      const fieldGroup = createInputGroup(field);
+      fieldGroup.style.animationDelay = `${index * 50}ms`;
+      fieldGroup.classList.add('animate-fade-in');
+      caregiverGrid.appendChild(fieldGroup);
+    });
+  }
 };
 
 const updateResidentBlocks = () => {
