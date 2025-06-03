@@ -103,9 +103,33 @@ const updateProgress = () => {
     const sectionElement = document.getElementById(`${section}Fields`);
     if (!sectionElement) return;
     
-    const inputs = sectionElement.querySelectorAll('input[required], select[required], textarea[required]');
-    const sectionTotal = inputs.length;
-    const sectionFilled = Array.from(inputs).filter(input => input.value).length;
+    let sectionTotal = 0;
+    let sectionFilled = 0;
+    
+    const normalInputs = sectionElement.querySelectorAll('input[required]:not([type="checkbox"]):not([id*="_validation"]), select[required], textarea[required]');
+    sectionTotal += normalInputs.length;
+    sectionFilled += Array.from(normalInputs).filter(input => input.value.trim()).length;
+    
+    const multiselectGroups = new Set();
+    sectionElement.querySelectorAll('input[type="checkbox"][data-field]').forEach(checkbox => {
+      const fieldName = checkbox.getAttribute('data-field');
+      if (fieldName) {
+        multiselectGroups.add(fieldName);
+      }
+    });
+    
+    multiselectGroups.forEach(fieldName => {
+      const hiddenValidation = document.getElementById(`${fieldName}_validation`);
+      if (hiddenValidation && hiddenValidation.required) {
+        sectionTotal += 1;
+        
+        const checkboxes = sectionElement.querySelectorAll(`input[type="checkbox"][data-field="${fieldName}"]`);
+        const hasChecked = Array.from(checkboxes).some(cb => cb.checked);
+        if (hasChecked) {
+          sectionFilled += 1;
+        }
+      }
+    });
     
     totalFields += sectionTotal;
     filledFields += sectionFilled;
@@ -118,9 +142,30 @@ const updateProgress = () => {
     if (progressText) progressText.textContent = `${Math.round(sectionProgress)}%`;
   });
   
-  const residentInputs = document.querySelectorAll('#residentsContainer input[required], #residentsContainer select[required], #residentsContainer textarea[required]');
+  const residentInputs = document.querySelectorAll('#residentsContainer input[required]:not([type="checkbox"]):not([id*="_validation"]), #residentsContainer select[required], #residentsContainer textarea[required]');
   totalFields += residentInputs.length;
-  filledFields += Array.from(residentInputs).filter(input => input.value).length;
+  filledFields += Array.from(residentInputs).filter(input => input.value.trim()).length;
+  
+  const residentMultiselectGroups = new Set();
+  document.querySelectorAll('#residentsContainer input[type="checkbox"][data-field]').forEach(checkbox => {
+    const fieldName = checkbox.getAttribute('data-field');
+    if (fieldName) {
+      residentMultiselectGroups.add(fieldName);
+    }
+  });
+  
+  residentMultiselectGroups.forEach(fieldName => {
+    const hiddenValidation = document.getElementById(`${fieldName}_validation`);
+    if (hiddenValidation && hiddenValidation.required) {
+      totalFields += 1;
+      
+      const checkboxes = document.querySelectorAll(`#residentsContainer input[type="checkbox"][data-field="${fieldName}"]`);
+      const hasChecked = Array.from(checkboxes).some(cb => cb.checked);
+      if (hasChecked) {
+        filledFields += 1;
+      }
+    }
+  });
   
   const overallProgress = totalFields > 0 ? (filledFields / totalFields) * 100 : 0;
   const progressBar = document.getElementById('progressFill');
@@ -168,6 +213,8 @@ const applyInputMask = (input, mask) => {
     e.target.value = maskedValue;
   });
 };
+
+// Substitua a função createEnhancedInputGroup em js/app.js pela versão corrigida:
 
 const createEnhancedInputGroup = (field, prefix = '') => {
   const group = document.createElement('div');
@@ -217,12 +264,10 @@ const createEnhancedInputGroup = (field, prefix = '') => {
       if (field.defaultValue === opt) option.selected = true;
       input.appendChild(option);
     });
-  } 
-
-   else if (field.type === 'multiselect' && field.options) {
-    // Criar container para checkboxes
+  } else if (field.type === 'multiselect' && field.options) {
+    // Criar container para checkboxes com scroll
     input = document.createElement('div');
-    input.className = 'space-y-2 p-4 bg-gray-50 dark:bg-gray-700/50 rounded-xl';
+    input.className = 'checkbox-group max-h-48 overflow-y-auto space-y-2 p-4 bg-gray-50 dark:bg-gray-700/50 rounded-xl border-2 border-gray-200 dark:border-gray-600';
     input.id = inputId;
     
     // Criar um checkbox para cada opção
@@ -232,34 +277,66 @@ const createEnhancedInputGroup = (field, prefix = '') => {
       
       const checkbox = document.createElement('input');
       checkbox.type = 'checkbox';
-      checkbox.name = inputId;
+      checkbox.name = inputId; // Nome consistente para agrupamento
       checkbox.value = opt;
       checkbox.className = 'w-5 h-5 text-blue-600 bg-gray-100 border-gray-300 rounded focus:ring-blue-500 dark:focus:ring-blue-600 dark:ring-offset-gray-800 focus:ring-2 dark:bg-gray-700 dark:border-gray-600';
       checkbox.id = `${inputId}_${index}`;
       
-      const label = document.createElement('span');
-      label.className = 'text-sm font-medium text-gray-700 dark:text-gray-300';
-      label.textContent = opt;
+      // Adicionar data-attribute para facilitar a coleta
+      checkbox.setAttribute('data-field', inputId);
+      
+      const labelText = document.createElement('span');
+      labelText.className = 'text-sm font-medium text-gray-700 dark:text-gray-300';
+      labelText.textContent = opt;
       
       checkboxWrapper.appendChild(checkbox);
-      checkboxWrapper.appendChild(label);
+      checkboxWrapper.appendChild(labelText);
       input.appendChild(checkboxWrapper);
     });
     
-    // Adicionar validação customizada para campos obrigatórios
+    // Validação customizada melhorada para campos obrigatórios
     if (field.required) {
+      // Criar input hidden para validação
+      const hiddenInput = document.createElement('input');
+      hiddenInput.type = 'hidden';
+      hiddenInput.id = `${inputId}_validation`;
+      hiddenInput.name = `${inputId}_validation`;
+      hiddenInput.required = true;
+      hiddenInput.setCustomValidity('Selecione pelo menos uma opção');
+      
       const checkboxes = input.querySelectorAll('input[type="checkbox"]');
+      
+      const validateSelection = () => {
+        const checkedCount = input.querySelectorAll('input[type="checkbox"]:checked').length;
+        if (checkedCount > 0) {
+          hiddenInput.setCustomValidity('');
+          hiddenInput.value = 'valid';
+          input.classList.remove('border-red-500');
+          input.classList.add('border-green-500');
+          
+          // Remover erro se existir
+          const errorMsg = group.querySelector('.error-message');
+          if (errorMsg) errorMsg.remove();
+        } else {
+          hiddenInput.setCustomValidity('Selecione pelo menos uma opção');
+          hiddenInput.value = '';
+          input.classList.remove('border-green-500');
+          if (field.required) {
+            input.classList.add('border-red-500');
+          }
+        }
+      };
+      
       checkboxes.forEach(cb => {
-        cb.addEventListener('change', () => {
-          const checked = input.querySelectorAll('input[type="checkbox"]:checked').length > 0;
-          checkboxes.forEach(checkbox => {
-            checkbox.setCustomValidity(checked ? '' : 'Selecione pelo menos uma opção');
-          });
-        });
+        cb.addEventListener('change', validateSelection);
       });
+      
+      group.appendChild(hiddenInput);
+      
+      // Validação inicial
+      validateSelection();
     }
-   }
-  else if (field.type === 'textarea') {
+  } else if (field.type === 'textarea') {
     input = document.createElement('textarea');
     input.rows = 3;
     input.className = 'w-full px-4 py-3 bg-white dark:bg-gray-700 border-2 border-gray-200 dark:border-gray-600 rounded-xl focus:border-blue-500 dark:focus:border-blue-400 focus:outline-none transition-all resize-none';
@@ -279,30 +356,40 @@ const createEnhancedInputGroup = (field, prefix = '') => {
     }
   }
   
-  input.id = inputId;
-  input.name = inputId;
-  if (field.required) input.required = true;
-  
-  if (field.mask) {
-    applyInputMask(input, field.mask);
+  // Configurar o input apenas se não for multiselect (que já foi configurado)
+  if (field.type !== 'multiselect') {
+    input.id = inputId;
+    input.name = inputId;
+    if (field.required) input.required = true;
+    
+    if (field.mask) {
+      applyInputMask(input, field.mask);
+    }
+    
+    input.addEventListener('invalid', (e) => {
+      e.preventDefault();
+      showFieldError(input, field);
+    });
+    
+    input.addEventListener('input', () => {
+      removeFieldError(input);
+      updateProgress();
+      
+      if (input.checkValidity() && input.value) {
+        input.classList.add('border-green-500', 'dark:border-green-400', 'animate-pulse-border');
+        setTimeout(() => {
+          input.classList.remove('border-green-500', 'dark:border-green-400', 'animate-pulse-border');
+        }, 1000);
+      }
+    });
   }
   
-  input.addEventListener('invalid', (e) => {
-    e.preventDefault();
-    showFieldError(input, field);
-  });
-  
-  input.addEventListener('input', () => {
-    removeFieldError(input);
-    updateProgress();
-    
-    if (input.checkValidity() && input.value) {
-      input.classList.add('border-green-500', 'dark:border-green-400', 'animate-pulse-border');
-      setTimeout(() => {
-        input.classList.remove('border-green-500', 'dark:border-green-400', 'animate-pulse-border');
-      }, 1000);
-    }
-  });
+  // Adicionar listener para mudança em checkboxes para atualizar progresso
+  if (field.type === 'multiselect') {
+    input.querySelectorAll('input[type="checkbox"]').forEach(checkbox => {
+      checkbox.addEventListener('change', updateProgress);
+    });
+  }
   
   group.appendChild(labelContainer);
   group.appendChild(input);
@@ -1240,17 +1327,30 @@ const setupConditionalFieldsForResident = (residentNum) => {
         if (shouldShow) {
           fieldElement.classList.remove('hidden');
           const input = fieldElement.querySelector('input, select, textarea');
+          const hiddenValidation = fieldElement.querySelector('input[id*="_validation"]');
+          
           if (input && input.dataset.wasRequired === 'true') {
             input.required = true;
+          }
+          if (hiddenValidation && hiddenValidation.dataset.wasRequired === 'true') {
+            hiddenValidation.required = true;
           }
         } else {
           fieldElement.classList.add('hidden');
           const input = fieldElement.querySelector('input, select, textarea');
+          const hiddenValidation = fieldElement.querySelector('input[id*="_validation"]');
+          const checkboxes = fieldElement.querySelectorAll('input[type="checkbox"]');
+          
           if (input) {
             input.dataset.wasRequired = input.required;
             input.required = false;
             input.value = '';
           }
+          if (hiddenValidation) {
+            hiddenValidation.dataset.wasRequired = hiddenValidation.required;
+            hiddenValidation.required = false;
+          }
+          checkboxes.forEach(cb => cb.checked = false);
         }
         updateProgress();
       };
@@ -1361,79 +1461,82 @@ const submitForm = async (event) => {
       status: 'active'
     };
     
-    document.querySelectorAll('#municipioFields input, #municipioFields select, #municipioFields textarea').forEach(field => {
-      if (field.type === 'checkbox') {
-    const fieldName = field.name;
-    if (!houseData[fieldName]) {
-      houseData[fieldName] = [];
-    }
-    if (field.checked) {
-      houseData[fieldName].push(field.value);
-    }
-  } else if (field.value) {
-    houseData[field.id] = field.value;
-  }
-    });
+    const collectSectionData = (sectionSelector) => {
+      const section = document.querySelector(sectionSelector);
+      if (!section) return;
+      
+      section.querySelectorAll('input:not([type="checkbox"]), select, textarea').forEach(field => {
+        if (field.value && field.id) {
+          houseData[field.id] = field.value;
+        }
+      });
+      
+      const multiselectGroups = {};
+      section.querySelectorAll('input[type="checkbox"]').forEach(checkbox => {
+        const fieldName = checkbox.getAttribute('data-field') || checkbox.name;
+        
+        if (!multiselectGroups[fieldName]) {
+          multiselectGroups[fieldName] = [];
+        }
+        
+        if (checkbox.checked) {
+          multiselectGroups[fieldName].push(checkbox.value);
+        }
+      });
+      
+      Object.keys(multiselectGroups).forEach(fieldName => {
+        if (multiselectGroups[fieldName].length > 0) {
+          houseData[fieldName] = multiselectGroups[fieldName];
+        }
+      });
+    };
     
-    document.querySelectorAll('#generalFields input, #generalFields select, #generalFields textarea').forEach(field => {
-      if (field.type === 'checkbox') {
-    const fieldName = field.name;
-    if (!houseData[fieldName]) {
-      houseData[fieldName] = [];
-    }
-    if (field.checked) {
-      houseData[fieldName].push(field.value);
-    }
-  } else if (field.value) {
-    houseData[field.id] = field.value;
-  }
-    });
+    collectSectionData('#municipioFields');
+    collectSectionData('#generalFields');
+    collectSectionData('#residenceFields');
+    collectSectionData('#caregiverFields');
     
-    document.querySelectorAll('#residenceFields input, #residenceFields select, #residenceFields textarea').forEach(field => {
-      if (field.type === 'checkbox') {
-    const fieldName = field.name;
-    if (!houseData[fieldName]) {
-      houseData[fieldName] = [];
-    }
-    if (field.checked) {
-      houseData[fieldName].push(field.value);
-    }
-  } else if (field.value) {
-    houseData[field.id] = field.value;
-  }
-    });
+    const totalResidents = document.getElementById('totalResidents');
+    const vagasTotais = document.getElementById('vagasTotais');
+    const vagasOcupadas = document.getElementById('vagasOcupadas');
+    const vagasDisponiveis = document.getElementById('vagasDisponiveis');
     
-    document.querySelectorAll('#caregiverFields input, #caregiverFields select, #caregiverFields textarea').forEach(field => {
-      if (field.type === 'checkbox') {
-    const fieldName = field.name;
-    if (!houseData[fieldName]) {
-      houseData[fieldName] = [];
-    }
-    if (field.checked) {
-      houseData[fieldName].push(field.value);
-    }
-  } else if (field.value) {
-    houseData[field.id] = field.value;
-  }
-    });
-    
-    houseData.totalMoradores = document.getElementById('totalResidents').value;
-    houseData.vagasTotais = document.getElementById('vagasTotais').value;
-    houseData.vagasOcupadas = document.getElementById('vagasOcupadas').value;
-    houseData.vagasDisponiveis = document.getElementById('vagasDisponiveis').value;
+    if (totalResidents) houseData.totalMoradores = totalResidents.value;
+    if (vagasTotais) houseData.vagasTotais = vagasTotais.value;
+    if (vagasOcupadas) houseData.vagasOcupadas = vagasOcupadas.value;
+    if (vagasDisponiveis) houseData.vagasDisponiveis = vagasDisponiveis.value;
     
     const count = parseInt(document.getElementById('numMoradores').value) || 0;
     houseData.residents = [];
     
     for (let i = 1; i <= count; i++) {
       const resident = {};
-      currentConfig.residentFields.forEach(field => {
-        const element = document.getElementById(`resident_${i}_${field.key}`);
-        if (element && element.value) {
-          resident[field.key] = element.value;
-        }
-      });
-      houseData.residents.push(resident);
+      const residentSection = document.querySelector(`[data-resident-number="${i}"]`);
+      
+      if (residentSection && currentConfig.residentFields) {
+        currentConfig.residentFields.forEach(field => {
+          const element = document.getElementById(`resident_${i}_${field.key}`);
+          
+          if (field.type === 'multiselect') {
+            const checkboxes = residentSection.querySelectorAll(`input[name="resident_${i}_${field.key}"]`);
+            const selectedValues = [];
+            
+            checkboxes.forEach(checkbox => {
+              if (checkbox.checked) {
+                selectedValues.push(checkbox.value);
+              }
+            });
+            
+            if (selectedValues.length > 0) {
+              resident[field.key] = selectedValues;
+            }
+          } else if (element && element.value) {
+            resident[field.key] = element.value;
+          }
+        });
+        
+        houseData.residents.push(resident);
+      }
     }
     
     await db.collection('houses').add(houseData);
