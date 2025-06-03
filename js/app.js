@@ -264,25 +264,26 @@ const createEnhancedInputGroup = (field, prefix = '') => {
       if (field.defaultValue === opt) option.selected = true;
       input.appendChild(option);
     });
-  } else if (field.type === 'multiselect' && field.options) {
-    // Criar container para checkboxes com scroll
+    
+    input.id = inputId;
+    input.name = inputId;
+    if (field.required) input.required = true;
+  } 
+  else if (field.type === 'multiselect' && field.options) {
     input = document.createElement('div');
     input.className = 'checkbox-group max-h-48 overflow-y-auto space-y-2 p-4 bg-gray-50 dark:bg-gray-700/50 rounded-xl border-2 border-gray-200 dark:border-gray-600';
     input.id = inputId;
     
-    // Criar um checkbox para cada opção
     field.options.forEach((opt, index) => {
       const checkboxWrapper = document.createElement('label');
       checkboxWrapper.className = 'flex items-center gap-3 cursor-pointer hover:bg-white dark:hover:bg-gray-700 p-2 rounded-lg transition-all';
       
       const checkbox = document.createElement('input');
       checkbox.type = 'checkbox';
-      checkbox.name = inputId; // Nome consistente para agrupamento
+      checkbox.name = inputId;
       checkbox.value = opt;
       checkbox.className = 'w-5 h-5 text-blue-600 bg-gray-100 border-gray-300 rounded focus:ring-blue-500 dark:focus:ring-blue-600 dark:ring-offset-gray-800 focus:ring-2 dark:bg-gray-700 dark:border-gray-600';
       checkbox.id = `${inputId}_${index}`;
-      
-      // Adicionar data-attribute para facilitar a coleta
       checkbox.setAttribute('data-field', inputId);
       
       const labelText = document.createElement('span');
@@ -294,9 +295,7 @@ const createEnhancedInputGroup = (field, prefix = '') => {
       input.appendChild(checkboxWrapper);
     });
     
-    // Validação customizada melhorada para campos obrigatórios
     if (field.required) {
-      // Criar input hidden para validação
       const hiddenInput = document.createElement('input');
       hiddenInput.type = 'hidden';
       hiddenInput.id = `${inputId}_validation`;
@@ -314,7 +313,6 @@ const createEnhancedInputGroup = (field, prefix = '') => {
           input.classList.remove('border-red-500');
           input.classList.add('border-green-500');
           
-          // Remover erro se existir
           const errorMsg = group.querySelector('.error-message');
           if (errorMsg) errorMsg.remove();
         } else {
@@ -329,19 +327,28 @@ const createEnhancedInputGroup = (field, prefix = '') => {
       
       checkboxes.forEach(cb => {
         cb.addEventListener('change', validateSelection);
+        cb.addEventListener('change', updateProgress);
       });
       
       group.appendChild(hiddenInput);
-      
-      // Validação inicial
       validateSelection();
+    } else {
+      input.querySelectorAll('input[type="checkbox"]').forEach(checkbox => {
+        checkbox.addEventListener('change', updateProgress);
+      });
     }
-  } else if (field.type === 'textarea') {
+  }
+  else if (field.type === 'textarea') {
     input = document.createElement('textarea');
     input.rows = 3;
     input.className = 'w-full px-4 py-3 bg-white dark:bg-gray-700 border-2 border-gray-200 dark:border-gray-600 rounded-xl focus:border-blue-500 dark:focus:border-blue-400 focus:outline-none transition-all resize-none';
     if (field.placeholder) input.placeholder = field.placeholder;
-  } else {
+    
+    input.id = inputId;
+    input.name = inputId;
+    if (field.required) input.required = true;
+  } 
+  else {
     input = document.createElement('input');
     input.type = field.type;
     input.className = 'w-full px-4 py-3 bg-white dark:bg-gray-700 border-2 border-gray-200 dark:border-gray-600 rounded-xl focus:border-blue-500 dark:focus:border-blue-400 focus:outline-none transition-all';
@@ -354,18 +361,17 @@ const createEnhancedInputGroup = (field, prefix = '') => {
     if (field.type === 'date' && field.max === 'today') {
       input.max = new Date().toISOString().split('T')[0];
     }
-  }
-  
-  // Configurar o input apenas se não for multiselect (que já foi configurado)
-  if (field.type !== 'multiselect') {
+    
     input.id = inputId;
     input.name = inputId;
     if (field.required) input.required = true;
-    
-    if (field.mask) {
-      applyInputMask(input, field.mask);
-    }
-    
+  }
+  
+  if (field.type !== 'multiselect' && field.mask) {
+    applyInputMask(input, field.mask);
+  }
+  
+  if (field.type !== 'multiselect') {
     input.addEventListener('invalid', (e) => {
       e.preventDefault();
       showFieldError(input, field);
@@ -381,13 +387,6 @@ const createEnhancedInputGroup = (field, prefix = '') => {
           input.classList.remove('border-green-500', 'dark:border-green-400', 'animate-pulse-border');
         }, 1000);
       }
-    });
-  }
-  
-  // Adicionar listener para mudança em checkboxes para atualizar progresso
-  if (field.type === 'multiselect') {
-    input.querySelectorAll('input[type="checkbox"]').forEach(checkbox => {
-      checkbox.addEventListener('change', updateProgress);
     });
   }
   
