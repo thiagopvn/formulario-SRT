@@ -2044,7 +2044,7 @@ window.editField = (section, index) => {
     document.getElementById('fieldMax').value = field.max || '';
   }
   
-  if (field.type === 'select' && field.options) {
+  if ((field.type === 'select' || field.type === 'multiselect') && field.options) {
     renderOptions(field.options);
   }
   
@@ -2128,7 +2128,7 @@ document.getElementById('fieldForm').addEventListener('submit', async (e) => {
     required: document.getElementById('fieldRequired').checked
   };
   
-  if (fieldData.type === 'select') {
+  if (fieldData.type === 'select' || fieldData.type === 'multiselect') {
     const options = [...document.querySelectorAll('#optionsList input')]
       .map(input => input.value)
       .filter(value => value.trim());

@@ -14,14 +14,35 @@ const EmailService = {
       if (!dateStr) return '-';
       try {
         const date = new Date(dateStr);
-        return date.toLocaleDateString('pt-BR');
+        return date.toLocaleDateString('pt-BR', {
+          day: '2-digit',
+          month: '2-digit',
+          year: 'numeric'
+        });
       } catch {
         return dateStr;
       }
     },
 
+    datetime: (timestamp) => {
+      if (!timestamp) return '-';
+      try {
+        const date = timestamp.toDate ? timestamp.toDate() : new Date(timestamp);
+        return date.toLocaleDateString('pt-BR', {
+          day: '2-digit',
+          month: '2-digit',
+          year: 'numeric',
+          hour: '2-digit',
+          minute: '2-digit'
+        });
+      } catch {
+        return '-';
+      }
+    },
+
     array: (arr) => {
       if (!arr || !Array.isArray(arr)) return '-';
+      if (arr.length === 0) return 'Nenhum selecionado';
       return arr.join(', ');
     },
 
@@ -29,11 +50,208 @@ const EmailService = {
       if (value === null || value === undefined || value === '') return '-';
       if (Array.isArray(value)) return EmailService.formatters.array(value);
       return value;
+    },
+
+    number: (value) => {
+      if (!value && value !== 0) return '-';
+      return value.toString();
+    },
+
+    boolean: (value) => {
+      if (value === true || value === 'true') return 'Sim';
+      if (value === false || value === 'false') return 'Não';
+      return value || '-';
     }
   },
 
-  generateReport: function(data) {
-    const { date: formatDate, array: formatArray, value: formatValue } = this.formatters;
+  fieldTypeFormatters: {
+    text: (value) => EmailService.formatters.value(value),
+    number: (value) => EmailService.formatters.number(value),
+    date: (value) => EmailService.formatters.date(value),
+    select: (value) => EmailService.formatters.value(value),
+    multiselect: (value) => EmailService.formatters.array(value),
+    textarea: (value) => EmailService.formatters.value(value),
+    tel: (value) => EmailService.formatters.value(value),
+    email: (value) => EmailService.formatters.value(value)
+  },
+
+  sectionIcons: {
+    municipio: '🏛️',
+    general: '📋',
+    residence: '🏠',
+    caregivers: '👥',
+    residentFields: '🏥'
+  },
+
+  sectionTitles: {
+    municipio: 'Informações do Município',
+    general: 'Dados da SRT',
+    residence: 'Dados da Residência Terapêutica',
+    caregivers: 'Dados da Equipe/Cuidadores',
+    residentFields: 'Dados Individuais dos Moradores'
+  },
+
+  async loadConfiguration() {
+    try {
+      const configRef = firebase.firestore().collection('config').doc('srt');
+      const configSnap = await configRef.get();
+      
+      if (configSnap.exists) {
+        return configSnap.data();
+      }
+      return null;
+    } catch (error) {
+      console.error('Erro ao carregar configuração:', error);
+      return null;
+    }
+  },
+
+  generateFieldHTML(field, value) {
+    const formatter = this.fieldTypeFormatters[field.type] || this.fieldTypeFormatters.text;
+    const formattedValue = formatter(value);
+    
+    const isHighlight = field.key === 'nomeResidencia' || field.key === 'tipoSRT';
+    const valueClass = isHighlight ? '<span class="highlight">' + formattedValue + '</span>' : formattedValue;
+    
+    return `
+      <div class="data-row">
+        <div class="data-label">${field.label}</div>
+        <div class="data-value">${valueClass}</div>
+      </div>
+    `;
+  },
+
+  generateSectionHTML(sectionKey, fields, data) {
+    if (!fields || fields.length === 0) return '';
+    
+    let fieldsHTML = '';
+    
+    fields.forEach(field => {
+      const value = data[field.key];
+      
+      if (field.conditional) {
+        const dependentValue = data[field.conditional.field];
+        const shouldShow = field.conditional.values 
+          ? field.conditional.values.includes(dependentValue)
+          : dependentValue === field.conditional.value;
+        
+        if (!shouldShow) return;
+      }
+      
+      if (value !== undefined && value !== null && value !== '') {
+        fieldsHTML += this.generateFieldHTML(field, value);
+      }
+    });
+    
+    if (!fieldsHTML) return '';
+    
+    return `
+      <div class="section">
+        <div class="section-header">
+          <div class="section-icon">${this.sectionIcons[sectionKey] || '📄'}</div>
+          <h2 class="section-title">${this.sectionTitles[sectionKey] || sectionKey}</h2>
+        </div>
+        ${fieldsHTML}
+      </div>
+    `;
+  },
+
+  generateCapacitySection(data) {
+    return `
+      <div class="section">
+        <div class="section-header">
+          <div class="section-icon">📊</div>
+          <h2 class="section-title">Capacidade e Ocupação</h2>
+        </div>
+        <div class="stats-grid">
+          <div class="stat-card">
+            <p class="stat-value">${this.formatters.value(data.totalMoradores || data.totalResidents)}</p>
+            <p class="stat-label">Moradores na Implantação</p>
+          </div>
+          <div class="stat-card">
+            <p class="stat-value">${this.formatters.value(data.vagasTotais)}</p>
+            <p class="stat-label">Vagas no CNES</p>
+          </div>
+          <div class="stat-card">
+            <p class="stat-value">${this.formatters.value(data.vagasOcupadas)}</p>
+            <p class="stat-label">Vagas Ocupadas</p>
+          </div>
+          <div class="stat-card">
+            <p class="stat-value">${this.formatters.value(data.vagasDisponiveis)}</p>
+            <p class="stat-label">Vagas Disponíveis</p>
+          </div>
+        </div>
+      </div>
+    `;
+  },
+
+  generateResidentHTML(resident, index, fields) {
+    let fieldsHTML = '';
+    
+    fields.forEach(field => {
+      const value = resident[field.key];
+      
+      if (field.conditional) {
+        const dependentValue = resident[field.conditional.field];
+        const shouldShow = field.conditional.values 
+          ? field.conditional.values.includes(dependentValue)
+          : dependentValue === field.conditional.value;
+        
+        if (!shouldShow) return;
+      }
+      
+      if (value !== undefined && value !== null && value !== '') {
+        fieldsHTML += this.generateFieldHTML(field, value);
+      }
+    });
+    
+    const residentName = this.formatters.value(resident.nomeCompleto);
+    const socialName = resident.nomeSocial ? ` (${resident.nomeSocial})` : '';
+    
+    return `
+      <div class="resident-card">
+        <div class="resident-header">
+          <div class="resident-number">${index + 1}</div>
+          <div class="resident-name">
+            ${residentName}${socialName ? `<span style="font-weight: normal; color: #6b7280;">${socialName}</span>` : ''}
+          </div>
+        </div>
+        ${fieldsHTML}
+      </div>
+    `;
+  },
+
+  async generateReport(data) {
+    const config = await this.loadConfiguration();
+    
+    if (!config) {
+      console.error('Não foi possível carregar a configuração');
+      return this.generateFallbackReport(data);
+    }
+
+    const { date: formatDate, datetime: formatDateTime, value: formatValue } = this.formatters;
+    
+    const municipioSection = config.municipio ? this.generateSectionHTML('municipio', config.municipio, data) : '';
+    const generalSection = config.general ? this.generateSectionHTML('general', config.general, data) : '';
+    const residenceSection = config.residence ? this.generateSectionHTML('residence', config.residence, data) : '';
+    const caregiversSection = config.caregivers ? this.generateSectionHTML('caregivers', config.caregivers, data) : '';
+    
+    let residentsSection = '';
+    if (data.residents && data.residents.length > 0 && config.residentFields) {
+      const residentsHTML = data.residents.map((resident, index) => 
+        this.generateResidentHTML(resident, index, config.residentFields)
+      ).join('');
+      
+      residentsSection = `
+        <div class="section">
+          <div class="section-header">
+            <div class="section-icon">🏥</div>
+            <h2 class="section-title">Dados Individuais dos Moradores (${data.residents.length})</h2>
+          </div>
+          ${residentsHTML}
+        </div>
+      `;
+    }
 
     return `
       <!DOCTYPE html>
@@ -43,200 +261,374 @@ const EmailService = {
         <meta name="viewport" content="width=device-width, initial-scale=1.0">
         <title>Relatório SRT - ${data.nomeResidencia || 'Residência Terapêutica'}</title>
         <style>
+          * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+          }
+          
           body {
             font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Arial, sans-serif;
             line-height: 1.6;
-            color: #333;
-            margin: 0;
-            padding: 0;
-            background-color: #f5f5f5;
+            color: #1a202c;
+            background-color: #f7fafc;
           }
+          
           .wrapper {
-            max-width: 800px;
+            max-width: 900px;
             margin: 0 auto;
             background: white;
+            box-shadow: 0 0 50px rgba(0, 0, 0, 0.1);
           }
+          
           .header {
-            background: linear-gradient(135deg, #3b82f6 0%, #8b5cf6 100%);
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
             color: white;
-            padding: 40px 30px;
+            padding: 60px 40px;
             text-align: center;
-          }
-          .header h1 {
-            margin: 0 0 10px 0;
-            font-size: 28px;
-            font-weight: 700;
-          }
-          .header .subtitle {
-            margin: 0;
-            opacity: 0.9;
-            font-size: 16px;
-          }
-          .header .date {
-            margin-top: 20px;
-            font-size: 14px;
-            opacity: 0.8;
-          }
-          .content {
-            padding: 30px;
-          }
-          .section {
-            margin-bottom: 30px;
-            border: 1px solid #e5e7eb;
-            border-radius: 8px;
+            position: relative;
             overflow: hidden;
           }
+          
+          .header::before {
+            content: '';
+            position: absolute;
+            top: -50%;
+            right: -50%;
+            width: 200%;
+            height: 200%;
+            background: radial-gradient(circle, rgba(255,255,255,0.1) 0%, transparent 70%);
+            animation: pulse 4s ease-in-out infinite;
+          }
+          
+          @keyframes pulse {
+            0%, 100% { transform: scale(0.8); opacity: 0.5; }
+            50% { transform: scale(1.2); opacity: 1; }
+          }
+          
+          .header h1 {
+            margin: 0 0 16px 0;
+            font-size: 32px;
+            font-weight: 800;
+            letter-spacing: -0.5px;
+            position: relative;
+            z-index: 1;
+          }
+          
+          .header .subtitle {
+            margin: 0 0 8px 0;
+            opacity: 0.95;
+            font-size: 18px;
+            font-weight: 500;
+            position: relative;
+            z-index: 1;
+          }
+          
+          .header .date {
+            margin-top: 24px;
+            font-size: 14px;
+            opacity: 0.85;
+            position: relative;
+            z-index: 1;
+          }
+          
+          .header .badge {
+            display: inline-block;
+            background: rgba(255, 255, 255, 0.2);
+            padding: 8px 16px;
+            border-radius: 20px;
+            font-size: 12px;
+            font-weight: 600;
+            margin-top: 16px;
+            backdrop-filter: blur(10px);
+            border: 1px solid rgba(255, 255, 255, 0.3);
+          }
+          
+          .content {
+            padding: 40px;
+          }
+          
+          .section {
+            margin-bottom: 32px;
+            border: 2px solid #e2e8f0;
+            border-radius: 12px;
+            overflow: hidden;
+            transition: all 0.3s ease;
+          }
+          
+          .section:hover {
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.1);
+          }
+          
           .section-header {
-            background: #f9fafb;
-            padding: 16px 20px;
-            border-bottom: 2px solid #e5e7eb;
+            background: linear-gradient(135deg, #f7fafc 0%, #edf2f7 100%);
+            padding: 20px 24px;
+            border-bottom: 2px solid #e2e8f0;
             display: flex;
             align-items: center;
-            gap: 12px;
+            gap: 16px;
           }
+          
           .section-icon {
-            width: 36px;
-            height: 36px;
-            background: #3b82f6;
-            border-radius: 6px;
+            width: 48px;
+            height: 48px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            border-radius: 10px;
             display: flex;
             align-items: center;
             justify-content: center;
-            color: white;
-            font-size: 18px;
+            font-size: 24px;
+            box-shadow: 0 4px 12px rgba(102, 126, 234, 0.3);
           }
+          
           .section-title {
             margin: 0;
-            font-size: 18px;
-            color: #1f2937;
-            font-weight: 600;
+            font-size: 20px;
+            color: #2d3748;
+            font-weight: 700;
+            letter-spacing: -0.3px;
           }
+          
           .data-row {
             display: flex;
-            border-bottom: 1px solid #f3f4f6;
+            border-bottom: 1px solid #f1f5f9;
+            transition: all 0.2s ease;
           }
+          
+          .data-row:hover {
+            background-color: #f8fafc;
+          }
+          
           .data-row:last-child {
             border-bottom: none;
           }
+          
           .data-label {
             flex: 0 0 40%;
-            padding: 14px 20px;
+            padding: 16px 24px;
             font-weight: 600;
-            color: #6b7280;
-            background: #f9fafb;
-            border-right: 1px solid #f3f4f6;
+            color: #64748b;
+            background: #f8fafc;
+            border-right: 1px solid #f1f5f9;
+            font-size: 14px;
           }
+          
           .data-value {
             flex: 1;
-            padding: 14px 20px;
-            color: #1f2937;
+            padding: 16px 24px;
+            color: #1e293b;
+            font-size: 14px;
+            line-height: 1.6;
           }
+          
           .highlight {
-            background: #fef3c7;
-            padding: 2px 6px;
-            border-radius: 4px;
-            font-weight: 600;
+            background: linear-gradient(120deg, #fbbf24 0%, #f59e0b 100%);
+            padding: 4px 10px;
+            border-radius: 6px;
+            font-weight: 700;
+            color: #fff;
+            display: inline-block;
+            box-shadow: 0 2px 8px rgba(245, 158, 11, 0.3);
           }
+          
           .resident-card {
-            background: #f0f9ff;
-            border: 1px solid #bae6fd;
-            border-radius: 8px;
-            margin: 20px;
+            background: linear-gradient(135deg, #eff6ff 0%, #e0f2fe 100%);
+            border: 2px solid #bae6fd;
+            border-radius: 12px;
+            margin: 24px;
             overflow: hidden;
+            transition: all 0.3s ease;
           }
+          
+          .resident-card:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 20px rgba(59, 130, 246, 0.2);
+          }
+          
           .resident-header {
-            background: #e0f2fe;
-            padding: 16px 20px;
+            background: linear-gradient(135deg, #dbeafe 0%, #bfdbfe 100%);
+            padding: 20px 24px;
             display: flex;
             align-items: center;
-            gap: 12px;
+            gap: 16px;
+            border-bottom: 2px solid #93c5fd;
           }
+          
           .resident-number {
-            width: 32px;
-            height: 32px;
-            background: #0284c7;
+            width: 40px;
+            height: 40px;
+            background: linear-gradient(135deg, #3b82f6 0%, #2563eb 100%);
             color: white;
             border-radius: 50%;
             display: flex;
             align-items: center;
             justify-content: center;
-            font-weight: bold;
-            font-size: 16px;
+            font-weight: 800;
+            font-size: 18px;
+            box-shadow: 0 4px 12px rgba(59, 130, 246, 0.4);
           }
+          
           .resident-name {
-            font-size: 16px;
-            font-weight: 600;
-            color: #0369a1;
+            font-size: 18px;
+            font-weight: 700;
+            color: #1e40af;
+            letter-spacing: -0.3px;
           }
-          .address-block {
-            background: #f3f4f6;
-            padding: 16px;
-            border-radius: 6px;
-            margin: 10px 0;
-          }
+          
           .stats-grid {
             display: grid;
-            grid-template-columns: repeat(2, 1fr);
-            gap: 16px;
-            margin: 20px;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 20px;
+            padding: 24px;
           }
+          
           .stat-card {
-            background: #f9fafb;
-            border: 1px solid #e5e7eb;
-            border-radius: 8px;
-            padding: 16px;
+            background: linear-gradient(135deg, #f0f9ff 0%, #e0f2fe 100%);
+            border: 2px solid #bae6fd;
+            border-radius: 12px;
+            padding: 24px;
             text-align: center;
+            transition: all 0.3s ease;
           }
+          
+          .stat-card:hover {
+            transform: translateY(-4px);
+            box-shadow: 0 12px 24px rgba(59, 130, 246, 0.2);
+          }
+          
           .stat-value {
-            font-size: 28px;
-            font-weight: 700;
-            color: #3b82f6;
-            margin: 0;
+            font-size: 36px;
+            font-weight: 800;
+            background: linear-gradient(135deg, #3b82f6 0%, #8b5cf6 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+            margin: 0 0 8px 0;
           }
+          
           .stat-label {
             font-size: 14px;
-            color: #6b7280;
-            margin: 4px 0 0 0;
+            color: #64748b;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
           }
+          
           .footer {
-            background: #1f2937;
+            background: linear-gradient(135deg, #1e293b 0%, #0f172a 100%);
             color: white;
-            padding: 30px;
+            padding: 40px;
             text-align: center;
+            position: relative;
+            overflow: hidden;
           }
+          
+          .footer::before {
+            content: '';
+            position: absolute;
+            top: -50%;
+            left: -50%;
+            width: 200%;
+            height: 200%;
+            background: radial-gradient(circle, rgba(139, 92, 246, 0.1) 0%, transparent 70%);
+            animation: rotate 20s linear infinite;
+          }
+          
+          @keyframes rotate {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+          }
+          
+          .footer h3 {
+            margin: 0 0 16px 0;
+            font-size: 24px;
+            font-weight: 800;
+            position: relative;
+            z-index: 1;
+          }
+          
           .footer p {
-            margin: 5px 0;
+            margin: 8px 0;
             opacity: 0.9;
+            font-size: 16px;
+            position: relative;
+            z-index: 1;
           }
+          
+          .footer .divider {
+            width: 80px;
+            height: 4px;
+            background: linear-gradient(90deg, #667eea 0%, #764ba2 100%);
+            margin: 24px auto;
+            border-radius: 2px;
+          }
+          
           .footer .small {
-            font-size: 12px;
+            font-size: 13px;
             opacity: 0.7;
-            margin-top: 20px;
+            margin-top: 24px;
+            line-height: 1.6;
+            position: relative;
+            z-index: 1;
           }
+          
+          .footer .logo {
+            display: inline-block;
+            width: 60px;
+            height: 60px;
+            background: rgba(255, 255, 255, 0.1);
+            border-radius: 50%;
+            margin-bottom: 16px;
+            backdrop-filter: blur(10px);
+            border: 2px solid rgba(255, 255, 255, 0.2);
+            position: relative;
+            z-index: 1;
+          }
+          
           .empty {
-            color: #9ca3af;
+            color: #94a3b8;
             font-style: italic;
           }
+          
+          .info-box {
+            background: #f0f9ff;
+            border-left: 4px solid #3b82f6;
+            padding: 16px 20px;
+            margin: 20px 0;
+            border-radius: 0 8px 8px 0;
+          }
+          
+          .info-box strong {
+            color: #1e40af;
+            display: block;
+            margin-bottom: 4px;
+          }
+          
+          @media print {
+            body { background: white; }
+            .wrapper { box-shadow: none; }
+            .section:hover { box-shadow: none; }
+          }
+          
           @media (max-width: 600px) {
-            .data-row {
-              flex-direction: column;
-            }
+            .data-row { flex-direction: column; }
             .data-label {
               flex: none;
               border-right: none;
-              border-bottom: 1px solid #f3f4f6;
+              border-bottom: 1px solid #f1f5f9;
             }
-            .stats-grid {
-              grid-template-columns: 1fr;
-            }
+            .stats-grid { grid-template-columns: 1fr; }
+            .header h1 { font-size: 24px; }
+            .content { padding: 20px; }
           }
         </style>
       </head>
       <body>
         <div class="wrapper">
           <div class="header">
-            <h1>Cadastro de Residência Terapêutica - SRT</h1>
-            <p class="subtitle">Relatório Completo do Formulário</p>
+            <div class="logo"></div>
+            <h1>Serviço de Residências Terapêuticas - SRT</h1>
+            <p class="subtitle">Relatório Completo de Cadastro</p>
             <p class="date">
               ${new Date().toLocaleDateString('pt-BR', { 
                 weekday: 'long', 
@@ -245,371 +637,36 @@ const EmailService = {
                 day: 'numeric' 
               })} às ${new Date().toLocaleTimeString('pt-BR')}
             </p>
+            <div class="badge">DOCUMENTO OFICIAL</div>
           </div>
           
           <div class="content">
-            <!-- MUNICÍPIO -->
-            <div class="section">
-              <div class="section-header">
-                <div class="section-icon">🏛️</div>
-                <h2 class="section-title">Informações do Município</h2>
-              </div>
-              <div class="data-row">
-                <div class="data-label">Região de Saúde</div>
-                <div class="data-value">${formatValue(data.regiaoSaude)}</div>
-              </div>
-              <div class="data-row">
-                <div class="data-label">Município</div>
-                <div class="data-value">${formatValue(data.municipio)}</div>
-              </div>
-              <div class="data-row">
-                <div class="data-label">Coordenação de Saúde Mental</div>
-                <div class="data-value">${formatValue(data.coordenacaoSaudeMental)}</div>
-              </div>
-              <div class="data-row">
-                <div class="data-label">Responsável pelo Preenchimento</div>
-                <div class="data-value">${formatValue(data.responsavelPreenchimento)}</div>
-              </div>
-              <div class="data-row">
-                <div class="data-label">Telefone do Responsável</div>
-                <div class="data-value">${formatValue(data.telefoneResponsavelPreenchimento)}</div>
-              </div>
-              <div class="data-row">
-                <div class="data-label">E-mail do Responsável</div>
-                <div class="data-value">${formatValue(data.emailResponsavelPreenchimento)}</div>
-              </div>
-              <div class="data-row">
-                <div class="data-label">Data do Preenchimento</div>
-                <div class="data-value">${formatDate(data.dataPreenchimentoMunicipio)}</div>
-              </div>
-              <div class="data-row">
-                <div class="data-label">CAPS de Referência</div>
-                <div class="data-value">${formatValue(data.capsVinculadaSRT)}</div>
-              </div>
-              <div class="data-row">
-                <div class="data-label">CNES do CAPS</div>
-                <div class="data-value">${formatValue(data.cnesCapsVinculada)}</div>
-              </div>
-            </div>
-
-            <!-- DADOS DA SRT -->
-            <div class="section">
-              <div class="section-header">
-                <div class="section-icon">📋</div>
-                <h2 class="section-title">Dados da SRT</h2>
-              </div>
-              <div class="data-row">
-                <div class="data-label">Nome da Residência</div>
-                <div class="data-value"><span class="highlight">${formatValue(data.nomeResidencia)}</span></div>
-              </div>
-              <div class="data-row">
-                <div class="data-label">Data do Cadastro</div>
-                <div class="data-value">${formatDate(data.dataPreenchimento)}</div>
-              </div>
-              <div class="data-row">
-                <div class="data-label">Responsável pela Residência</div>
-                <div class="data-value">${formatValue(data.responsavelNome)}</div>
-              </div>
-              <div class="data-row">
-                <div class="data-label">Cargo/Função</div>
-                <div class="data-value">${formatValue(data.responsavelCargo)}</div>
-              </div>
-              <div class="data-row">
-                <div class="data-label">Telefone de Contato</div>
-                <div class="data-value">${formatValue(data.contatoResponsavel)}</div>
-              </div>
-              <div class="data-row">
-                <div class="data-label">Nome do CAPS</div>
-                <div class="data-value">${formatValue(data.nomeCaps)}</div>
-              </div>
-              <div class="data-row">
-                <div class="data-label">CNES do CAPS</div>
-                <div class="data-value">${formatValue(data.cnesCaps)}</div>
-              </div>
-              <div class="data-row">
-                <div class="data-label">Tipo de SRT</div>
-                <div class="data-value"><span class="highlight">${formatValue(data.tipoSRT)}</span></div>
-              </div>
-              <div class="data-row">
-                <div class="data-label">Esfera de Gestão</div>
-                <div class="data-value">${formatValue(data.esferaGestao)}</div>
-              </div>
-              <div class="data-row">
-                <div class="data-label">Situação da Habilitação</div>
-                <div class="data-value">${formatValue(data.situacaoHabilitacao)}</div>
-              </div>
-              ${data.numeroPortaria ? `
-              <div class="data-row">
-                <div class="data-label">Número da Portaria</div>
-                <div class="data-value">${formatValue(data.numeroPortaria)}</div>
-              </div>` : ''}
-              ${data.dataPortaria ? `
-              <div class="data-row">
-                <div class="data-label">Data da Portaria</div>
-                <div class="data-value">${formatDate(data.dataPortaria)}</div>
-              </div>` : ''}
-              <div class="data-row">
-                <div class="data-label">Data de Inauguração</div>
-                <div class="data-value">${formatDate(data.dataInauguracao)}</div>
-              </div>
-            </div>
-
-            <!-- ENDEREÇO -->
-            <div class="section">
-              <div class="section-header">
-                <div class="section-icon">📍</div>
-                <h2 class="section-title">Localização da Residência</h2>
-              </div>
-              <div style="padding: 20px;">
-                <div class="address-block">
-                  <strong>Endereço Completo:</strong><br>
-                  ${formatValue(data.logradouro)}, ${formatValue(data.numero)} 
-                  ${data.complemento ? `- ${data.complemento}` : ''}<br>
-                  ${formatValue(data.bairro)} - ${formatValue(data.municipio)}/${formatValue(data.uf)}<br>
-                  CEP: ${formatValue(data.cep)}<br>
-                  Zona: ${formatValue(data.localizacao)}
-                </div>
-              </div>
-            </div>
-
-            <!-- ESTRUTURA FÍSICA -->
-            <div class="section">
-              <div class="section-header">
-                <div class="section-icon">🏠</div>
-                <h2 class="section-title">Estrutura Física</h2>
-              </div>
-              <div class="data-row">
-                <div class="data-label">Quantidade de Quartos</div>
-                <div class="data-value">${formatValue(data.quartos)}</div>
-              </div>
-              <div class="data-row">
-                <div class="data-label">Quantidade de Salas</div>
-                <div class="data-value">${formatValue(data.salas)}</div>
-              </div>
-              <div class="data-row">
-                <div class="data-label">Quantidade de Cozinhas</div>
-                <div class="data-value">${formatValue(data.cozinhas)}</div>
-              </div>
-              <div class="data-row">
-                <div class="data-label">Quantidade de Banheiros</div>
-                <div class="data-value">${formatValue(data.banheiros)}</div>
-              </div>
-              <div class="data-row">
-                <div class="data-label">Quantidade de Varandas</div>
-                <div class="data-value">${formatValue(data.varanda || '0')}</div>
-              </div>
-              <div class="data-row">
-                <div class="data-label">Quantidade de Lavanderias</div>
-                <div class="data-value">${formatValue(data.lavanderia || '0')}</div>
-              </div>
-              <div class="data-row">
-                <div class="data-label">Quantidade de Despensas</div>
-                <div class="data-value">${formatValue(data.despensa || '0')}</div>
-              </div>
-              ${data.outros ? `
-              <div class="data-row">
-                <div class="data-label">Outros Cômodos</div>
-                <div class="data-value">${formatValue(data.outros)}</div>
-              </div>` : ''}
-            </div>
-
-            <!-- CAPACIDADE -->
-            <div class="section">
-              <div class="section-header">
-                <div class="section-icon">📊</div>
-                <h2 class="section-title">Capacidade e Ocupação</h2>
-              </div>
-              <div class="stats-grid">
-                <div class="stat-card">
-                  <p class="stat-value">${formatValue(data.totalMoradores)}</p>
-                  <p class="stat-label">Moradores na Implantação</p>
-                </div>
-                <div class="stat-card">
-                  <p class="stat-value">${formatValue(data.vagasTotais)}</p>
-                  <p class="stat-label">Vagas no CNES</p>
-                </div>
-                <div class="stat-card">
-                  <p class="stat-value">${formatValue(data.vagasOcupadas)}</p>
-                  <p class="stat-label">Vagas Ocupadas</p>
-                </div>
-                <div class="stat-card">
-                  <p class="stat-value">${formatValue(data.vagasDisponiveis)}</p>
-                  <p class="stat-label">Vagas Disponíveis</p>
-                </div>
-              </div>
-            </div>
-
-            <!-- EQUIPE -->
-            <div class="section">
-              <div class="section-header">
-                <div class="section-icon">👥</div>
-                <h2 class="section-title">Dados da Equipe/Cuidadores</h2>
-              </div>
-              <div class="data-row">
-                <div class="data-label">Total de Profissionais</div>
-                <div class="data-value"><span class="highlight">${formatValue(data.totalProfissionais)}</span></div>
-              </div>
-              <div class="data-row">
-                <div class="data-label">Número de Cuidadores</div>
-                <div class="data-value">${formatValue(data.totalCuidadores)}</div>
-              </div>
-              <div class="data-row">
-                <div class="data-label">Técnicos de Enfermagem</div>
-                <div class="data-value">${formatValue(data.totalTecnicos)}</div>
-              </div>
-              <div class="data-row">
-                <div class="data-label">Enfermeiros</div>
-                <div class="data-value">${formatValue(data.totalEnfermeiros)}</div>
-              </div>
-              <div class="data-row">
-                <div class="data-label">Outros Profissionais</div>
-                <div class="data-value">${formatValue(data.totalOutros || '0')}</div>
-              </div>
-              <div class="data-row">
-                <div class="data-label">Escala de Trabalho</div>
-                <div class="data-value">${formatValue(data.escalaTrabalho)}</div>
-              </div>
-              <div class="data-row">
-                <div class="data-label">Proporção Cuidador/Morador</div>
-                <div class="data-value">${formatValue(data.relacaoCuidadorMorador)}</div>
-              </div>
-              <div class="data-row">
-                <div class="data-label">Cuidadores por Turno</div>
-                <div class="data-value">${formatValue(data.cuidadoresPorTurno)}</div>
-              </div>
-              <div class="data-row">
-                <div class="data-label">Participa de Educação Permanente?</div>
-                <div class="data-value">${formatValue(data.participaEducacao)}</div>
-              </div>
-              ${data.quemPromoveEducacao ? `
-              <div class="data-row">
-                <div class="data-label">Detalhes da Educação Permanente</div>
-                <div class="data-value">${formatValue(data.quemPromoveEducacao)}</div>
-              </div>` : ''}
-              <div class="data-row">
-                <div class="data-label">Realiza Reuniões Regulares?</div>
-                <div class="data-value">${formatValue(data.reunioesRegulares)}</div>
-              </div>
-              <div class="data-row">
-                <div class="data-label">Vínculos Empregatícios</div>
-                <div class="data-value">${formatArray(data.vinculoEmpregaticio)}</div>
-              </div>
-            </div>
-
-            <!-- MORADORES -->
-            ${data.residents && data.residents.length > 0 ? `
-            <div class="section">
-              <div class="section-header">
-                <div class="section-icon">🏥</div>
-                <h2 class="section-title">Dados Individuais dos Moradores (${data.residents.length})</h2>
-              </div>
-              ${data.residents.map((resident, index) => `
-                <div class="resident-card">
-                  <div class="resident-header">
-                    <div class="resident-number">${index + 1}</div>
-                    <div class="resident-name">
-                      ${formatValue(resident.nomeCompleto)}
-                      ${resident.nomeSocial ? `<span style="font-weight: normal; color: #6b7280;"> (${resident.nomeSocial})</span>` : ''}
-                    </div>
-                  </div>
-                  <div class="data-row">
-                    <div class="data-label">Data de Nascimento</div>
-                    <div class="data-value">${formatDate(resident.dataNascimento)}</div>
-                  </div>
-                  <div class="data-row">
-                    <div class="data-label">Idade</div>
-                    <div class="data-value">${formatValue(resident.idade)} anos</div>
-                  </div>
-                  <div class="data-row">
-                    <div class="data-label">Instituição de Origem</div>
-                    <div class="data-value">${formatValue(resident.instituicaoOrigem)}</div>
-                  </div>
-                  ${resident.cnesOrigem ? `
-                  <div class="data-row">
-                    <div class="data-label">CNES da Instituição</div>
-                    <div class="data-value">${formatValue(resident.cnesOrigem)}</div>
-                  </div>` : ''}
-                  <div class="data-row">
-                    <div class="data-label">Tempo de Internação</div>
-                    <div class="data-value">${formatValue(resident.tempoInternacao)} anos</div>
-                  </div>
-                  <div class="data-row">
-                    <div class="data-label">Raça/Cor</div>
-                    <div class="data-value">${formatValue(resident.racaCor)}</div>
-                  </div>
-                  <div class="data-row">
-                    <div class="data-label">Sexo Biológico</div>
-                    <div class="data-value">${formatValue(resident.generoNascimento)}</div>
-                  </div>
-                  <div class="data-row">
-                    <div class="data-label">Identidade de Gênero</div>
-                    <div class="data-value">${formatValue(resident.identidadeGenero)}</div>
-                  </div>
-                  <div class="data-row">
-                    <div class="data-label">Município de Origem</div>
-                    <div class="data-value">${formatValue(resident.origemTerritorial)}</div>
-                  </div>
-                  ${resident.vinculoMunicipio ? `
-                  <div class="data-row">
-                    <div class="data-label">Vínculo com Município</div>
-                    <div class="data-value">${formatValue(resident.vinculoMunicipio)}</div>
-                  </div>` : ''}
-                  <div class="data-row">
-                    <div class="data-label">Beneficiário do PVC?</div>
-                    <div class="data-value">${formatValue(resident.participaPVC)}</div>
-                  </div>
-                  <div class="data-row">
-                    <div class="data-label">Vínculo Familiar</div>
-                    <div class="data-value">${formatValue(resident.vinculoFamiliar)}</div>
-                  </div>
-                  ${resident.descricaoVinculo ? `
-                  <div class="data-row">
-                    <div class="data-label">Descrição do Vínculo</div>
-                    <div class="data-value">${formatValue(resident.descricaoVinculo)}</div>
-                  </div>` : ''}
-                  <div class="data-row">
-                    <div class="data-label">Frequência ao CAPS</div>
-                    <div class="data-value">${formatValue(resident.frequenciaCaps)}</div>
-                  </div>
-                  <div class="data-row">
-                    <div class="data-label">Acompanhamento UBS</div>
-                    <div class="data-value">${formatValue(resident.frequenciaUBS)}</div>
-                  </div>
-                  <div class="data-row">
-                    <div class="data-label">Frequenta Escola?</div>
-                    <div class="data-value">${formatValue(resident.escola)}</div>
-                  </div>
-                  ${resident.qualEscola ? `
-                  <div class="data-row">
-                    <div class="data-label">Qual Instituição?</div>
-                    <div class="data-value">${formatValue(resident.qualEscola)}</div>
-                  </div>` : ''}
-                  <div class="data-row">
-                    <div class="data-label">CRAS/CREAS</div>
-                    <div class="data-value">${formatValue(resident.crasCreas)}</div>
-                  </div>
-                  <div class="data-row">
-                    <div class="data-label">Benefícios</div>
-                    <div class="data-value">${formatArray(resident.beneficios)}</div>
-                  </div>
-                  ${resident.comorbidades && resident.comorbidades.length > 0 ? `
-                  <div class="data-row">
-                    <div class="data-label">Comorbidades</div>
-                    <div class="data-value">${formatArray(resident.comorbidades)}</div>
-                  </div>` : ''}
-                </div>
-              `).join('')}
+            ${municipioSection}
+            ${generalSection}
+            ${residenceSection}
+            ${this.generateCapacitySection(data)}
+            ${caregiversSection}
+            ${residentsSection}
+            
+            ${data.createdAt ? `
+            <div class="info-box">
+              <strong>Data de Registro no Sistema:</strong>
+              ${formatDateTime(data.createdAt)}
             </div>
             ` : ''}
           </div>
           
           <div class="footer">
-            <p><strong>Sistema SRT - Serviço de Residências Terapêuticas</strong></p>
-            <p>Estado do Rio de Janeiro</p>
-            <p>Este é um registro oficial do formulário preenchido</p>
+            <h3>Sistema SRT - Residências Terapêuticas</h3>
+            <p>Secretaria de Estado de Saúde do Rio de Janeiro</p>
+            <div class="divider"></div>
+            <p>Este documento é um registro oficial do formulário de cadastro</p>
+            <p>Todos os dados foram validados e armazenados com segurança</p>
             <p class="small">
-              Documento gerado automaticamente em ${new Date().toLocaleString('pt-BR')}<br>
-              Mantenha este e-mail arquivado para seus registros
+              Documento gerado automaticamente pelo Sistema SRT<br>
+              ID do Registro: ${data.id || 'Pendente'}<br>
+              Hash de Verificação: ${this.generateHash(data)}<br>
+              Mantenha este e-mail arquivado para seus registros oficiais
             </p>
           </div>
         </div>
@@ -618,10 +675,40 @@ const EmailService = {
     `;
   },
 
-  sendEmail: async function(data) {
+  generateHash(data) {
+    const str = JSON.stringify(data);
+    let hash = 0;
+    for (let i = 0; i < str.length; i++) {
+      const char = str.charCodeAt(i);
+      hash = ((hash << 5) - hash) + char;
+      hash = hash & hash;
+    }
+    return Math.abs(hash).toString(16).toUpperCase().padStart(8, '0');
+  },
+
+  generateFallbackReport(data) {
+    console.log('Usando relatório de fallback');
+    return `
+      <!DOCTYPE html>
+      <html lang="pt-BR">
+      <head>
+        <meta charset="UTF-8">
+        <title>Relatório SRT</title>
+      </head>
+      <body>
+        <h1>Relatório de Cadastro SRT</h1>
+        <p>Data: ${new Date().toLocaleString('pt-BR')}</p>
+        <h2>Dados Cadastrados:</h2>
+        <pre>${JSON.stringify(data, null, 2)}</pre>
+      </body>
+      </html>
+    `;
+  },
+
+  async sendEmail(data) {
     try {
       const recipientEmail = data.emailResponsavelPreenchimento || data.email || 'default@email.com';
-      const emailContent = this.generateReport(data);
+      const emailContent = await this.generateReport(data);
       
       const templateParams = {
         to_email: recipientEmail,
@@ -645,11 +732,12 @@ const EmailService = {
     }
   },
 
-  previewEmail: function(data) {
-    const emailHTML = this.generateReport(data);
-    const previewWindow = window.open('', '_blank');
-    previewWindow.document.write(emailHTML);
-    previewWindow.document.close();
+  async testEmail(data) {
+    const emailHTML = await this.generateReport(data);
+    const blob = new Blob([emailHTML], { type: 'text/html' });
+    const url = URL.createObjectURL(blob);
+    window.open(url, '_blank');
+    setTimeout(() => URL.revokeObjectURL(url), 60000);
   }
 };
 
