@@ -734,17 +734,6 @@ document.getElementById('exportBtn').addEventListener('click', async () => {
           right: { style: "thin", color: { rgb: "7C3AED" } }
         }
       },
-      summaryValue: {
-        font: { sz: 12, color: { rgb: "1F2937" } },
-        fill: { fgColor: { rgb: "F3E8FF" } },
-        alignment: { horizontal: "left", vertical: "center" },
-        border: {
-          top: { style: "thin", color: { rgb: "E9D5FF" } },
-          bottom: { style: "thin", color: { rgb: "E9D5FF" } },
-          left: { style: "thin", color: { rgb: "E9D5FF" } },
-          right: { style: "thin", color: { rgb: "E9D5FF" } }
-        }
-      },
       header: {
         font: { bold: true, sz: 11, color: { rgb: "FFFFFF" } },
         fill: { fgColor: { rgb: "1F2937" } },
@@ -765,37 +754,11 @@ document.getElementById('exportBtn').addEventListener('click', async () => {
           left: { style: "thin", color: { rgb: "E5E7EB" } },
           right: { style: "thin", color: { rgb: "E5E7EB" } }
         }
-      },
-      cellAlt: {
-        font: { sz: 10, color: { rgb: "1F2937" } },
-        fill: { fgColor: { rgb: "F9FAFB" } },
-        alignment: { vertical: "center" },
-        border: {
-          top: { style: "thin", color: { rgb: "E5E7EB" } },
-          bottom: { style: "thin", color: { rgb: "E5E7EB" } },
-          left: { style: "thin", color: { rgb: "E5E7EB" } },
-          right: { style: "thin", color: { rgb: "E5E7EB" } }
-        }
-      },
-      number: {
-        font: { sz: 10, color: { rgb: "1F2937" } },
-        alignment: { horizontal: "center", vertical: "center" },
-        numFmt: "#,##0"
-      },
-      percentage: {
-        font: { sz: 10, color: { rgb: "059669" }, bold: true },
-        alignment: { horizontal: "center", vertical: "center" },
-        numFmt: "0.0%"
-      },
-      date: {
-        font: { sz: 10, color: { rgb: "1F2937" } },
-        alignment: { horizontal: "center", vertical: "center" },
-        numFmt: "dd/mm/yyyy"
       }
     };
     
-    rows.push(['RELATÓRIO DE RESIDÊNCIAS TERAPÊUTICAS - SRT']);
-    rows.push([`Gerado em: ${new Date().toLocaleDateString('pt-BR')}`]);
+    rows.push(['RELATÓRIO COMPLETO DE RESIDÊNCIAS TERAPÊUTICAS - SRT']);
+    rows.push([`Gerado em: ${new Date().toLocaleDateString('pt-BR')} às ${new Date().toLocaleTimeString('pt-BR')}`]);
     rows.push([]);
     
     const totalMoradores = allHouses.reduce((sum, house) => sum + (house.residents?.length || 0), 0);
@@ -810,230 +773,134 @@ document.getElementById('exportBtn').addEventListener('click', async () => {
     rows.push([`Taxa de Ocupação Média: ${taxaMedia.toFixed(1)}%`]);
     
     rows.push([]);
-    
-    const headers = [
-      'ID da Casa', 'Região de Saúde', 'Município', 'Coordenação Saúde Mental',
-      'Responsável Preenchimento Municipal', 'Telefone Responsável Municipal',
-      'E-mail Responsável Municipal', 'Data Preenchimento Municipal',
-      'CAPS Vinculada SRT', 'CNES CAPS Vinculada',
-      'Nome da Residência', 'CAPS Vinculado', 'CNES do CAPS',
-      'Tipo SRT', 'Data de Preenchimento', 'Responsável', 'Cargo', 'Contato',
-      'Endereço', 'Bairro', 'Município', 'UF', 'CEP', 'Total de Moradores',
-      'Vagas Totais', 'Vagas Ocupadas', 'Vagas Disponíveis', 'Taxa de Ocupação (%)',
-      'Morador Nº', 'Nome do Morador', 'Nome Social', 'Data de Nascimento',
-      'Idade', 'Instituição de Origem', 'Tempo de Internação', 'Raça/Cor',
-      'Sexo Biológico', 'Identidade de Gênero', 'Participa do PVC',
-      'Vínculo Familiar', 'Frequência CAPS', 'Frequência UBS'
-    ];
-    rows.push(headers);
+    rows.push(['DADOS DETALHADOS POR RESIDÊNCIA']);
+    rows.push([]);
     
     for (const house of allHouses) {
-      const taxaOcupacao = house.vagasTotais > 0 ? ((house.vagasOcupadas / house.vagasTotais) * 100).toFixed(1) : '0.0';
+      rows.push([`RESIDÊNCIA: ${house.nomeResidencia || 'Sem nome'}`]);
+      rows.push([]);
       
-      const baseInfo = {
-        'ID da Casa': house.id,
-        'Região de Saúde': house.regiaoSaude || '',
-        'Município': house.municipio || '',
-        'Coordenação Saúde Mental': house.coordenacaoSaudeMental || '',
-        'Responsável Preenchimento Municipal': house.responsavelPreenchimento || '',
-        'Telefone Responsável Municipal': house.telefoneResponsavelPreenchimento || '',
-        'E-mail Responsável Municipal': house.emailResponsavelPreenchimento || '',
-        'Data Preenchimento Municipal': house.dataPreenchimentoMunicipio || '',
-        'CAPS Vinculada SRT': house.capsVinculadaSRT || '',
-        'CNES CAPS Vinculada': house.cnesCapsVinculada || '',
-        'Nome da Residência': house.nomeResidencia || '',
-        'CAPS Vinculado': house.nomeCaps || '',
-        'CNES do CAPS': house.cnesCaps || '',
-        'Tipo SRT': house.tipoSRT || '',
-        'Data de Preenchimento': house.dataPreenchimento || '',
-        'Responsável': house.responsavelNome || '',
-        'Cargo': house.responsavelCargo || '',
-        'Contato': house.contatoResponsavel || '',
-        'Endereço': `${house.logradouro || ''} ${house.numero || ''}`,
-        'Bairro': house.bairro || '',
-        'Município': house.municipio || '',
-        'UF': house.uf || '',
-        'CEP': house.cep || '',
-        'Total de Moradores': house.residents?.length || 0,
-        'Vagas Totais': parseInt(house.vagasTotais) || 0,
-        'Vagas Ocupadas': parseInt(house.vagasOcupadas) || 0,
-        'Vagas Disponíveis': parseInt(house.vagasDisponiveis) || 0,
-        'Taxa de Ocupação (%)': parseFloat(taxaOcupacao)
-      };
+      rows.push(['INFORMAÇÕES DO MUNICÍPIO']);
+      rows.push(['Região de Saúde', house.regiaoSaude || '-']);
+      rows.push(['Município', house.municipio || '-']);
+      rows.push(['Coordenação de Saúde Mental', house.coordenacaoSaudeMental || '-']);
+      rows.push(['Responsável pelo Preenchimento', house.responsavelPreenchimento || '-']);
+      rows.push(['Telefone do Responsável', house.telefoneResponsavelPreenchimento || '-']);
+      rows.push(['E-mail do Responsável', house.emailResponsavelPreenchimento || '-']);
+      rows.push(['Data do Preenchimento Municipal', house.dataPreenchimentoMunicipio || '-']);
+      rows.push(['CAPS de Referência', house.capsVinculadaSRT || '-']);
+      rows.push(['CNES do CAPS', house.cnesCapsVinculada || '-']);
+      rows.push([]);
+      
+      rows.push(['DADOS DA SRT']);
+      rows.push(['Data do Preenchimento', house.dataPreenchimento || '-']);
+      rows.push(['Responsável pela Residência', house.responsavelNome || '-']);
+      rows.push(['Cargo/Função', house.responsavelCargo || '-']);
+      rows.push(['Telefone de Contato', house.contatoResponsavel || '-']);
+      rows.push(['Nome do CAPS', house.nomeCaps || '-']);
+      rows.push(['CNES do CAPS', house.cnesCaps || '-']);
+      rows.push(['Tipo SRT', house.tipoSRT || '-']);
+      rows.push(['Esfera de Gestão', house.esferaGestao || '-']);
+      rows.push(['Situação da Habilitação', house.situacaoHabilitacao || '-']);
+      rows.push(['Número da Portaria', house.numeroPortaria || '-']);
+      rows.push(['Data da Portaria', house.dataPortaria || '-']);
+      rows.push(['Data de Inauguração', house.dataInauguracao || '-']);
+      rows.push([]);
+      
+      rows.push(['ENDEREÇO']);
+      rows.push(['Logradouro', house.logradouro || '-']);
+      rows.push(['Número', house.numero || '-']);
+      rows.push(['Complemento', house.complemento || '-']);
+      rows.push(['Bairro', house.bairro || '-']);
+      rows.push(['CEP', house.cep || '-']);
+      rows.push(['Município', house.municipio || '-']);
+      rows.push(['UF', house.uf || '-']);
+      rows.push(['Localização', house.localizacao || '-']);
+      rows.push([]);
+      
+      rows.push(['ESTRUTURA FÍSICA']);
+      rows.push(['Quartos', house.quartos || '-']);
+      rows.push(['Salas', house.salas || '-']);
+      rows.push(['Cozinhas', house.cozinhas || '-']);
+      rows.push(['Banheiros', house.banheiros || '-']);
+      rows.push(['Varandas', house.varanda || '-']);
+      rows.push(['Lavanderias', house.lavanderia || '-']);
+      rows.push(['Despensas', house.despensa || '-']);
+      rows.push(['Outros Cômodos', house.outros || '-']);
+      rows.push([]);
+      
+      rows.push(['DADOS DA EQUIPE/CUIDADORES']);
+      rows.push(['Total de Profissionais', house.totalProfissionais || '-']);
+      rows.push(['Número de Cuidadores', house.totalCuidadores || '-']);
+      rows.push(['Técnicos de Enfermagem', house.totalTecnicos || '-']);
+      rows.push(['Enfermeiros', house.totalEnfermeiros || '-']);
+      rows.push(['Outros Profissionais', house.totalOutros || '-']);
+      rows.push(['Escala de Trabalho', house.escalaTrabalho || '-']);
+      rows.push(['Proporção Cuidador/Morador', house.relacaoCuidadorMorador || '-']);
+      rows.push(['Cuidadores por Turno', house.cuidadoresPorTurno || '-']);
+      rows.push(['Participa de Educação Permanente?', house.participaEducacao || '-']);
+      rows.push(['Detalhes da Educação Permanente', house.quemPromoveEducacao || '-']);
+      rows.push(['Realiza reuniões regulares?', house.reunioesRegulares || '-']);
+      rows.push(['Vínculos Empregatícios', house.vinculoEmpregaticio ? house.vinculoEmpregaticio.join(', ') : '-']);
+      rows.push([]);
+      
+      rows.push(['CAPACIDADE']);
+      rows.push(['Total de Moradores na Implantação', house.totalMoradores || '-']);
+      rows.push(['Vagas Totais (CNES)', house.vagasTotais || '-']);
+      rows.push(['Vagas Ocupadas', house.vagasOcupadas || '-']);
+      rows.push(['Vagas Disponíveis', house.vagasDisponiveis || '-']);
       
       if (house.residents && house.residents.length > 0) {
+        rows.push([]);
+        rows.push(['DADOS DOS MORADORES']);
+        
         house.residents.forEach((resident, index) => {
-          rows.push([
-            baseInfo['ID da Casa'],
-            baseInfo['Região de Saúde'],
-            baseInfo['Município'],
-            baseInfo['Coordenação Saúde Mental'],
-            baseInfo['Responsável Preenchimento Municipal'],
-            baseInfo['Telefone Responsável Municipal'],
-            baseInfo['E-mail Responsável Municipal'],
-            baseInfo['Data Preenchimento Municipal'],
-            baseInfo['CAPS Vinculada SRT'],
-            baseInfo['CNES CAPS Vinculada'],
-            baseInfo['Nome da Residência'],
-            baseInfo['CAPS Vinculado'],
-            baseInfo['CNES do CAPS'],
-            baseInfo['Tipo SRT'],
-            baseInfo['Data de Preenchimento'],
-            baseInfo['Responsável'],
-            baseInfo['Cargo'],
-            baseInfo['Contato'],
-            baseInfo['Endereço'],
-            baseInfo['Bairro'],
-            baseInfo['Município'],
-            baseInfo['UF'],
-            baseInfo['CEP'],
-            baseInfo['Total de Moradores'],
-            baseInfo['Vagas Totais'],
-            baseInfo['Vagas Ocupadas'],
-            baseInfo['Vagas Disponíveis'],
-            baseInfo['Taxa de Ocupação (%)'],
-            index + 1,
-            resident.nomeCompleto || '',
-            resident.nomeSocial || '',
-            resident.dataNascimento || '',
-            resident.idade || '',
-            resident.instituicaoOrigem || '',
-            resident.tempoInternacao || '',
-            resident.racaCor || '',
-            resident.generoNascimento || '',
-            resident.identidadeGenero || '',
-            resident.participaPVC || '',
-            resident.vinculoFamiliar || '',
-            resident.frequenciaCaps || '',
-            resident.frequenciaUBS || ''
-          ]);
+          rows.push([]);
+          rows.push([`MORADOR ${index + 1}`]);
+          rows.push(['Nome Completo', resident.nomeCompleto || '-']);
+          rows.push(['Nome Social', resident.nomeSocial || '-']);
+          rows.push(['Data de Nascimento', resident.dataNascimento || '-']);
+          rows.push(['Idade', resident.idade || '-']);
+          rows.push(['Instituição de Origem', resident.instituicaoOrigem || '-']);
+          rows.push(['CNES da Origem', resident.cnesOrigem || '-']);
+          rows.push(['Tempo de Internação', resident.tempoInternacao || '-']);
+          rows.push(['Raça/Cor', resident.racaCor || '-']);
+          rows.push(['Sexo Biológico', resident.generoNascimento || '-']);
+          rows.push(['Identidade de Gênero', resident.identidadeGenero || '-']);
+          rows.push(['Município de Origem', resident.origemTerritorial || '-']);
+          rows.push(['Vínculo com Município', resident.vinculoMunicipio || '-']);
+          rows.push(['Participa do PVC?', resident.participaPVC || '-']);
+          rows.push(['Vínculo Familiar', resident.vinculoFamiliar || '-']);
+          rows.push(['Descrição do Vínculo', resident.descricaoVinculo || '-']);
+          rows.push(['Frequência CAPS', resident.frequenciaCaps || '-']);
+          rows.push(['Frequência UBS', resident.frequenciaUBS || '-']);
+          rows.push(['Frequenta Escola?', resident.escola || '-']);
+          rows.push(['Qual Escola?', resident.qualEscola || '-']);
+          rows.push(['Acompanhamento CRAS/CREAS', resident.crasCreas || '-']);
+          rows.push(['Benefícios', resident.beneficios ? resident.beneficios.join(', ') : '-']);
+          rows.push(['Comorbidades', resident.comorbidades ? resident.comorbidades.join(', ') : '-']);
         });
-      } else {
-        rows.push([
-          baseInfo['ID da Casa'],
-          baseInfo['Região de Saúde'],
-          baseInfo['Município'],
-          baseInfo['Coordenação Saúde Mental'],
-          baseInfo['Responsável Preenchimento Municipal'],
-          baseInfo['Telefone Responsável Municipal'],
-          baseInfo['E-mail Responsável Municipal'],
-          baseInfo['Data Preenchimento Municipal'],
-          baseInfo['CAPS Vinculada SRT'],
-          baseInfo['CNES CAPS Vinculada'],
-          baseInfo['Nome da Residência'],
-          baseInfo['CAPS Vinculado'],
-          baseInfo['CNES do CAPS'],
-          baseInfo['Tipo SRT'],
-          baseInfo['Data de Preenchimento'],
-          baseInfo['Responsável'],
-          baseInfo['Cargo'],
-          baseInfo['Contato'],
-          baseInfo['Endereço'],
-          baseInfo['Bairro'],
-          baseInfo['Município'],
-          baseInfo['UF'],
-          baseInfo['CEP'],
-          baseInfo['Total de Moradores'],
-          baseInfo['Vagas Totais'],
-          baseInfo['Vagas Ocupadas'],
-          baseInfo['Vagas Disponíveis'],
-          baseInfo['Taxa de Ocupação (%)'],
-          '', '', '', '', '', '', '', '', '', '', '', '', '', ''
-        ]);
       }
+      
+      rows.push([]);
+      rows.push(['=' . repeat(50)]);
+      rows.push([]);
     }
     
     const worksheet = XLSX.utils.aoa_to_sheet(rows);
-    const range = XLSX.utils.decode_range(worksheet['!ref']);
     
     worksheet['A1'].s = styles.title;
     worksheet['A2'].s = styles.subtitle;
     worksheet['A4'].s = styles.summary;
-    for (let i = 5; i <= 7; i++) {
-      worksheet[`A${i}`].s = styles.summaryValue;
-    }
     
-    for (let C = 0; C <= 41; C++) {
-      const cellAddress = XLSX.utils.encode_cell({ r: 8, c: C });
-      if (worksheet[cellAddress]) {
-        worksheet[cellAddress].s = styles.header;
-      }
-    }
-    
-    let isAlternate = false;
-    for (let R = 9; R <= range.e.r; R++) {
-      for (let C = 0; C <= 41; C++) {
-        const cellAddress = XLSX.utils.encode_cell({ r: R, c: C });
-        if (worksheet[cellAddress]) {
-          worksheet[cellAddress].s = isAlternate ? styles.cellAlt : styles.cell;
-          
-          if (C >= 23 && C <= 26) {
-            worksheet[cellAddress].s = {
-              ...worksheet[cellAddress].s,
-              ...styles.number
-            };
-          } else if (C === 27) {
-            worksheet[cellAddress].s = {
-              ...worksheet[cellAddress].s,
-              ...styles.percentage
-            };
-            worksheet[cellAddress].t = 'n';
-            worksheet[cellAddress].v = worksheet[cellAddress].v / 100;
-          } else if (C === 7 || C === 14 || C === 31) {
-            if (worksheet[cellAddress].v && worksheet[cellAddress].v.includes('-')) {
-              const dateParts = worksheet[cellAddress].v.split('-');
-              if (dateParts.length === 3) {
-                worksheet[cellAddress].v = `${dateParts[2]}/${dateParts[1]}/${dateParts[0]}`;
-              }
-            }
-          }
-          
-          if (C === 10) {
-            worksheet[cellAddress].s.font = { ...worksheet[cellAddress].s.font, bold: true };
-          }
-        }
-      }
-      isAlternate = !isAlternate;
-    }
-    
-    const colWidths = [
-      { wch: 15 }, { wch: 20 }, { wch: 20 }, { wch: 30 },
-      { wch: 30 }, { wch: 20 }, { wch: 30 }, { wch: 18 },
-      { wch: 25 }, { wch: 15 }, { wch: 30 }, { wch: 25 },
-      { wch: 15 }, { wch: 12 }, { wch: 18 }, { wch: 25 },
-      { wch: 20 }, { wch: 18 }, { wch: 35 }, { wch: 20 },
-      { wch: 20 }, { wch: 8 }, { wch: 12 }, { wch: 18 },
-      { wch: 15 }, { wch: 15 }, { wch: 18 }, { wch: 20 },
-      { wch: 12 }, { wch: 30 }, { wch: 25 }, { wch: 18 },
-      { wch: 10 }, { wch: 30 }, { wch: 20 }, { wch: 15 },
-      { wch: 15 }, { wch: 20 }, { wch: 15 }, { wch: 18 },
-      { wch: 18 }, { wch: 18 }
-    ];
-    
-    worksheet['!cols'] = colWidths;
-    
-    worksheet['!merges'] = [
-      { s: { r: 0, c: 0 }, e: { r: 0, c: 41 } },
-      { s: { r: 1, c: 0 }, e: { r: 1, c: 41 } },
-      { s: { r: 3, c: 0 }, e: { r: 3, c: 4 } },
-      { s: { r: 4, c: 0 }, e: { r: 4, c: 4 } },
-      { s: { r: 5, c: 0 }, e: { r: 5, c: 4 } },
-      { s: { r: 6, c: 0 }, e: { r: 6, c: 4 } }
-    ];
-    
-    worksheet['!rows'] = [
-      { hpt: 30 }, { hpt: 20 }, { hpt: 15 }, { hpt: 25 },
-      { hpt: 20 }, { hpt: 20 }, { hpt: 20 }, { hpt: 15 }, { hpt: 30 }
-    ];
-    
-    worksheet['!freeze'] = { xSplit: 0, ySplit: 9, topLeftCell: "A10" };
-    worksheet['!autofilter'] = { ref: `A9:AP${range.e.r}` };
+    const range = XLSX.utils.decode_range(worksheet['!ref']);
+    worksheet['!cols'] = [{ wch: 40 }, { wch: 60 }];
     
     const workbook = XLSX.utils.book_new();
-    XLSX.utils.book_append_sheet(workbook, worksheet, "Casas SRT");
+    XLSX.utils.book_append_sheet(workbook, worksheet, "Relatório Completo SRT");
     
     workbook.Props = {
-      Title: "Relatório SRT - Sistema de Residências Terapêuticas",
+      Title: "Relatório Completo SRT - Sistema de Residências Terapêuticas",
       Subject: "Dados completos das Residências Terapêuticas",
       Author: "Sistema SRT",
       CreatedDate: new Date(),
@@ -1041,7 +908,7 @@ document.getElementById('exportBtn').addEventListener('click', async () => {
     };
     
     const date = new Date().toISOString().split('T')[0];
-    XLSX.writeFile(workbook, `relatorio_srt_${date}.xlsx`);
+    XLSX.writeFile(workbook, `relatorio_completo_srt_${date}.xlsx`);
     
     showToast('Dados exportados com sucesso!');
   } catch (error) {
@@ -1080,8 +947,6 @@ const fieldTypeLabels = {
   tel: 'Telefone',
   email: 'E-mail'
 };
-
-// Substitua a função getDefaultConfig() em js/app.js e js/admin.js por esta versão melhorada:
 
 const getDefaultConfig = () => ({
   municipio: [
@@ -1534,6 +1399,14 @@ const getDefaultConfig = () => ({
       options: ["Sim", "Não"], 
       required: true,
       helpText: "Reuniões para discussão de casos e planejamento"
+    },
+    { 
+      key: "vinculoEmpregaticio", 
+      label: "Qual vínculo empregatício dos profissionais da SRT?", 
+      type: "multiselect", 
+      options: ["Servidor estatutário", "RPA", "Contrato municipal", "CLT-OSS", "Outros"], 
+      required: true,
+      helpText: "Selecione todos os tipos de vínculo existentes"
     }
   ],
   
@@ -1708,7 +1581,23 @@ const getDefaultConfig = () => ({
       options: ["Sim - CRAS", "Sim - CREAS", "Sim - Ambos", "Não"], 
       required: true,
       helpText: "Se recebe acompanhamento da assistência social"
-    }
+    },
+    { 
+      key: "beneficios", 
+      label: "Benefícios que possui:", 
+      type: "multiselect", 
+      options: ["PVC", "BPC", "Aposentadoria", "Pensão", "Bolsa Rio", "Outros"], 
+      required: true,
+      helpText: "Selecione todos os benefícios que o morador recebe"
+    },
+    { 
+      key: "comorbidades", 
+      label: "Morador que possui algum tipo de comorbidade?", 
+      type: "multiselect", 
+      options: ["Hipertensão", "Diabetes", "Cardiopatia", "Neuropatia", "DPOC", "Asma", "Obesidade", "Outros"], 
+      required: false,
+      helpText: "Marque todas as comorbidades do morador"
+    },
   ]
 });
 

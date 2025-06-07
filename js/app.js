@@ -9,6 +9,7 @@ const firebaseConfig = {
 };
 
 firebase.initializeApp(firebaseConfig);
+emailjs.init("d0sJQnEpzJuuj6k-Z");
 const db = firebase.firestore();
 
 let currentConfig = null;
@@ -928,7 +929,15 @@ const getDefaultConfig = () => ({
       options: ["Sim", "Não"], 
       required: true,
       helpText: "Reuniões para discussão de casos e planejamento"
-    }
+    },
+    { 
+  key: "vinculoEmpregaticio", 
+  label: "Qual vínculo empregatício dos profissionais da SRT?", 
+  type: "multiselect", 
+  options: ["Servidor estatutário", "RPA", "Contrato municipal", "CLT-OSS", "Outros"], 
+  required: true,
+  helpText: "Selecione todos os tipos de vínculo existentes"
+},
   ],
   
   residentFields: [
@@ -1102,7 +1111,23 @@ const getDefaultConfig = () => ({
       options: ["Sim - CRAS", "Sim - CREAS", "Sim - Ambos", "Não"], 
       required: true,
       helpText: "Se recebe acompanhamento da assistência social"
-    }
+    },
+    { 
+  key: "beneficios", 
+  label: "Benefícios que possui:", 
+  type: "multiselect", 
+  options: ["PVC", "BPC", "Aposentadoria", "Pensão", "Bolsa Rio", "Outros"], 
+  required: true,
+  helpText: "Selecione todos os benefícios que o morador recebe"
+},
+{ 
+  key: "comorbidades", 
+  label: "Morador que possui algum tipo de comorbidade?", 
+  type: "multiselect", 
+  options: ["Hipertensão", "Diabetes", "Cardiopatia", "Neuropatia", "DPOC", "Asma", "Obesidade", "Outros"], 
+  required: false,
+  helpText: "Marque todas as comorbidades do morador"
+}
   ]
 });
 
@@ -1540,7 +1565,25 @@ const submitForm = async (event) => {
     
     await db.collection('houses').add(houseData);
     
-    showToast('Dados salvos com sucesso!');
+    const emailReport = generateEmailReport(houseData);
+    const recipientEmail = houseData.emailResponsavelPreenchimento || houseData.email;
+    
+    if (recipientEmail) {
+      try {
+        await emailjs.send("service_wkc23hq", "template_sfl4w8e", {
+          to_email: recipientEmail,
+          from_name: "Sistema SRT",
+          subject: `Relatório de Cadastro - ${houseData.nomeResidencia || 'Residência Terapêutica'}`,
+          message_html: emailReport
+        });
+        showToast('Dados salvos e e-mail enviado com sucesso!');
+      } catch (emailError) {
+        console.error('Erro ao enviar e-mail:', emailError);
+        showToast('Dados salvos, mas houve erro ao enviar e-mail');
+      }
+    } else {
+      showToast('Dados salvos com sucesso!');
+    }
     
     const celebration = document.createElement('div');
     celebration.className = 'fixed inset-0 pointer-events-none z-50';
@@ -1575,6 +1618,87 @@ const submitForm = async (event) => {
       Enviar Dados
     `;
   }
+};
+
+const generateEmailReport = (data) => {
+  let html = `
+    <div style="font-family: Arial, sans-serif; max-width: 800px; margin: 0 auto;">
+      <h1 style="color: #3b82f6; text-align: center;">Relatório de Cadastro - Sistema SRT</h1>
+      <p style="text-align: center; color: #666;">Data: ${new Date().toLocaleDateString('pt-BR')} às ${new Date().toLocaleTimeString('pt-BR')}</p>
+      
+      <h2 style="color: #1f2937; border-bottom: 2px solid #e5e7eb; padding-bottom: 10px;">Informações da Residência</h2>
+      <table style="width: 100%; border-collapse: collapse; margin-bottom: 30px;">
+        <tr>
+          <td style="padding: 8px; border: 1px solid #e5e7eb; background: #f9fafb;"><strong>Nome da Residência:</strong></td>
+          <td style="padding: 8px; border: 1px solid #e5e7eb;">${data.nomeResidencia || '-'}</td>
+        </tr>
+        <tr>
+          <td style="padding: 8px; border: 1px solid #e5e7eb; background: #f9fafb;"><strong>Tipo SRT:</strong></td>
+          <td style="padding: 8px; border: 1px solid #e5e7eb;">${data.tipoSRT || '-'}</td>
+        </tr>
+        <tr>
+          <td style="padding: 8px; border: 1px solid #e5e7eb; background: #f9fafb;"><strong>CAPS Vinculado:</strong></td>
+          <td style="padding: 8px; border: 1px solid #e5e7eb;">${data.nomeCaps || '-'}</td>
+        </tr>
+        <tr>
+          <td style="padding: 8px; border: 1px solid #e5e7eb; background: #f9fafb;"><strong>Responsável:</strong></td>
+          <td style="padding: 8px; border: 1px solid #e5e7eb;">${data.responsavelNome || '-'}</td>
+        </tr>
+      </table>
+      
+      <h2 style="color: #1f2937; border-bottom: 2px solid #e5e7eb; padding-bottom: 10px;">Capacidade</h2>
+      <table style="width: 100%; border-collapse: collapse; margin-bottom: 30px;">
+        <tr>
+          <td style="padding: 8px; border: 1px solid #e5e7eb; background: #f9fafb;"><strong>Vagas Totais:</strong></td>
+          <td style="padding: 8px; border: 1px solid #e5e7eb;">${data.vagasTotais || '-'}</td>
+        </tr>
+        <tr>
+          <td style="padding: 8px; border: 1px solid #e5e7eb; background: #f9fafb;"><strong>Vagas Ocupadas:</strong></td>
+          <td style="padding: 8px; border: 1px solid #e5e7eb;">${data.vagasOcupadas || '-'}</td>
+        </tr>
+        <tr>
+          <td style="padding: 8px; border: 1px solid #e5e7eb; background: #f9fafb;"><strong>Vagas Disponíveis:</strong></td>
+          <td style="padding: 8px; border: 1px solid #e5e7eb;">${data.vagasDisponiveis || '-'}</td>
+        </tr>
+      </table>
+      
+      <h2 style="color: #1f2937; border-bottom: 2px solid #e5e7eb; padding-bottom: 10px;">Endereço</h2>
+      <p style="margin-bottom: 30px;">
+        ${data.logradouro || ''} ${data.numero || ''} ${data.complemento || ''}<br>
+        ${data.bairro || ''} - ${data.municipio || ''}/${data.uf || ''}<br>
+        CEP: ${data.cep || '-'}
+      </p>
+      
+      ${data.residents && data.residents.length > 0 ? `
+        <h2 style="color: #1f2937; border-bottom: 2px solid #e5e7eb; padding-bottom: 10px;">Moradores Cadastrados</h2>
+        <table style="width: 100%; border-collapse: collapse; margin-bottom: 30px;">
+          <tr style="background: #f9fafb;">
+            <th style="padding: 8px; border: 1px solid #e5e7eb; text-align: left;">#</th>
+            <th style="padding: 8px; border: 1px solid #e5e7eb; text-align: left;">Nome</th>
+            <th style="padding: 8px; border: 1px solid #e5e7eb; text-align: left;">Idade</th>
+            <th style="padding: 8px; border: 1px solid #e5e7eb; text-align: left;">Origem</th>
+          </tr>
+          ${data.residents.map((resident, index) => `
+            <tr>
+              <td style="padding: 8px; border: 1px solid #e5e7eb;">${index + 1}</td>
+              <td style="padding: 8px; border: 1px solid #e5e7eb;">${resident.nomeCompleto || '-'}</td>
+              <td style="padding: 8px; border: 1px solid #e5e7eb;">${resident.idade || '-'} anos</td>
+              <td style="padding: 8px; border: 1px solid #e5e7eb;">${resident.instituicaoOrigem || '-'}</td>
+            </tr>
+          `).join('')}
+        </table>
+      ` : ''}
+      
+      <div style="background: #f0f9ff; padding: 20px; border-radius: 8px; margin-top: 40px;">
+        <p style="margin: 0; color: #0369a1; text-align: center;">
+          <strong>Este é um registro automático do Sistema SRT</strong><br>
+          Mantenha este e-mail para seus registros
+        </p>
+      </div>
+    </div>
+  `;
+  
+  return html;
 };
 
 const initializeApp = async () => {
