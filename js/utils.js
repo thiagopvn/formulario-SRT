@@ -104,50 +104,50 @@ const ExportUtils = {
   },
 
   generateSummaryData(houses) {
-    const totalHouses = houses.length;
-    const totalResidents = houses.reduce((sum, house) => sum + (house.residents?.length || 0), 0);
-    const totalVagas = houses.reduce((sum, house) => sum + (parseInt(house.vagasTotais) || 0), 0);
-    const vagasOcupadas = houses.reduce((sum, house) => sum + (parseInt(house.vagasOcupadas) || 0), 0);
-    const occupancyRate = totalVagas > 0 ? ((vagasOcupadas / totalVagas) * 100).toFixed(1) : '0';
+  const totalHouses = houses.length;
+  const totalResidents = houses.reduce((sum, house) => sum + (house.residents?.length || 0), 0);
+  const totalVagas = houses.reduce((sum, house) => sum + (parseInt(house.vagasTotais) || 0), 0);
+  const vagasOcupadas = houses.reduce((sum, house) => sum + (parseInt(house.vagasOcupadas) || 0), 0);
+  const occupancyRate = totalVagas > 0 ? ((vagasOcupadas / totalVagas) * 100).toFixed(1) : '0';
 
-    const municipios = [...new Set(houses.map(h => h.municipio).filter(Boolean))];
-    const tiposDistribution = houses.reduce((acc, house) => {
-      const tipo = house.tipoSRT || 'Não especificado';
-      acc[tipo] = (acc[tipo] || 0) + 1;
-      return acc;
-    }, {});
+  const municipios = [...new Set(houses.map(h => h.municipio).filter(Boolean))];
+  const tiposDistribution = houses.reduce((acc, house) => {
+    const tipo = house.tipoSRT || 'Não especificado';
+    acc[tipo] = (acc[tipo] || 0) + 1;
+    return acc;
+  }, {});
 
-    const data = [
-      ['RELATÓRIO GERAL DE RESIDÊNCIAS TERAPÊUTICAS - SRT'],
-      ['Estado do Rio de Janeiro'],
-      [`Gerado em: ${new Date().toLocaleDateString('pt-BR')} às ${new Date().toLocaleTimeString('pt-BR')}`],
-      [],
-      ['RESUMO EXECUTIVO'],
-      ['Total de Casas Cadastradas', totalHouses],
-      ['Total de Moradores', totalResidents],
-      ['Total de Vagas (CNES)', totalVagas],
-      ['Vagas Ocupadas', vagasOcupadas],
-      ['Vagas Disponíveis', totalVagas - vagasOcupadas],
-      ['Taxa de Ocupação Geral', `${occupancyRate}%`],
-      ['Média de Moradores por Casa', totalHouses > 0 ? (totalResidents / totalHouses).toFixed(1) : '0'],
-      ['Municípios Atendidos', municipios.length],
-      [],
-      ['DISTRIBUIÇÃO POR TIPO DE SRT'],
-      ...Object.entries(tiposDistribution).map(([tipo, count]) => [
-        tipo, 
-        count, 
-        `${((count / totalHouses) * 100).toFixed(1)}%`
-      ]),
-      [],
-      ['MUNICÍPIOS CADASTRADOS'],
-      ...municipios.map(municipio => {
-        const casasNoMunicipio = houses.filter(h => h.municipio === municipio).length;
-        return [municipio, casasNoMunicipio];
-      })
-    ];
+  const data = [
+    ['RELATÓRIO GERAL DE RESIDÊNCIAS TERAPÊUTICAS - SRT'],
+    ['Estado do Rio de Janeiro'],
+    [`Gerado em: ${new Date().toLocaleDateString('pt-BR')} às ${new Date().toLocaleTimeString('pt-BR')}`],
+    [''],
+    ['RESUMO EXECUTIVO'],
+    ['Total de Casas Cadastradas', totalHouses.toString()],
+    ['Total de Moradores', totalResidents.toString()],
+    ['Total de Vagas (CNES)', totalVagas.toString()],
+    ['Vagas Ocupadas', vagasOcupadas.toString()],
+    ['Vagas Disponíveis', (totalVagas - vagasOcupadas).toString()],
+    ['Taxa de Ocupação Geral', `${occupancyRate}%`],
+    ['Média de Moradores por Casa', totalHouses > 0 ? (totalResidents / totalHouses).toFixed(1) : '0'],
+    ['Municípios Atendidos', municipios.length.toString()],
+    [''],
+    ['DISTRIBUIÇÃO POR TIPO DE SRT'],
+    ...Object.entries(tiposDistribution).map(([tipo, count]) => [
+      tipo, 
+      count.toString(), 
+      `${((count / totalHouses) * 100).toFixed(1)}%`
+    ]),
+    [''],
+    ['MUNICÍPIOS CADASTRADOS'],
+    ...municipios.map(municipio => {
+      const casasNoMunicipio = houses.filter(h => h.municipio === municipio).length;
+      return [municipio, casasNoMunicipio.toString()];
+    })
+  ];
 
-    return data;
-  },
+  return data;
+},
 
   generateHousesListData(houses) {
     const headers = [
@@ -198,93 +198,93 @@ const ExportUtils = {
   },
 
   generateDetailedHouseData(house, config) {
-    const data = [];
-    const sections = ['municipio', 'general', 'residence', 'caregivers'];
+  const data = [];
+  const sections = ['municipio', 'general', 'residence', 'caregivers'];
 
-    data.push([`RESIDÊNCIA: ${house.nomeResidencia || 'Sem nome'}`]);
-    data.push([]);
+  data.push([`RESIDÊNCIA: ${house.nomeResidencia || 'Sem nome'}`]);
+  data.push(['']);
 
-    sections.forEach(sectionKey => {
-      if (!config[sectionKey]) return;
+  sections.forEach(sectionKey => {
+    if (!config[sectionKey]) return;
 
-      const sectionTitles = {
-        municipio: 'INFORMAÇÕES DO MUNICÍPIO',
-        general: 'DADOS DA SRT',
-        residence: 'DADOS DA RESIDÊNCIA',
-        caregivers: 'DADOS DA EQUIPE/CUIDADORES'
-      };
+    const sectionTitles = {
+      municipio: 'INFORMAÇÕES DO MUNICÍPIO',
+      general: 'DADOS DA SRT',
+      residence: 'DADOS DA RESIDÊNCIA',
+      caregivers: 'DADOS DA EQUIPE/CUIDADORES'
+    };
 
-      data.push([sectionTitles[sectionKey]]);
-      
-      config[sectionKey].forEach(field => {
-        if (field.conditional) {
-          const dependentValue = house[field.conditional.field];
-          const shouldShow = field.conditional.values 
-            ? field.conditional.values.includes(dependentValue)
-            : dependentValue === field.conditional.value;
-          if (!shouldShow) return;
+    data.push([sectionTitles[sectionKey]]);
+    
+    config[sectionKey].forEach(field => {
+      if (field.conditional) {
+        const dependentValue = house[field.conditional.field];
+        const shouldShow = field.conditional.values 
+          ? field.conditional.values.includes(dependentValue)
+          : dependentValue === field.conditional.value;
+        if (!shouldShow) return;
+      }
+
+      const value = house[field.key];
+      if (value !== undefined && value !== null && value !== '') {
+        let formattedValue;
+        if (field.type === 'multiselect' || Array.isArray(value)) {
+          formattedValue = this.formatValue(value, 'array');
+        } else if (field.type === 'date') {
+          formattedValue = this.formatValue(value, 'date');
+        } else {
+          formattedValue = this.formatValue(value);
         }
-
-        const value = house[field.key];
-        if (value !== undefined && value !== null && value !== '') {
-          let formattedValue;
-          if (field.type === 'multiselect' || Array.isArray(value)) {
-            formattedValue = this.formatValue(value, 'array');
-          } else if (field.type === 'date') {
-            formattedValue = this.formatValue(value, 'date');
-          } else {
-            formattedValue = this.formatValue(value);
-          }
-          data.push([field.label, formattedValue]);
-        }
-      });
-      data.push([]);
+        data.push([field.label, formattedValue]);
+      }
     });
+    data.push(['']);
+  });
 
-    data.push(['CAPACIDADE E OCUPAÇÃO']);
-    data.push(['Moradores na Implantação', house.totalMoradores || house.totalResidents || '']);
-    data.push(['Vagas Totais (CNES)', house.vagasTotais || '']);
-    data.push(['Vagas Ocupadas', house.vagasOcupadas || '']);
-    data.push(['Vagas Disponíveis', house.vagasDisponiveis || '']);
-    data.push([]);
+  data.push(['CAPACIDADE E OCUPAÇÃO']);
+  data.push(['Moradores na Implantação', (house.totalMoradores || house.totalResidents || '').toString()]);
+  data.push(['Vagas Totais (CNES)', (house.vagasTotais || '').toString()]);
+  data.push(['Vagas Ocupadas', (house.vagasOcupadas || '').toString()]);
+  data.push(['Vagas Disponíveis', (house.vagasDisponiveis || '').toString()]);
+  data.push(['']);
 
-    if (house.residents && house.residents.length > 0) {
-      data.push([`MORADORES (${house.residents.length})`]);
-      data.push([]);
+  if (house.residents && house.residents.length > 0) {
+    data.push([`MORADORES (${house.residents.length})`]);
+    data.push(['']);
 
-      house.residents.forEach((resident, index) => {
-        data.push([`MORADOR ${index + 1}`]);
-        
-        if (config.residentFields) {
-          config.residentFields.forEach(field => {
-            if (field.conditional) {
-              const dependentValue = resident[field.conditional.field];
-              const shouldShow = field.conditional.values 
-                ? field.conditional.values.includes(dependentValue)
-                : dependentValue === field.conditional.value;
-              if (!shouldShow) return;
+    house.residents.forEach((resident, index) => {
+      data.push([`MORADOR ${index + 1}`]);
+      
+      if (config.residentFields) {
+        config.residentFields.forEach(field => {
+          if (field.conditional) {
+            const dependentValue = resident[field.conditional.field];
+            const shouldShow = field.conditional.values 
+              ? field.conditional.values.includes(dependentValue)
+              : dependentValue === field.conditional.value;
+            if (!shouldShow) return;
+          }
+
+          const value = resident[field.key];
+          if (value !== undefined && value !== null && value !== '') {
+            let formattedValue;
+            if (field.type === 'multiselect' || Array.isArray(value)) {
+              formattedValue = this.formatValue(value, 'array');
+            } else if (field.type === 'date') {
+              formattedValue = this.formatValue(value, 'date');
+            } else {
+              formattedValue = this.formatValue(value);
             }
+            data.push([field.label, formattedValue]);
+          }
+        });
+      }
+      data.push(['']);
+    });
+  }
 
-            const value = resident[field.key];
-            if (value !== undefined && value !== null && value !== '') {
-              let formattedValue;
-              if (field.type === 'multiselect' || Array.isArray(value)) {
-                formattedValue = this.formatValue(value, 'array');
-              } else if (field.type === 'date') {
-                formattedValue = this.formatValue(value, 'date');
-              } else {
-                formattedValue = this.formatValue(value);
-              }
-              data.push([field.label, formattedValue]);
-            }
-          });
-        }
-        data.push([]);
-      });
-    }
-
-    return data;
-  },
+  return data;
+},
 
   generateResidentsData(houses, config) {
     if (!config?.residentFields) return [['Configuração de campos não encontrada']];
@@ -339,36 +339,40 @@ const ExportUtils = {
   },
 
   applyStyles(worksheet, data, startRow = 0) {
-    const range = XLSX.utils.decode_range(worksheet['!ref']);
-    
-    for (let R = range.s.r; R <= range.e.r; ++R) {
-      for (let C = range.s.c; C <= range.e.c; ++C) {
-        const cellAddress = XLSX.utils.encode_cell({ r: R, c: C });
-        const cell = worksheet[cellAddress];
-        
-        if (!cell) continue;
+  const range = XLSX.utils.decode_range(worksheet['!ref']);
+  
+  for (let R = range.s.r; R <= range.e.r; ++R) {
+    for (let C = range.s.c; C <= range.e.c; ++C) {
+      const cellAddress = XLSX.utils.encode_cell({ r: R, c: C });
+      const cell = worksheet[cellAddress];
+      
+      if (!cell) continue;
 
-        if (R === startRow && data[R] && data[R][0] && data[R][0].includes('RELATÓRIO')) {
-          cell.s = this.STYLES.TITLE;
-        } else if (R === startRow + 1 && data[R] && data[R][0] && data[R][0].includes('Estado')) {
-          cell.s = this.STYLES.SUBHEADER;
-        } else if (data[R] && data[R][C] && typeof data[R][C] === 'string' && 
-                   (data[R][C].includes('INFORMAÇÕES') || 
-                    data[R][C].includes('DADOS') || 
-                    data[R][C].includes('RESUMO') ||
-                    data[R][C].includes('DISTRIBUIÇÃO') ||
-                    data[R][C].includes('RESIDÊNCIA:') ||
-                    data[R][C].includes('MORADORES') ||
-                    data[R][C].includes('CAPACIDADE'))) {
-          cell.s = this.STYLES.SECTION_HEADER;
-        } else if (R === startRow && C === 0) {
-          cell.s = this.STYLES.HEADER;
-        } else {
-          cell.s = this.STYLES.CELL;
-        }
+      const cellValue = data[R] && data[R][C] ? String(data[R][C]) : '';
+      const firstCellValue = data[R] && data[R][0] ? String(data[R][0]) : '';
+
+      if (R === startRow && firstCellValue.includes('RELATÓRIO')) {
+        cell.s = this.STYLES.TITLE;
+      } else if (R === startRow + 1 && firstCellValue.includes('Estado')) {
+        cell.s = this.STYLES.SUBHEADER;
+      } else if (firstCellValue.includes('INFORMAÇÕES') || 
+                 firstCellValue.includes('DADOS') || 
+                 firstCellValue.includes('RESUMO') ||
+                 firstCellValue.includes('DISTRIBUIÇÃO') ||
+                 firstCellValue.includes('RESIDÊNCIA:') ||
+                 firstCellValue.includes('MORADORES') ||
+                 firstCellValue.includes('CAPACIDADE')) {
+        cell.s = this.STYLES.SECTION_HEADER;
+      } else if (R === 0 && C === 0) {
+        cell.s = this.STYLES.HEADER;
+      } else if (cellValue.includes('Total') || cellValue.includes('Taxa') || cellValue.includes('Média')) {
+        cell.s = this.STYLES.CELL_HIGHLIGHT;
+      } else {
+        cell.s = this.STYLES.CELL;
       }
     }
-  },
+  }
+},
 
   setColumnWidths(worksheet, numCols) {
     const cols = [];
