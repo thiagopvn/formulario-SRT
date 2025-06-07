@@ -691,7 +691,7 @@ document.getElementById('searchInput').addEventListener('input', (e) => {
   displayHouses(filtered);
 });
 
-document.getElementById('exportBtn').addEventListener('click', async () => {document.getElementById('exportBtn').addEventListener('click', async () => {
+document.getElementById('exportBtn').addEventListener('click', async () => {
   const exportBtn = document.getElementById('exportBtn');
   exportBtn.disabled = true;
   exportBtn.innerHTML = `
