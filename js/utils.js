@@ -201,7 +201,7 @@ const ExportUtils = {
         });
       }
       
-      row.push(house.nomeResidencia || '');
+      row.push(house.nomeResidencia || house.nomeResidenciaTherapeutica || '');
       row.push(house.nomeCaps || house.capsVinculadaSRT || '');
       row.push(house.tipoSRT || '');
       row.push(this.formatValue(house.vagasTotais, 'number'));

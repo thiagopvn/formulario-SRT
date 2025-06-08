@@ -405,7 +405,7 @@ const displayHouses = (houses) => {
     
     row.innerHTML = `
       <td class="px-6 py-4 whitespace-nowrap">
-        <div class="text-sm font-medium text-gray-900 dark:text-white">${house.nomeResidencia || '(Sem nome)'}</div>
+        <div class="text-sm font-medium text-gray-900 dark:text-white">${house.nomeResidencia || house.nomeResidenciaTherapeutica || '(Sem nome)'}</div>
       </td>
       <td class="px-6 py-4 whitespace-nowrap">
         <div class="text-sm text-gray-600 dark:text-gray-300">${house.nomeCaps || house.capsVinculadaSRT || '-'}</div>
@@ -516,7 +516,7 @@ const viewHouseDetails = (houseId) => {
         <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
           <div>
             <p class="text-sm text-gray-600 dark:text-gray-400">Nome da Residência</p>
-            <p class="font-medium text-gray-900 dark:text-white">${house.nomeResidencia || '-'}</p>
+            <p class="font-medium text-gray-900 dark:text-white">${house.nomeResidencia || house.nomeResidenciaTherapeutica || '-'}</p>
           </div>
           <div>
             <p class="text-sm text-gray-600 dark:text-gray-400">CAPS Vinculado</p>
