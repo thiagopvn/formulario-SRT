@@ -1488,57 +1488,186 @@ const submitForm = async (event) => {
     };
     
     // Função auxiliar para coletar dados de seção
-    const collectSectionData = (sectionSelector) => {
-      const section = document.querySelector(sectionSelector);
-      if (!section) return;
+    const collectSectionData = (sectionSelector, houseData) => {
+  const section = document.querySelector(sectionSelector);
+  if (!section) {
+    console.warn(`Seção não encontrada: ${sectionSelector}`);
+    return;
+  }
+  
+  console.log(`Coletando dados da seção: ${sectionSelector}`);
+  
+  // 1. Coletar todos os inputs normais (text, number, date, email, tel, etc.)
+  section.querySelectorAll('input:not([type="checkbox"]):not([type="radio"]):not([id*="_validation"])').forEach(field => {
+    if (!field.id || field.type === 'hidden' || field.disabled) return;
+    
+    const value = field.value.trim();
+    if (!value) return;
+    
+    // Log para debug
+    console.log(`Campo encontrado: ${field.id} = ${value} (tipo: ${field.type})`);
+    
+    // Tratar diferentes tipos de dados
+    switch (field.type) {
+      case 'number':
+        houseData[field.id] = parseInt(value) || 0;
+        break;
+      case 'date':
+        houseData[field.id] = value;
+        break;
+      case 'email':
+        houseData[field.id] = value.toLowerCase();
+        break;
+      case 'tel':
+        houseData[field.id] = value.replace(/\D/g, ''); // Remove formatação
+        houseData[field.id + '_formatted'] = value; // Salva versão formatada também
+        break;
+      default:
+        houseData[field.id] = value;
+    }
+    
+    // Tratamento especial para campos de nome
+    if (field.id.toLowerCase().includes('nomeresidencia') || 
+        field.id.toLowerCase().includes('nome_residencia')) {
+      console.log(`Campo de nome detectado: ${field.id} = ${value}`);
       
-      // Coletar inputs normais
-      section.querySelectorAll('input:not([type="checkbox"]):not([type="radio"]), select, textarea').forEach(field => {
-        if (field.value && field.id && !field.id.includes('_validation')) {
-          // Tratar diferentes tipos de dados
-          if (field.type === 'number') {
-            houseData[field.id] = parseInt(field.value) || 0;
-          } else if (field.type === 'date') {
-            houseData[field.id] = field.value;
-          } else {
-            houseData[field.id] = field.value.trim();
+      // Garantir que seja salvo como nomeResidencia
+      if (!houseData.nomeResidencia) {
+        houseData.nomeResidencia = value;
+      }
+      
+      // Salvar também com o ID original
+      houseData[field.id] = value;
+    }
+  });
+  
+  // 2. Coletar selects
+  section.querySelectorAll('select').forEach(select => {
+    if (!select.id || select.disabled) return;
+    
+    const value = select.value;
+    if (!value || value === '') return;
+    
+    console.log(`Select encontrado: ${select.id} = ${value}`);
+    houseData[select.id] = value;
+    
+    // Para selects múltiplos
+    if (select.multiple) {
+      const selectedOptions = Array.from(select.selectedOptions).map(opt => opt.value);
+      if (selectedOptions.length > 0) {
+        houseData[select.id] = selectedOptions;
+      }
+    }
+  });
+  
+  // 3. Coletar textareas
+  section.querySelectorAll('textarea').forEach(textarea => {
+    if (!textarea.id || textarea.disabled) return;
+    
+    const value = textarea.value.trim();
+    if (!value) return;
+    
+    console.log(`Textarea encontrado: ${textarea.id} = ${value.substring(0, 50)}...`);
+    houseData[textarea.id] = value;
+  });
+  
+  // 4. Coletar campos multiselect (grupos de checkboxes)
+  const multiselectGroups = {};
+  
+  section.querySelectorAll('input[type="checkbox"]').forEach(checkbox => {
+    // Ignorar checkboxes de validação
+    if (checkbox.id && checkbox.id.includes('_validation')) return;
+    
+    // Obter o nome do grupo
+    const fieldName = checkbox.getAttribute('data-field') || checkbox.name;
+    if (!fieldName) return;
+    
+    // Inicializar array se não existir
+    if (!multiselectGroups[fieldName]) {
+      multiselectGroups[fieldName] = {
+        values: [],
+        element: checkbox
+      };
+    }
+
+    if (checkbox.checked) {
+      multiselectGroups[fieldName].values.push(checkbox.value);
+      console.log(`Checkbox marcado: ${fieldName} -> ${checkbox.value}`);
+    }
+  });
+
+  Object.keys(multiselectGroups).forEach(fieldName => {
+    const group = multiselectGroups[fieldName];
+    if (group.values.length > 0) {
+      houseData[fieldName] = group.values;
+      console.log(`Multiselect ${fieldName}:`, group.values);
+    }
+  });
+
+  const radioGroups = {};
+  
+  section.querySelectorAll('input[type="radio"]:checked').forEach(radio => {
+    if (!radio.name || radio.disabled) return;
+    
+    radioGroups[radio.name] = radio.value;
+    console.log(`Radio selecionado: ${radio.name} = ${radio.value}`);
+  });
+
+  Object.assign(houseData, radioGroups);
+
+  section.querySelectorAll('[data-depends-on]').forEach(conditionalField => {
+    const dependsOn = conditionalField.dataset.dependsOn;
+    const showWhen = conditionalField.dataset.showWhen;
+    
+    if (dependsOn && showWhen) {
+      const dependentValue = houseData[dependsOn];
+      const shouldShow = showWhen.split(',').includes(dependentValue);
+      
+      if (!shouldShow) {
+        // Remover campos condicionais não aplicáveis
+        conditionalField.querySelectorAll('input, select, textarea').forEach(field => {
+          if (field.id && houseData[field.id] !== undefined) {
+            console.log(`Removendo campo condicional: ${field.id}`);
+            delete houseData[field.id];
           }
-        }
-      });
-      
-      // Coletar campos multiselect (checkboxes agrupados)
-      const multiselectGroups = {};
-      section.querySelectorAll('input[type="checkbox"]').forEach(checkbox => {
-        const fieldName = checkbox.getAttribute('data-field') || checkbox.name;
-        
-        if (fieldName && !fieldName.includes('_validation')) {
-          if (!multiselectGroups[fieldName]) {
-            multiselectGroups[fieldName] = [];
-          }
-          
-          if (checkbox.checked) {
-            multiselectGroups[fieldName].push(checkbox.value);
-          }
-        }
-      });
-      
-      // Adicionar arrays de multiselect ao houseData
-      Object.keys(multiselectGroups).forEach(fieldName => {
-        if (multiselectGroups[fieldName].length > 0) {
-          houseData[fieldName] = multiselectGroups[fieldName];
-        }
-      });
-      
-      // Coletar radio buttons
-      const radioGroups = {};
-      section.querySelectorAll('input[type="radio"]:checked').forEach(radio => {
-        if (radio.name && radio.value) {
-          radioGroups[radio.name] = radio.value;
-        }
-      });
-      
-      Object.assign(houseData, radioGroups);
-    };
+        });
+      }
+    }
+  });
+
+  if (houseData.nomeResidenciaTherapeutica && !houseData.nomeResidencia) {
+    houseData.nomeResidencia = houseData.nomeResidenciaTherapeutica;
+    console.log('Copiando nomeResidenciaTherapeutica para nomeResidencia');
+  }
+
+  if (houseData.cep) {
+    const cepLimpo = houseData.cep.replace(/\D/g, '');
+    if (cepLimpo.length === 8) {
+      houseData.cep = `${cepLimpo.substring(0, 5)}-${cepLimpo.substring(5)}`;
+    }
+  }
+
+  const numericFields = [
+    'quartos', 'salas', 'cozinhas', 'banheiros', 'varanda', 'lavanderia', 'despensa',
+    'totalProfissionais', 'totalCuidadores', 'totalTecnicos', 'totalEnfermeiros', 'totalOutros',
+    'cuidadoresPorTurno', 'vagasTotais', 'vagasOcupadas', 'totalResidents'
+  ];
+  
+  numericFields.forEach(fieldName => {
+    if (houseData[fieldName] && typeof houseData[fieldName] === 'string') {
+      houseData[fieldName] = parseInt(houseData[fieldName]) || 0;
+    }
+  });
+
+  console.log(`Dados coletados de ${sectionSelector}:`, {
+    totalCampos: Object.keys(houseData).length,
+    campos: Object.keys(houseData),
+    nomeResidencia: houseData.nomeResidencia,
+    tipoSRT: houseData.tipoSRT
+  });
+  
+  return houseData;
+};
     
     // Coletar dados de todas as seções
     console.log('Coletando dados do município...');
