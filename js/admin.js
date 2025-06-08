@@ -516,7 +516,7 @@ const viewHouseDetails = (houseId) => {
         <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
           <div>
             <p class="text-sm text-gray-600 dark:text-gray-400">Nome da Residência</p>
-            <p class="font-medium text-gray-900 dark:text-white">${house.nomeResidenciaTherapeutica || '-'}</p>
+            <p class="font-medium text-gray-900 dark:text-white">${house.nomeResidencia || house.nomeResidenciaTherapeutica || '-'}</p>
           </div>
           <div>
             <p class="text-sm text-gray-600 dark:text-gray-400">CAPS Vinculado</p>
