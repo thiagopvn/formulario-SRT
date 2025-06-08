@@ -149,7 +149,6 @@ const ExportUtils = {
       });
     }
     
-    headers.push('Nome da Residência');
     headers.push('CAPS Vinculado');
     headers.push('Tipo SRT');
     headers.push('Vagas Totais');
