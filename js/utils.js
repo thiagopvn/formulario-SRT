@@ -201,7 +201,7 @@ const ExportUtils = {
         });
       }
       
-      row.push(house.nomeResidencia || house.nomeResidenciaTherapeutica || house.nomeResidenciaTherapeutica || '');
+      row.push(house.nomeResidencia || house.nomeResidenciaTherapeutica || house.nome_da_residencia_terapeutica_caso_possua || '');
       row.push(house.nomeCaps || house.capsVinculadaSRT || '');
       row.push(house.tipoSRT || '');
       row.push(this.formatValue(house.vagasTotais, 'number'));

@@ -1529,17 +1529,19 @@ const submitForm = async (event) => {
     }
     
     // Tratamento especial para campos de nome
+    // Tratamento especial para campos de nome
     if (field.id.toLowerCase().includes('nomeresidencia') || 
-        field.id.toLowerCase().includes('nome_residencia')) {
-      console.log(`Campo de nome detectado: ${field.id} = ${value}`);
-      
-      // Garantir que seja salvo como nomeResidencia
+    field.id.toLowerCase().includes('nome_residencia') ||
+    field.id.toLowerCase().includes('nome_da_residencia')) {  // Adicione esta linha
+    console.log(`Campo de nome detectado: ${field.id} = ${value}`);
+  
+  // Garantir que seja salvo como nomeResidencia
       if (!houseData.nomeResidencia) {
         houseData.nomeResidencia = value;
       }
-      
-      // Salvar também com o ID original
-      houseData[field.id] = value;
+  
+  // Salvar também com o ID original
+  houseData[field.id] = value;
     }
   });
   

@@ -405,7 +405,7 @@ const displayHouses = (houses) => {
     
     row.innerHTML = `
       <td class="px-6 py-4 whitespace-nowrap">
-        <div class="text-sm font-medium text-gray-900 dark:text-white">${house.nomeResidencia || house.nomeResidenciaTherapeutica || house.nomeResidenciaTherapeutica || '(Sem nome)'}</div>
+        <div class="text-sm font-medium text-gray-900 dark:text-white">${house.nomeResidencia || house.nomeResidenciaTherapeutica || house.nome_da_residencia_terapeutica_caso_possua || '(Sem nome)'}</div>
       </td>
       <td class="px-6 py-4 whitespace-nowrap">
         <div class="text-sm text-gray-600 dark:text-gray-300">${house.nomeCaps || house.capsVinculadaSRT || '-'}</div>
@@ -928,7 +928,7 @@ const viewHouseDetails = (houseId) => {
 
 const deleteHouse = async (houseId) => {
   const house = allHouses.find(h => h.id === houseId);
-  const houseName = house?.nomeResidencia || house?.nomeResidenciaTherapeutica || house?.nomeResidenciaTherapeutica || 'esta casa';
+  const houseName = house?.nomeResidencia || house?.nomeResidenciaTherapeutica || house?.nome_da_residencia_terapeutica_caso_possua || 'esta casa';
   
   if (!confirm(`Tem certeza que deseja excluir "${houseName}"? Esta ação não pode ser desfeita.`)) {
     return;
