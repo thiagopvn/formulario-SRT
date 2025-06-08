@@ -1479,13 +1479,15 @@ const submitForm = async (event) => {
   
   showLoading();
   
+  // Declarar houseData fora do try-catch para que esteja disponível em todo o escopo
+  const houseData = {
+    createdAt: firebase.firestore.FieldValue.serverTimestamp(),
+    status: 'active',
+    submittedAt: new Date().toISOString(),
+    formVersion: '2.0'
+  };
+  
   try {
-    const houseData = {
-      createdAt: firebase.firestore.FieldValue.serverTimestamp(),
-      status: 'active',
-      submittedAt: new Date().toISOString(),
-      formVersion: '2.0'
-    };
     
     // Função auxiliar para coletar dados de seção
     const collectSectionData = (sectionSelector, houseData) => {
@@ -1665,22 +1667,20 @@ const submitForm = async (event) => {
     nomeResidencia: houseData.nomeResidencia,
     tipoSRT: houseData.tipoSRT
   });
-  
-  return houseData;
 };
     
     // Coletar dados de todas as seções
     console.log('Coletando dados do município...');
-    collectSectionData('#municipioFields');
+    collectSectionData('#municipioFields', houseData);
     
     console.log('Coletando dados gerais...');
-    collectSectionData('#generalFields');
+    collectSectionData('#generalFields', houseData);
     
     console.log('Coletando dados da residência...');
-    collectSectionData('#residenceFields');
+    collectSectionData('#residenceFields', houseData);
     
     console.log('Coletando dados dos cuidadores...');
-    collectSectionData('#caregiverFields');
+    collectSectionData('#caregiverFields', houseData);
     
     // Coletar dados de capacidade
     const totalResidents = document.getElementById('totalResidents');
