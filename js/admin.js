@@ -457,6 +457,7 @@ const viewHouseDetails = (houseId) => {
     <div class="space-y-6">
   `;
   
+  // Seção: Informações do Município
   if (house.regiaoSaude || house.municipio || house.responsavelPreenchimento) {
     detailsHTML += `
       <div class="bg-gray-50 dark:bg-gray-900 rounded-xl p-6">
@@ -493,7 +494,11 @@ const viewHouseDetails = (houseId) => {
             <p class="font-medium text-gray-900 dark:text-white">${house.emailResponsavelPreenchimento || '-'}</p>
           </div>
           <div>
-            <p class="text-sm text-gray-600 dark:text-gray-400">CAPS Vinculada</p>
+            <p class="text-sm text-gray-600 dark:text-gray-400">Data do Preenchimento Municipal</p>
+            <p class="font-medium text-gray-900 dark:text-white">${house.dataPreenchimentoMunicipio || '-'}</p>
+          </div>
+          <div>
+            <p class="text-sm text-gray-600 dark:text-gray-400">CAPS de Referência da SRT</p>
             <p class="font-medium text-gray-900 dark:text-white">${house.capsVinculadaSRT || '-'}</p>
           </div>
           <div>
@@ -505,87 +510,258 @@ const viewHouseDetails = (houseId) => {
     `;
   }
   
+  // Seção: Dados da SRT
   detailsHTML += `
+    <div class="bg-gray-50 dark:bg-gray-900 rounded-xl p-6">
+      <h3 class="text-lg font-semibold text-gray-800 dark:text-white mb-4 flex items-center gap-2">
+        <svg class="w-5 h-5 text-blue-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+        </svg>
+        Dados da SRT
+      </h3>
+      <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+        <div>
+          <p class="text-sm text-gray-600 dark:text-gray-400">Data do Preenchimento</p>
+          <p class="font-medium text-gray-900 dark:text-white">${house.dataPreenchimento || '-'}</p>
+        </div>
+        <div>
+          <p class="text-sm text-gray-600 dark:text-gray-400">Responsável pela Residência</p>
+          <p class="font-medium text-gray-900 dark:text-white">${house.responsavelNome || '-'}</p>
+        </div>
+        <div>
+          <p class="text-sm text-gray-600 dark:text-gray-400">Cargo/Função</p>
+          <p class="font-medium text-gray-900 dark:text-white">${house.responsavelCargo || '-'}</p>
+        </div>
+        <div>
+          <p class="text-sm text-gray-600 dark:text-gray-400">Telefone de Contato</p>
+          <p class="font-medium text-gray-900 dark:text-white">${house.contatoResponsavel || '-'}</p>
+        </div>
+        <div>
+          <p class="text-sm text-gray-600 dark:text-gray-400">Nome Completo do CAPS</p>
+          <p class="font-medium text-gray-900 dark:text-white">${house.nomeCaps || '-'}</p>
+        </div>
+        <div>
+          <p class="text-sm text-gray-600 dark:text-gray-400">Código CNES do CAPS</p>
+          <p class="font-medium text-gray-900 dark:text-white">${house.cnesCaps || '-'}</p>
+        </div>
+        <div>
+          <p class="text-sm text-gray-600 dark:text-gray-400">Nome da Residência Terapêutica</p>
+          <p class="font-medium text-gray-900 dark:text-white">${house.nomeResidencia || '-'}</p>
+        </div>
+        <div>
+          <p class="text-sm text-gray-600 dark:text-gray-400">Modalidade da SRT</p>
+          <p class="font-medium text-gray-900 dark:text-white">${house.tipoSRT || '-'}</p>
+        </div>
+        <div>
+          <p class="text-sm text-gray-600 dark:text-gray-400">Esfera de Gestão</p>
+          <p class="font-medium text-gray-900 dark:text-white">${house.esferaGestao || '-'}</p>
+        </div>
+        <div>
+          <p class="text-sm text-gray-600 dark:text-gray-400">Situação da Habilitação no MS</p>
+          <p class="font-medium text-gray-900 dark:text-white">${house.situacaoHabilitacao || '-'}</p>
+        </div>
+        ${house.numeroPortaria ? `
+          <div>
+            <p class="text-sm text-gray-600 dark:text-gray-400">Número da Portaria</p>
+            <p class="font-medium text-gray-900 dark:text-white">${house.numeroPortaria}</p>
+          </div>
+        ` : ''}
+        ${house.dataPortaria ? `
+          <div>
+            <p class="text-sm text-gray-600 dark:text-gray-400">Data da Portaria</p>
+            <p class="font-medium text-gray-900 dark:text-white">${house.dataPortaria}</p>
+          </div>
+        ` : ''}
+        <div>
+          <p class="text-sm text-gray-600 dark:text-gray-400">Data de Início do Funcionamento</p>
+          <p class="font-medium text-gray-900 dark:text-white">${house.dataInauguracao || '-'}</p>
+        </div>
+      </div>
+    </div>
+  `;
+  
+  // Seção: Dados da Residência Terapêutica
+  detailsHTML += `
+    <div class="bg-gray-50 dark:bg-gray-900 rounded-xl p-6">
+      <h3 class="text-lg font-semibold text-gray-800 dark:text-white mb-4 flex items-center gap-2">
+        <svg class="w-5 h-5 text-purple-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6" />
+        </svg>
+        Dados da Residência
+      </h3>
+      <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
+        <div class="md:col-span-2">
+          <p class="text-sm text-gray-600 dark:text-gray-400">Endereço Completo</p>
+          <p class="font-medium text-gray-900 dark:text-white">
+            ${house.logradouro || ''} ${house.numero || ''} ${house.complemento || ''}
+            ${house.logradouro || house.numero ? '-' : ''} ${house.bairro || ''}
+            ${house.bairro ? '-' : ''} ${house.municipio || ''}/${house.uf || ''}
+            ${house.cep ? `- CEP: ${house.cep}` : ''}
+          </p>
+        </div>
+        <div>
+          <p class="text-sm text-gray-600 dark:text-gray-400">Zona</p>
+          <p class="font-medium text-gray-900 dark:text-white">${house.localizacao || '-'}</p>
+        </div>
+      </div>
+      
+      <div class="border-t border-gray-200 dark:border-gray-700 pt-4 mt-4">
+        <h4 class="text-md font-semibold text-gray-700 dark:text-gray-300 mb-3">Estrutura Física</h4>
+        <div class="grid grid-cols-2 md:grid-cols-4 gap-3">
+          <div class="bg-white dark:bg-gray-800 rounded-lg p-3 text-center">
+            <p class="text-2xl font-bold text-blue-600 dark:text-blue-400">${house.quartos || 0}</p>
+            <p class="text-xs text-gray-600 dark:text-gray-400">Quartos</p>
+          </div>
+          <div class="bg-white dark:bg-gray-800 rounded-lg p-3 text-center">
+            <p class="text-2xl font-bold text-purple-600 dark:text-purple-400">${house.salas || 0}</p>
+            <p class="text-xs text-gray-600 dark:text-gray-400">Salas</p>
+          </div>
+          <div class="bg-white dark:bg-gray-800 rounded-lg p-3 text-center">
+            <p class="text-2xl font-bold text-green-600 dark:text-green-400">${house.cozinhas || 0}</p>
+            <p class="text-xs text-gray-600 dark:text-gray-400">Cozinhas</p>
+          </div>
+          <div class="bg-white dark:bg-gray-800 rounded-lg p-3 text-center">
+            <p class="text-2xl font-bold text-orange-600 dark:text-orange-400">${house.banheiros || 0}</p>
+            <p class="text-xs text-gray-600 dark:text-gray-400">Banheiros</p>
+          </div>
+          <div class="bg-white dark:bg-gray-800 rounded-lg p-3 text-center">
+            <p class="text-2xl font-bold text-pink-600 dark:text-pink-400">${house.varanda || 0}</p>
+            <p class="text-xs text-gray-600 dark:text-gray-400">Varandas</p>
+          </div>
+          <div class="bg-white dark:bg-gray-800 rounded-lg p-3 text-center">
+            <p class="text-2xl font-bold text-indigo-600 dark:text-indigo-400">${house.lavanderia || 0}</p>
+            <p class="text-xs text-gray-600 dark:text-gray-400">Lavanderias</p>
+          </div>
+          <div class="bg-white dark:bg-gray-800 rounded-lg p-3 text-center">
+            <p class="text-2xl font-bold text-yellow-600 dark:text-yellow-400">${house.despensa || 0}</p>
+            <p class="text-xs text-gray-600 dark:text-gray-400">Despensas</p>
+          </div>
+        </div>
+        ${house.outros ? `
+          <div class="mt-4">
+            <p class="text-sm text-gray-600 dark:text-gray-400">Outros Cômodos</p>
+            <p class="font-medium text-gray-900 dark:text-white">${house.outros}</p>
+          </div>
+        ` : ''}
+      </div>
+    </div>
+  `;
+  
+  // Seção: Capacidade
+  detailsHTML += `
+    <div class="bg-gray-50 dark:bg-gray-900 rounded-xl p-6">
+      <h3 class="text-lg font-semibold text-gray-800 dark:text-white mb-4 flex items-center gap-2">
+        <svg class="w-5 h-5 text-green-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-3 7h3m-3 4h3m-6-4h.01M9 16h.01" />
+        </svg>
+        Capacidade e Ocupação
+      </h3>
+      <div class="grid grid-cols-2 md:grid-cols-4 gap-4 text-center">
+        <div class="bg-white dark:bg-gray-800 rounded-lg p-4">
+          <p class="text-3xl font-bold text-blue-600 dark:text-blue-400">${house.totalResidents || house.totalMoradores || 0}</p>
+          <p class="text-sm text-gray-600 dark:text-gray-400">Implantação</p>
+        </div>
+        <div class="bg-white dark:bg-gray-800 rounded-lg p-4">
+          <p class="text-3xl font-bold text-purple-600 dark:text-purple-400">${house.vagasTotais || 0}</p>
+          <p class="text-sm text-gray-600 dark:text-gray-400">Cadastrados CNES</p>
+        </div>
+        <div class="bg-white dark:bg-gray-800 rounded-lg p-4">
+          <p class="text-3xl font-bold text-green-600 dark:text-green-400">${house.vagasOcupadas || 0}</p>
+          <p class="text-sm text-gray-600 dark:text-gray-400">Moradores Atuais</p>
+        </div>
+        <div class="bg-white dark:bg-gray-800 rounded-lg p-4">
+          <p class="text-3xl font-bold text-orange-600 dark:text-orange-400">${house.vagasDisponiveis || 0}</p>
+          <p class="text-sm text-gray-600 dark:text-gray-400">Disponibilidade</p>
+        </div>
+      </div>
+      ${house.vagasTotais > 0 ? `
+        <div class="mt-4">
+          <div class="flex items-center justify-between mb-2">
+            <span class="text-sm font-medium text-gray-700 dark:text-gray-300">Taxa de Ocupação</span>
+            <span class="text-sm font-bold text-gray-900 dark:text-white">${((house.vagasOcupadas / house.vagasTotais) * 100).toFixed(1)}%</span>
+          </div>
+          <div class="w-full bg-gray-200 dark:bg-gray-700 rounded-full h-3">
+            <div class="bg-gradient-to-r from-blue-500 to-purple-600 h-3 rounded-full transition-all duration-500" 
+                 style="width: ${(house.vagasOcupadas / house.vagasTotais) * 100}%"></div>
+          </div>
+        </div>
+      ` : ''}
+    </div>
+  `;
+  
+  // Seção: Equipe/Cuidadores
+  if (house.totalProfissionais || house.totalCuidadores || house.escalaTrabalho) {
+    detailsHTML += `
       <div class="bg-gray-50 dark:bg-gray-900 rounded-xl p-6">
         <h3 class="text-lg font-semibold text-gray-800 dark:text-white mb-4 flex items-center gap-2">
-          <svg class="w-5 h-5 text-blue-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4" />
+          <svg class="w-5 h-5 text-pink-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M18 9v3m0 0v3m0-3h3m-3 0h-3m-2-5a4 4 0 11-8 0 4 4 0 018 0zM3 20a6 6 0 0112 0v1H3v-1z" />
           </svg>
-          Informações Gerais
+          Equipe/Cuidadores
         </h3>
         <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
           <div>
-            <p class="text-sm text-gray-600 dark:text-gray-400">Nome da Residência</p>
-            <p class="font-medium text-gray-900 dark:text-white">${house.nomeResidencia || house.nomeResidenciaTherapeutica || house.nomeResidenciaTherapeutica || '-'}</p>
+            <p class="text-sm text-gray-600 dark:text-gray-400">Total de Profissionais</p>
+            <p class="font-medium text-gray-900 dark:text-white">${house.totalProfissionais || '-'}</p>
           </div>
           <div>
-            <p class="text-sm text-gray-600 dark:text-gray-400">CAPS Vinculado</p>
-            <p class="font-medium text-gray-900 dark:text-white">${house.nomeCaps || house.capsVinculadaSRT || '-'}</p>
+            <p class="text-sm text-gray-600 dark:text-gray-400">Cuidadores</p>
+            <p class="font-medium text-gray-900 dark:text-white">${house.totalCuidadores || '-'}</p>
           </div>
           <div>
-            <p class="text-sm text-gray-600 dark:text-gray-400">Tipo SRT</p>
-            <p class="font-medium text-gray-900 dark:text-white">${house.tipoSRT || '-'}</p>
+            <p class="text-sm text-gray-600 dark:text-gray-400">Técnicos de Enfermagem</p>
+            <p class="font-medium text-gray-900 dark:text-white">${house.totalTecnicos || '-'}</p>
           </div>
           <div>
-            <p class="text-sm text-gray-600 dark:text-gray-400">Responsável</p>
-            <p class="font-medium text-gray-900 dark:text-white">${house.responsavelNome || '-'} ${house.responsavelCargo ? `(${house.responsavelCargo})` : ''}</p>
+            <p class="text-sm text-gray-600 dark:text-gray-400">Enfermeiros</p>
+            <p class="font-medium text-gray-900 dark:text-white">${house.totalEnfermeiros || '-'}</p>
           </div>
           <div>
-            <p class="text-sm text-gray-600 dark:text-gray-400">Contato</p>
-            <p class="font-medium text-gray-900 dark:text-white">${house.contatoResponsavel || '-'}</p>
+            <p class="text-sm text-gray-600 dark:text-gray-400">Outros Profissionais</p>
+            <p class="font-medium text-gray-900 dark:text-white">${house.totalOutros || '-'}</p>
           </div>
           <div>
-            <p class="text-sm text-gray-600 dark:text-gray-400">Data de Inauguração</p>
-            <p class="font-medium text-gray-900 dark:text-white">${house.dataInauguracao || '-'}</p>
+            <p class="text-sm text-gray-600 dark:text-gray-400">Cuidadores por Turno</p>
+            <p class="font-medium text-gray-900 dark:text-white">${house.cuidadoresPorTurno || '-'}</p>
+          </div>
+          <div>
+            <p class="text-sm text-gray-600 dark:text-gray-400">Proporção Cuidador/Morador</p>
+            <p class="font-medium text-gray-900 dark:text-white">${house.relacaoCuidadorMorador || '-'}</p>
+          </div>
+          <div>
+            <p class="text-sm text-gray-600 dark:text-gray-400">Educação Permanente</p>
+            <p class="font-medium text-gray-900 dark:text-white">${house.participaEducacao || '-'}</p>
+          </div>
+          <div>
+            <p class="text-sm text-gray-600 dark:text-gray-400">Reuniões de Equipe</p>
+            <p class="font-medium text-gray-900 dark:text-white">${house.reunioesRegulares || '-'}</p>
+          </div>
+          <div>
+            <p class="text-sm text-gray-600 dark:text-gray-400">Vínculos Empregatícios</p>
+            <p class="font-medium text-gray-900 dark:text-white">${
+              Array.isArray(house.vinculoEmpregaticio) 
+                ? house.vinculoEmpregaticio.join(', ') 
+                : house.vinculoEmpregaticio || '-'
+            }</p>
           </div>
         </div>
-      </div>
-      
-      <div class="bg-gray-50 dark:bg-gray-900 rounded-xl p-6">
-        <h3 class="text-lg font-semibold text-gray-800 dark:text-white mb-4 flex items-center gap-2">
-          <svg class="w-5 h-5 text-purple-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z" />
-            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 11a3 3 0 11-6 0 3 3 0 016 0z" />
-          </svg>
-          Endereço
-        </h3>
-        <div class="space-y-2">
-          <p class="text-gray-700 dark:text-gray-300">
-            ${house.logradouro || ''} ${house.numero || ''} ${house.complemento || ''}
-          </p>
-          <p class="text-gray-700 dark:text-gray-300">
-            ${house.bairro || ''} - ${house.municipio || ''}/${house.uf || ''}
-          </p>
-          <p class="text-gray-700 dark:text-gray-300">
-            CEP: ${house.cep || '-'}
-          </p>
-        </div>
-      </div>
-      
-      <div class="bg-gray-50 dark:bg-gray-900 rounded-xl p-6">
-        <h3 class="text-lg font-semibold text-gray-800 dark:text-white mb-4 flex items-center gap-2">
-          <svg class="w-5 h-5 text-green-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-3 7h3m-3 4h3m-6-4h.01M9 16h.01" />
-          </svg>
-          Capacidade
-        </h3>
-        <div class="grid grid-cols-3 gap-4 text-center">
-          <div class="bg-white dark:bg-gray-800 rounded-lg p-4">
-            <p class="text-2xl font-bold text-blue-600 dark:text-blue-400">${house.vagasTotais || 0}</p>
-            <p class="text-sm text-gray-600 dark:text-gray-400">Vagas Totais</p>
+        ${house.escalaTrabalho ? `
+          <div class="mt-4">
+            <p class="text-sm text-gray-600 dark:text-gray-400">Descrição da Escala de Trabalho</p>
+            <p class="font-medium text-gray-900 dark:text-white mt-1">${house.escalaTrabalho}</p>
           </div>
-          <div class="bg-white dark:bg-gray-800 rounded-lg p-4">
-            <p class="text-2xl font-bold text-green-600 dark:text-green-400">${house.vagasOcupadas || 0}</p>
-            <p class="text-sm text-gray-600 dark:text-gray-400">Vagas Ocupadas</p>
+        ` : ''}
+        ${house.quemPromoveEducacao ? `
+          <div class="mt-4">
+            <p class="text-sm text-gray-600 dark:text-gray-400">Detalhes da Educação Permanente</p>
+            <p class="font-medium text-gray-900 dark:text-white mt-1">${house.quemPromoveEducacao}</p>
           </div>
-          <div class="bg-white dark:bg-gray-800 rounded-lg p-4">
-            <p class="text-2xl font-bold text-orange-600 dark:text-orange-400">${house.vagasDisponiveis || 0}</p>
-            <p class="text-sm text-gray-600 dark:text-gray-400">Vagas Disponíveis</p>
-          </div>
-        </div>
+        ` : ''}
       </div>
-  `;
+    `;
+  }
   
+  // Seção: Moradores
   if (house.residents && house.residents.length > 0) {
     detailsHTML += `
       <div class="bg-gray-50 dark:bg-gray-900 rounded-xl p-6">
@@ -604,7 +780,10 @@ const viewHouseDetails = (houseId) => {
           <summary class="cursor-pointer bg-white dark:bg-gray-800 rounded-lg p-4 hover:bg-gray-100 dark:hover:bg-gray-700 transition-all flex items-center justify-between">
             <div class="flex items-center gap-3">
               <span class="w-8 h-8 bg-gradient-to-br from-blue-500 to-purple-600 rounded-full flex items-center justify-center text-white text-sm font-bold">${index + 1}</span>
-              <span class="font-medium text-gray-900 dark:text-white">${resident.nomeCompleto || '(Sem nome)'}</span>
+              <div>
+                <span class="font-medium text-gray-900 dark:text-white">${resident.nomeCompleto || '(Sem nome)'}</span>
+                ${resident.nomeSocial ? `<span class="text-sm text-gray-600 dark:text-gray-400 ml-2">(${resident.nomeSocial})</span>` : ''}
+              </div>
             </div>
             <svg class="w-5 h-5 text-gray-400 transform transition-transform group-open:rotate-180" fill="none" viewBox="0 0 24 24" stroke="currentColor">
               <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7" />
@@ -612,10 +791,6 @@ const viewHouseDetails = (houseId) => {
           </summary>
           <div class="mt-3 bg-white dark:bg-gray-800 rounded-lg p-4 ml-11">
             <div class="grid grid-cols-1 md:grid-cols-2 gap-3">
-              <div>
-                <p class="text-sm text-gray-600 dark:text-gray-400">Nome Social</p>
-                <p class="font-medium text-gray-900 dark:text-white">${resident.nomeSocial || '-'}</p>
-              </div>
               <div>
                 <p class="text-sm text-gray-600 dark:text-gray-400">Data de Nascimento</p>
                 <p class="font-medium text-gray-900 dark:text-white">${resident.dataNascimento || '-'}</p>
@@ -625,11 +800,27 @@ const viewHouseDetails = (houseId) => {
                 <p class="font-medium text-gray-900 dark:text-white">${resident.idade || '-'} anos</p>
               </div>
               <div>
+                <p class="text-sm text-gray-600 dark:text-gray-400">Raça/Cor</p>
+                <p class="font-medium text-gray-900 dark:text-white">${resident.racaCor || '-'}</p>
+              </div>
+              <div>
+                <p class="text-sm text-gray-600 dark:text-gray-400">Sexo Biológico</p>
+                <p class="font-medium text-gray-900 dark:text-white">${resident.generoNascimento || '-'}</p>
+              </div>
+              <div>
+                <p class="text-sm text-gray-600 dark:text-gray-400">Identidade de Gênero</p>
+                <p class="font-medium text-gray-900 dark:text-white">${resident.identidadeGenero || '-'}</p>
+              </div>
+              <div>
+                <p class="text-sm text-gray-600 dark:text-gray-400">Município de Origem</p>
+                <p class="font-medium text-gray-900 dark:text-white">${resident.origemTerritorial || '-'}</p>
+              </div>
+              <div>
                 <p class="text-sm text-gray-600 dark:text-gray-400">Instituição de Origem</p>
                 <p class="font-medium text-gray-900 dark:text-white">${resident.instituicaoOrigem || '-'}</p>
               </div>
               <div>
-                <p class="text-sm text-gray-600 dark:text-gray-400">Tempo de Internação</p>
+                <p class="text-sm text-gray-600 dark:text-gray-400">Tempo de Internação Anterior</p>
                 <p class="font-medium text-gray-900 dark:text-white">${resident.tempoInternacao || '-'} anos</p>
               </div>
               <div>
@@ -637,14 +828,64 @@ const viewHouseDetails = (houseId) => {
                 <p class="font-medium text-gray-900 dark:text-white">${resident.participaPVC || '-'}</p>
               </div>
               <div>
+                <p class="text-sm text-gray-600 dark:text-gray-400">Vínculo Familiar</p>
+                <p class="font-medium text-gray-900 dark:text-white">${resident.vinculoFamiliar || '-'}</p>
+              </div>
+              <div>
                 <p class="text-sm text-gray-600 dark:text-gray-400">Frequência CAPS</p>
                 <p class="font-medium text-gray-900 dark:text-white">${resident.frequenciaCaps || '-'}</p>
               </div>
               <div>
-                <p class="text-sm text-gray-600 dark:text-gray-400">Frequência UBS</p>
+                <p class="text-sm text-gray-600 dark:text-gray-400">Acompanhamento UBS</p>
                 <p class="font-medium text-gray-900 dark:text-white">${resident.frequenciaUBS || '-'}</p>
               </div>
+              <div>
+                <p class="text-sm text-gray-600 dark:text-gray-400">Frequenta Escola</p>
+                <p class="font-medium text-gray-900 dark:text-white">${resident.escola || '-'}</p>
+              </div>
+              <div>
+                <p class="text-sm text-gray-600 dark:text-gray-400">CRAS/CREAS</p>
+                <p class="font-medium text-gray-900 dark:text-white">${resident.crasCreas || '-'}</p>
+              </div>
             </div>
+            ${resident.beneficios && resident.beneficios.length > 0 ? `
+              <div class="mt-3">
+                <p class="text-sm text-gray-600 dark:text-gray-400 mb-1">Benefícios</p>
+                <div class="flex flex-wrap gap-2">
+                  ${resident.beneficios.map(b => `
+                    <span class="px-2 py-1 bg-blue-100 dark:bg-blue-900/20 text-blue-700 dark:text-blue-300 text-xs rounded-full">${b}</span>
+                  `).join('')}
+                </div>
+              </div>
+            ` : ''}
+            ${resident.comorbidades && resident.comorbidades.length > 0 ? `
+              <div class="mt-3">
+                <p class="text-sm text-gray-600 dark:text-gray-400 mb-1">Comorbidades</p>
+                <div class="flex flex-wrap gap-2">
+                  ${resident.comorbidades.map(c => `
+                    <span class="px-2 py-1 bg-red-100 dark:bg-red-900/20 text-red-700 dark:text-red-300 text-xs rounded-full">${c}</span>
+                  `).join('')}
+                </div>
+              </div>
+            ` : ''}
+            ${resident.descricaoVinculo ? `
+              <div class="mt-3">
+                <p class="text-sm text-gray-600 dark:text-gray-400">Descrição do Vínculo Familiar</p>
+                <p class="font-medium text-gray-900 dark:text-white mt-1">${resident.descricaoVinculo}</p>
+              </div>
+            ` : ''}
+            ${resident.qualEscola ? `
+              <div class="mt-3">
+                <p class="text-sm text-gray-600 dark:text-gray-400">Instituição de Ensino</p>
+                <p class="font-medium text-gray-900 dark:text-white mt-1">${resident.qualEscola}</p>
+              </div>
+            ` : ''}
+            ${resident.vinculoMunicipio ? `
+              <div class="mt-3">
+                <p class="text-sm text-gray-600 dark:text-gray-400">Vínculo com o Município</p>
+                <p class="font-medium text-gray-900 dark:text-white mt-1">${resident.vinculoMunicipio}</p>
+              </div>
+            ` : ''}
           </div>
         </details>
       `;
@@ -652,6 +893,32 @@ const viewHouseDetails = (houseId) => {
     
     detailsHTML += '</div></div>';
   }
+  
+  // Seção: Metadados
+  detailsHTML += `
+    <div class="bg-gray-50 dark:bg-gray-900 rounded-xl p-6">
+      <h3 class="text-lg font-semibold text-gray-800 dark:text-white mb-4 flex items-center gap-2">
+        <svg class="w-5 h-5 text-gray-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+        </svg>
+        Informações do Sistema
+      </h3>
+      <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+        <div>
+          <p class="text-sm text-gray-600 dark:text-gray-400">ID do Registro</p>
+          <p class="font-medium text-gray-900 dark:text-white">${house.id}</p>
+        </div>
+        <div>
+          <p class="text-sm text-gray-600 dark:text-gray-400">Data de Cadastro</p>
+          <p class="font-medium text-gray-900 dark:text-white">${
+            house.createdAt 
+              ? new Date(house.createdAt.toDate()).toLocaleString('pt-BR')
+              : '-'
+          }</p>
+        </div>
+      </div>
+    </div>
+  `;
   
   detailsHTML += '</div>';
   
@@ -2029,82 +2296,460 @@ document.getElementById('generateReportBtn').addEventListener('click', async () 
   }
 });
 
-const generateSummaryReport = (houses, startDate, endDate) => {
-  const totalHouses = houses.length;
-  const totalResidents = houses.reduce((sum, house) => sum + (house.residents?.length || 0), 0);
-  const totalVagas = houses.reduce((sum, house) => sum + (parseInt(house.vagasTotais) || 0), 0);
-  const vagasOcupadas = houses.reduce((sum, house) => sum + (parseInt(house.vagasOcupadas) || 0), 0);
+const generateSummaryReport = (filteredHouses, startDate, endDate) => {
+  const totalHouses = filteredHouses.length;
+  const totalResidents = filteredHouses.reduce((sum, house) => sum + (house.residents?.length || 0), 0);
+  const totalVagas = filteredHouses.reduce((sum, house) => sum + (parseInt(house.vagasTotais) || 0), 0);
+  const vagasOcupadas = filteredHouses.reduce((sum, house) => sum + (parseInt(house.vagasOcupadas) || 0), 0);
+  const vagasDisponiveis = totalVagas - vagasOcupadas;
+  const totalMoradoresImplantacao = filteredHouses.reduce((sum, house) => sum + (parseInt(house.totalResidents || house.totalMoradores) || 0), 0);
   
-  const tipoCount = houses.reduce((acc, house) => {
+  // Análise por tipo
+  const tipoCount = filteredHouses.reduce((acc, house) => {
     const tipo = house.tipoSRT || 'Não especificado';
     acc[tipo] = (acc[tipo] || 0) + 1;
     return acc;
   }, {});
   
-  const municipioCount = houses.reduce((acc, house) => {
+  // Análise por município
+  const municipioStats = {};
+  filteredHouses.forEach(house => {
     const municipio = house.municipio || 'Não especificado';
-    acc[municipio] = (acc[municipio] || 0) + 1;
+    if (!municipioStats[municipio]) {
+      municipioStats[municipio] = {
+        casas: 0,
+        moradores: 0,
+        vagasTotais: 0,
+        vagasOcupadas: 0,
+        tipoI: 0,
+        tipoII: 0
+      };
+    }
+    municipioStats[municipio].casas++;
+    municipioStats[municipio].moradores += house.residents?.length || 0;
+    municipioStats[municipio].vagasTotais += parseInt(house.vagasTotais) || 0;
+    municipioStats[municipio].vagasOcupadas += parseInt(house.vagasOcupadas) || 0;
+    if (house.tipoSRT === 'Tipo I') municipioStats[municipio].tipoI++;
+    if (house.tipoSRT === 'Tipo II') municipioStats[municipio].tipoII++;
+  });
+  
+  // Análise por situação de habilitação
+  const habilitacaoCount = filteredHouses.reduce((acc, house) => {
+    const situacao = house.situacaoHabilitacao || 'Não informado';
+    acc[situacao] = (acc[situacao] || 0) + 1;
     return acc;
   }, {});
   
+  // Análise de profissionais
+  const totalProfissionais = filteredHouses.reduce((sum, house) => sum + (parseInt(house.totalProfissionais) || 0), 0);
+  const totalCuidadores = filteredHouses.reduce((sum, house) => sum + (parseInt(house.totalCuidadores) || 0), 0);
+  const totalEnfermeiros = filteredHouses.reduce((sum, house) => sum + (parseInt(house.totalEnfermeiros) || 0), 0);
+  const totalTecnicos = filteredHouses.reduce((sum, house) => sum + (parseInt(house.totalTecnicos) || 0), 0);
+  
+  // Análise de moradores
+  const moradoresAnalise = {
+    total: 0,
+    porIdade: { '18-30': 0, '31-40': 0, '41-50': 0, '51-60': 0, '60+': 0 },
+    porGenero: {},
+    porRaca: {},
+    comPVC: 0,
+    semPVC: 0,
+    comVinculoFamiliar: 0,
+    frequentaCaps: {},
+    comBeneficios: {},
+    comComorbidades: 0
+  };
+  
+  filteredHouses.forEach(house => {
+    if (house.residents) {
+      house.residents.forEach(resident => {
+        moradoresAnalise.total++;
+        
+        // Idade
+        const idade = parseInt(resident.idade) || 0;
+        if (idade >= 18 && idade <= 30) moradoresAnalise.porIdade['18-30']++;
+        else if (idade >= 31 && idade <= 40) moradoresAnalise.porIdade['31-40']++;
+        else if (idade >= 41 && idade <= 50) moradoresAnalise.porIdade['41-50']++;
+        else if (idade >= 51 && idade <= 60) moradoresAnalise.porIdade['51-60']++;
+        else if (idade > 60) moradoresAnalise.porIdade['60+']++;
+        
+        // Gênero
+        const genero = resident.generoNascimento || 'Não informado';
+        moradoresAnalise.porGenero[genero] = (moradoresAnalise.porGenero[genero] || 0) + 1;
+        
+        // Raça
+        const raca = resident.racaCor || 'Não informada';
+        moradoresAnalise.porRaca[raca] = (moradoresAnalise.porRaca[raca] || 0) + 1;
+        
+        // PVC
+        if (resident.participaPVC === 'Sim') moradoresAnalise.comPVC++;
+        else if (resident.participaPVC === 'Não') moradoresAnalise.semPVC++;
+        
+        // Vínculo familiar
+        if (resident.vinculoFamiliar === 'Sim' || resident.vinculoFamiliar === 'Esporadicamente') {
+          moradoresAnalise.comVinculoFamiliar++;
+        }
+        
+        // Frequência CAPS
+        const freqCaps = resident.frequenciaCaps || 'Não informado';
+        moradoresAnalise.frequentaCaps[freqCaps] = (moradoresAnalise.frequentaCaps[freqCaps] || 0) + 1;
+        
+        // Benefícios
+        if (resident.beneficios && Array.isArray(resident.beneficios)) {
+          resident.beneficios.forEach(beneficio => {
+            moradoresAnalise.comBeneficios[beneficio] = (moradoresAnalise.comBeneficios[beneficio] || 0) + 1;
+          });
+        }
+        
+        // Comorbidades
+        if (resident.comorbidades && resident.comorbidades.length > 0) {
+          moradoresAnalise.comComorbidades++;
+        }
+      });
+    }
+  });
+  
+  // Análise de qualidade
+  const qualidadeIndicadores = {
+    casasComNome: filteredHouses.filter(h => h.nomeResidencia || h.nomeResidenciaTherapeutica).length,
+    casasComEndereco: filteredHouses.filter(h => h.logradouro && h.numero).length,
+    casasComResponsavel: filteredHouses.filter(h => h.responsavelNome).length,
+    casasHabilitadas: filteredHouses.filter(h => h.situacaoHabilitacao === 'Habilitada').length,
+    casasComEquipeCompleta: filteredHouses.filter(h => h.totalProfissionais > 0).length,
+    divergenciaVagasMoradores: filteredHouses.filter(h => 
+      parseInt(h.vagasOcupadas || 0) !== (h.residents?.length || 0)
+    ).length
+  };
+  
   return `
     <div class="space-y-6 animate-fade-in">
-      <div class="text-center mb-8">
-        <h3 class="text-2xl font-bold text-gray-800 dark:text-white mb-2">Relatório Resumido</h3>
-        <p class="text-gray-600 dark:text-gray-400">Período: ${startDate.toLocaleDateString('pt-BR')} a ${endDate.toLocaleDateString('pt-BR')}</p>
+      <!-- Cabeçalho do Relatório -->
+      <div class="text-center mb-8 bg-gradient-to-r from-blue-500 to-purple-600 text-white rounded-xl p-8">
+        <h3 class="text-3xl font-bold mb-2">Relatório Resumido - SRT</h3>
+        <p class="text-lg">Período: ${startDate.toLocaleDateString('pt-BR')} a ${endDate.toLocaleDateString('pt-BR')}</p>
+        <p class="text-sm mt-2 opacity-90">Total de ${totalHouses} residências analisadas</p>
       </div>
       
+      <!-- Cards de Indicadores Principais -->
       <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
-        <div class="bg-gradient-to-br from-blue-500 to-blue-600 rounded-xl p-6 text-white">
-          <h4 class="text-3xl font-bold mb-2">${totalHouses}</h4>
+        <div class="bg-gradient-to-br from-blue-500 to-blue-600 rounded-xl p-6 text-white hover-lift">
+          <div class="flex items-center justify-between mb-2">
+            <h4 class="text-3xl font-bold">${totalHouses}</h4>
+            <svg class="w-8 h-8 opacity-70" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6" />
+            </svg>
+          </div>
           <p class="text-blue-100">Total de Casas</p>
+          <p class="text-xs mt-2 opacity-75">${Object.keys(municipioStats).length} município(s)</p>
         </div>
-        <div class="bg-gradient-to-br from-purple-500 to-purple-600 rounded-xl p-6 text-white">
-          <h4 class="text-3xl font-bold mb-2">${totalResidents}</h4>
+        
+        <div class="bg-gradient-to-br from-purple-500 to-purple-600 rounded-xl p-6 text-white hover-lift">
+          <div class="flex items-center justify-between mb-2">
+            <h4 class="text-3xl font-bold">${totalResidents}</h4>
+            <svg class="w-8 h-8 opacity-70" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z" />
+            </svg>
+          </div>
           <p class="text-purple-100">Total de Moradores</p>
+          <p class="text-xs mt-2 opacity-75">${totalHouses > 0 ? (totalResidents / totalHouses).toFixed(1) : 0} por casa</p>
         </div>
-        <div class="bg-gradient-to-br from-green-500 to-green-600 rounded-xl p-6 text-white">
-          <h4 class="text-3xl font-bold mb-2">${totalVagas}</h4>
+        
+        <div class="bg-gradient-to-br from-green-500 to-green-600 rounded-xl p-6 text-white hover-lift">
+          <div class="flex items-center justify-between mb-2">
+            <h4 class="text-3xl font-bold">${totalVagas}</h4>
+            <svg class="w-8 h-8 opacity-70" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10" />
+            </svg>
+          </div>
           <p class="text-green-100">Total de Vagas</p>
+          <p class="text-xs mt-2 opacity-75">${vagasDisponiveis} disponíveis</p>
         </div>
-        <div class="bg-gradient-to-br from-orange-500 to-orange-600 rounded-xl p-6 text-white">
-          <h4 class="text-3xl font-bold mb-2">${totalVagas ? ((vagasOcupadas/totalVagas)*100).toFixed(1) : 0}%</h4>
+        
+        <div class="bg-gradient-to-br from-orange-500 to-orange-600 rounded-xl p-6 text-white hover-lift">
+          <div class="flex items-center justify-between mb-2">
+            <h4 class="text-3xl font-bold">${totalVagas ? ((vagasOcupadas/totalVagas)*100).toFixed(1) : 0}%</h4>
+            <svg class="w-8 h-8 opacity-70" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" />
+            </svg>
+          </div>
           <p class="text-orange-100">Taxa de Ocupação</p>
+          <p class="text-xs mt-2 opacity-75">${vagasOcupadas} de ${totalVagas} vagas</p>
         </div>
       </div>
       
+      <!-- Distribuição por Tipo e Habilitação -->
       <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
         <div class="bg-white dark:bg-gray-800 rounded-xl p-6 shadow-lg">
-          <h4 class="text-lg font-semibold text-gray-800 dark:text-white mb-4">Distribuição por Tipo</h4>
+          <h4 class="text-lg font-semibold text-gray-800 dark:text-white mb-4 flex items-center gap-2">
+            <svg class="w-5 h-5 text-blue-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" />
+            </svg>
+            Distribuição por Tipo
+          </h4>
           <div class="space-y-3">
-            ${Object.entries(tipoCount).map(([tipo, count]) => `
-              <div class="flex items-center justify-between">
-                <span class="text-gray-600 dark:text-gray-300">${tipo}</span>
-                <div class="flex items-center gap-2">
-                  <div class="w-32 bg-gray-200 dark:bg-gray-700 rounded-full h-2">
-                    <div class="bg-gradient-to-r from-blue-500 to-purple-600 h-2 rounded-full" style="width: ${totalHouses ? ((count/totalHouses)*100) : 0}%"></div>
+            ${Object.entries(tipoCount).map(([tipo, count]) => {
+              const percent = totalHouses > 0 ? ((count/totalHouses)*100).toFixed(1) : 0;
+              return `
+                <div class="flex items-center justify-between">
+                  <span class="text-gray-600 dark:text-gray-300">${tipo}</span>
+                  <div class="flex items-center gap-2">
+                    <div class="w-32 bg-gray-200 dark:bg-gray-700 rounded-full h-2">
+                      <div class="bg-gradient-to-r from-blue-500 to-purple-600 h-2 rounded-full transition-all duration-500" style="width: ${percent}%"></div>
+                    </div>
+                    <span class="text-sm font-medium text-gray-800 dark:text-white w-16 text-right">${count} (${percent}%)</span>
                   </div>
-                  <span class="text-sm font-medium text-gray-800 dark:text-white">${count} (${totalHouses ? ((count/totalHouses)*100).toFixed(1) : 0}%)</span>
                 </div>
-              </div>
-            `).join('')}
+              `;
+            }).join('')}
           </div>
         </div>
         
         <div class="bg-white dark:bg-gray-800 rounded-xl p-6 shadow-lg">
-          <h4 class="text-lg font-semibold text-gray-800 dark:text-white mb-4">Top 5 Municípios</h4>
+          <h4 class="text-lg font-semibold text-gray-800 dark:text-white mb-4 flex items-center gap-2">
+            <svg class="w-5 h-5 text-green-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+            </svg>
+            Situação de Habilitação
+          </h4>
           <div class="space-y-3">
-            ${Object.entries(municipioCount).sort((a, b) => b[1] - a[1]).slice(0, 5).map(([municipio, count], index) => `
-              <div class="flex items-center justify-between">
-                <div class="flex items-center gap-2">
-                  <span class="w-6 h-6 bg-gradient-to-br from-blue-500 to-purple-600 rounded-full flex items-center justify-center text-white text-xs font-bold">${index + 1}</span>
-                  <span class="text-gray-600 dark:text-gray-300">${municipio}</span>
+            ${Object.entries(habilitacaoCount).map(([situacao, count]) => {
+              const percent = totalHouses > 0 ? ((count/totalHouses)*100).toFixed(1) : 0;
+              const color = situacao === 'Habilitada' ? 'green' : situacao === 'Em processo de habilitação' ? 'yellow' : 'red';
+              return `
+                <div class="flex items-center justify-between">
+                  <span class="text-gray-600 dark:text-gray-300">${situacao}</span>
+                  <div class="flex items-center gap-2">
+                    <div class="w-32 bg-gray-200 dark:bg-gray-700 rounded-full h-2">
+                      <div class="bg-${color}-500 h-2 rounded-full transition-all duration-500" style="width: ${percent}%"></div>
+                    </div>
+                    <span class="text-sm font-medium text-gray-800 dark:text-white w-16 text-right">${count} (${percent}%)</span>
+                  </div>
                 </div>
-                <span class="text-sm font-medium text-gray-800 dark:text-white">${count} casas</span>
-              </div>
-            `).join('')}
+              `;
+            }).join('')}
           </div>
         </div>
+      </div>
+      
+      <!-- Top 5 Municípios -->
+      <div class="bg-white dark:bg-gray-800 rounded-xl p-6 shadow-lg">
+        <h4 class="text-lg font-semibold text-gray-800 dark:text-white mb-4 flex items-center gap-2">
+          <svg class="w-5 h-5 text-purple-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z" />
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 11a3 3 0 11-6 0 3 3 0 016 0z" />
+          </svg>
+          Análise por Município (Top 5)
+        </h4>
+        <div class="overflow-x-auto">
+          <table class="w-full">
+            <thead>
+              <tr class="text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
+                <th class="text-left py-3">Município</th>
+                <th class="text-center py-3">Casas</th>
+                <th class="text-center py-3">Moradores</th>
+                <th class="text-center py-3">Taxa Ocupação</th>
+                <th class="text-center py-3">Tipo I</th>
+                <th class="text-center py-3">Tipo II</th>
+              </tr>
+            </thead>
+            <tbody class="divide-y divide-gray-200 dark:divide-gray-700">
+              ${Object.entries(municipioStats)
+                .sort((a, b) => b[1].casas - a[1].casas)
+                .slice(0, 5)
+                .map(([municipio, stats], index) => {
+                  const taxaOcupacao = stats.vagasTotais > 0 ? ((stats.vagasOcupadas / stats.vagasTotais) * 100).toFixed(1) : 0;
+                  return `
+                    <tr>
+                      <td class="py-3 text-sm">
+                        <div class="flex items-center gap-2">
+                          <span class="w-6 h-6 bg-gradient-to-br from-blue-500 to-purple-600 rounded-full flex items-center justify-center text-white text-xs font-bold">${index + 1}</span>
+                          <span class="font-medium text-gray-900 dark:text-white">${municipio}</span>
+                        </div>
+                      </td>
+                      <td class="py-3 text-sm text-center text-gray-600 dark:text-gray-300">${stats.casas}</td>
+                      <td class="py-3 text-sm text-center text-gray-600 dark:text-gray-300">${stats.moradores}</td>
+                      <td class="py-3 text-sm text-center">
+                        <span class="px-2 py-1 text-xs rounded-full ${
+                          taxaOcupacao >= 80 ? 'bg-green-100 text-green-800 dark:bg-green-900/20 dark:text-green-400' :
+                          taxaOcupacao >= 50 ? 'bg-yellow-100 text-yellow-800 dark:bg-yellow-900/20 dark:text-yellow-400' :
+                          'bg-red-100 text-red-800 dark:bg-red-900/20 dark:text-red-400'
+                        }">${taxaOcupacao}%</span>
+                      </td>
+                      <td class="py-3 text-sm text-center text-gray-600 dark:text-gray-300">${stats.tipoI}</td>
+                      <td class="py-3 text-sm text-center text-gray-600 dark:text-gray-300">${stats.tipoII}</td>
+                    </tr>
+                  `;
+                }).join('')}
+            </tbody>
+          </table>
+        </div>
+      </div>
+      
+      <!-- Perfil dos Moradores -->
+      <div class="bg-white dark:bg-gray-800 rounded-xl p-6 shadow-lg">
+        <h4 class="text-lg font-semibold text-gray-800 dark:text-white mb-4 flex items-center gap-2">
+          <svg class="w-5 h-5 text-indigo-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z" />
+          </svg>
+          Perfil dos Moradores
+        </h4>
+        
+        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+          <!-- Faixa Etária -->
+          <div>
+            <h5 class="text-sm font-medium text-gray-700 dark:text-gray-300 mb-3">Distribuição por Idade</h5>
+            <div class="space-y-2">
+              ${Object.entries(moradoresAnalise.porIdade).map(([faixa, count]) => {
+                const percent = moradoresAnalise.total > 0 ? ((count/moradoresAnalise.total)*100).toFixed(1) : 0;
+                return `
+                  <div class="flex items-center justify-between text-sm">
+                    <span class="text-gray-600 dark:text-gray-400">${faixa} anos</span>
+                    <span class="font-medium">${count} (${percent}%)</span>
+                  </div>
+                `;
+              }).join('')}
+            </div>
+          </div>
+          
+          <!-- Gênero -->
+          <div>
+            <h5 class="text-sm font-medium text-gray-700 dark:text-gray-300 mb-3">Distribuição por Gênero</h5>
+            <div class="space-y-2">
+              ${Object.entries(moradoresAnalise.porGenero)
+                .sort((a, b) => b[1] - a[1])
+                .map(([genero, count]) => {
+                  const percent = moradoresAnalise.total > 0 ? ((count/moradoresAnalise.total)*100).toFixed(1) : 0;
+                  return `
+                    <div class="flex items-center justify-between text-sm">
+                      <span class="text-gray-600 dark:text-gray-400">${genero}</span>
+                      <span class="font-medium">${count} (${percent}%)</span>
+                    </div>
+                  `;
+                }).join('')}
+            </div>
+          </div>
+          
+          <!-- PVC e Vínculos -->
+          <div>
+            <h5 class="text-sm font-medium text-gray-700 dark:text-gray-300 mb-3">Indicadores Sociais</h5>
+            <div class="space-y-2">
+              <div class="flex items-center justify-between text-sm">
+                <span class="text-gray-600 dark:text-gray-400">Com PVC</span>
+                <span class="font-medium text-green-600">${moradoresAnalise.comPVC}</span>
+              </div>
+              <div class="flex items-center justify-between text-sm">
+                <span class="text-gray-600 dark:text-gray-400">Sem PVC</span>
+                <span class="font-medium text-red-600">${moradoresAnalise.semPVC}</span>
+              </div>
+              <div class="flex items-center justify-between text-sm">
+                <span class="text-gray-600 dark:text-gray-400">Com vínculo familiar</span>
+                <span class="font-medium">${moradoresAnalise.comVinculoFamiliar}</span>
+              </div>
+              <div class="flex items-center justify-between text-sm">
+                <span class="text-gray-600 dark:text-gray-400">Com comorbidades</span>
+                <span class="font-medium">${moradoresAnalise.comComorbidades}</span>
+              </div>
+            </div>
+          </div>
+        </div>
+        
+        <!-- Benefícios -->
+        ${Object.keys(moradoresAnalise.comBeneficios).length > 0 ? `
+          <div class="mt-6 pt-6 border-t border-gray-200 dark:border-gray-700">
+            <h5 class="text-sm font-medium text-gray-700 dark:text-gray-300 mb-3">Benefícios Recebidos</h5>
+            <div class="flex flex-wrap gap-2">
+              ${Object.entries(moradoresAnalise.comBeneficios)
+                .sort((a, b) => b[1] - a[1])
+                .map(([beneficio, count]) => `
+                  <span class="px-3 py-1 bg-blue-100 dark:bg-blue-900/20 text-blue-700 dark:text-blue-300 text-sm rounded-full">
+                    ${beneficio}: ${count}
+                  </span>
+                `).join('')}
+            </div>
+          </div>
+        ` : ''}
+      </div>
+      
+      <!-- Equipe e Profissionais -->
+      <div class="bg-white dark:bg-gray-800 rounded-xl p-6 shadow-lg">
+        <h4 class="text-lg font-semibold text-gray-800 dark:text-white mb-4 flex items-center gap-2">
+          <svg class="w-5 h-5 text-pink-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M18 9v3m0 0v3m0-3h3m-3 0h-3m-2-5a4 4 0 11-8 0 4 4 0 018 0zM3 20a6 6 0 0112 0v1H3v-1z" />
+          </svg>
+          Análise da Equipe
+        </h4>
+        <div class="grid grid-cols-2 md:grid-cols-4 gap-4">
+          <div class="bg-gray-50 dark:bg-gray-900 rounded-lg p-4 text-center">
+            <p class="text-2xl font-bold text-pink-600 dark:text-pink-400">${totalProfissionais}</p>
+            <p class="text-sm text-gray-600 dark:text-gray-400">Total Profissionais</p>
+          </div>
+          <div class="bg-gray-50 dark:bg-gray-900 rounded-lg p-4 text-center">
+            <p class="text-2xl font-bold text-blue-600 dark:text-blue-400">${totalCuidadores}</p>
+            <p class="text-sm text-gray-600 dark:text-gray-400">Cuidadores</p>
+          </div>
+          <div class="bg-gray-50 dark:bg-gray-900 rounded-lg p-4 text-center">
+            <p class="text-2xl font-bold text-purple-600 dark:text-purple-400">${totalEnfermeiros}</p>
+            <p class="text-sm text-gray-600 dark:text-gray-400">Enfermeiros</p>
+          </div>
+          <div class="bg-gray-50 dark:bg-gray-900 rounded-lg p-4 text-center">
+            <p class="text-2xl font-bold text-green-600 dark:text-green-400">${totalTecnicos}</p>
+            <p class="text-sm text-gray-600 dark:text-gray-400">Técnicos</p>
+          </div>
+        </div>
+      </div>
+      
+      <!-- Indicadores de Qualidade -->
+      <div class="bg-white dark:bg-gray-800 rounded-xl p-6 shadow-lg">
+        <h4 class="text-lg font-semibold text-gray-800 dark:text-white mb-4 flex items-center gap-2">
+          <svg class="w-5 h-5 text-yellow-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+          </svg>
+          Indicadores de Qualidade
+        </h4>
+        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+          <div class="flex items-center justify-between p-3 bg-gray-50 dark:bg-gray-900 rounded-lg">
+            <span class="text-sm text-gray-600 dark:text-gray-400">Casas com nome cadastrado</span>
+            <span class="font-medium ${qualidadeIndicadores.casasComNome === totalHouses ? 'text-green-600' : 'text-yellow-600'}">
+              ${qualidadeIndicadores.casasComNome}/${totalHouses}
+            </span>
+          </div>
+          <div class="flex items-center justify-between p-3 bg-gray-50 dark:bg-gray-900 rounded-lg">
+            <span class="text-sm text-gray-600 dark:text-gray-400">Casas com endereço completo</span>
+            <span class="font-medium ${qualidadeIndicadores.casasComEndereco === totalHouses ? 'text-green-600' : 'text-yellow-600'}">
+              ${qualidadeIndicadores.casasComEndereco}/${totalHouses}
+            </span>
+          </div>
+          <div class="flex items-center justify-between p-3 bg-gray-50 dark:bg-gray-900 rounded-lg">
+            <span class="text-sm text-gray-600 dark:text-gray-400">Casas habilitadas</span>
+            <span class="font-medium ${qualidadeIndicadores.casasHabilitadas === totalHouses ? 'text-green-600' : 'text-yellow-600'}">
+              ${qualidadeIndicadores.casasHabilitadas}/${totalHouses}
+            </span>
+          </div>
+          <div class="flex items-center justify-between p-3 bg-gray-50 dark:bg-gray-900 rounded-lg">
+            <span class="text-sm text-gray-600 dark:text-gray-400">Com responsável cadastrado</span>
+            <span class="font-medium ${qualidadeIndicadores.casasComResponsavel === totalHouses ? 'text-green-600' : 'text-yellow-600'}">
+              ${qualidadeIndicadores.casasComResponsavel}/${totalHouses}
+            </span>
+          </div>
+          <div class="flex items-center justify-between p-3 bg-gray-50 dark:bg-gray-900 rounded-lg">
+            <span class="text-sm text-gray-600 dark:text-gray-400">Com equipe registrada</span>
+            <span class="font-medium ${qualidadeIndicadores.casasComEquipeCompleta === totalHouses ? 'text-green-600' : 'text-yellow-600'}">
+              ${qualidadeIndicadores.casasComEquipeCompleta}/${totalHouses}
+            </span>
+          </div>
+          <div class="flex items-center justify-between p-3 bg-gray-50 dark:bg-gray-900 rounded-lg">
+            <span class="text-sm text-gray-600 dark:text-gray-400">Divergência vagas/moradores</span>
+            <span class="font-medium ${qualidadeIndicadores.divergenciaVagasMoradores === 0 ? 'text-green-600' : 'text-red-600'}">
+              ${qualidadeIndicadores.divergenciaVagasMoradores} casas
+            </span>
+          </div>
+        </div>
+      </div>
+      
+      <!-- Rodapé do Relatório -->
+      <div class="text-center text-sm text-gray-500 dark:text-gray-400 pt-6 border-t border-gray-200 dark:border-gray-700">
+        <p>Relatório gerado em ${new Date().toLocaleString('pt-BR')}</p>
+        <p class="mt-1">Sistema de Gerenciamento de Residências Terapêuticas - SRT</p>
       </div>
     </div>
   `;

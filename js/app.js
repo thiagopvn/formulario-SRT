@@ -1482,123 +1482,305 @@ const submitForm = async (event) => {
   try {
     const houseData = {
       createdAt: firebase.firestore.FieldValue.serverTimestamp(),
-      status: 'active'
+      status: 'active',
+      submittedAt: new Date().toISOString(),
+      formVersion: '2.0'
     };
     
+    // Função auxiliar para coletar dados de seção
     const collectSectionData = (sectionSelector) => {
       const section = document.querySelector(sectionSelector);
       if (!section) return;
       
-      section.querySelectorAll('input:not([type="checkbox"]), select, textarea').forEach(field => {
-        if (field.value && field.id) {
-          houseData[field.id] = field.value;
+      // Coletar inputs normais
+      section.querySelectorAll('input:not([type="checkbox"]):not([type="radio"]), select, textarea').forEach(field => {
+        if (field.value && field.id && !field.id.includes('_validation')) {
+          // Tratar diferentes tipos de dados
+          if (field.type === 'number') {
+            houseData[field.id] = parseInt(field.value) || 0;
+          } else if (field.type === 'date') {
+            houseData[field.id] = field.value;
+          } else {
+            houseData[field.id] = field.value.trim();
+          }
         }
       });
       
+      // Coletar campos multiselect (checkboxes agrupados)
       const multiselectGroups = {};
       section.querySelectorAll('input[type="checkbox"]').forEach(checkbox => {
         const fieldName = checkbox.getAttribute('data-field') || checkbox.name;
         
-        if (!multiselectGroups[fieldName]) {
-          multiselectGroups[fieldName] = [];
-        }
-        
-        if (checkbox.checked) {
-          multiselectGroups[fieldName].push(checkbox.value);
+        if (fieldName && !fieldName.includes('_validation')) {
+          if (!multiselectGroups[fieldName]) {
+            multiselectGroups[fieldName] = [];
+          }
+          
+          if (checkbox.checked) {
+            multiselectGroups[fieldName].push(checkbox.value);
+          }
         }
       });
       
+      // Adicionar arrays de multiselect ao houseData
       Object.keys(multiselectGroups).forEach(fieldName => {
         if (multiselectGroups[fieldName].length > 0) {
           houseData[fieldName] = multiselectGroups[fieldName];
         }
       });
+      
+      // Coletar radio buttons
+      const radioGroups = {};
+      section.querySelectorAll('input[type="radio"]:checked').forEach(radio => {
+        if (radio.name && radio.value) {
+          radioGroups[radio.name] = radio.value;
+        }
+      });
+      
+      Object.assign(houseData, radioGroups);
     };
     
+    // Coletar dados de todas as seções
+    console.log('Coletando dados do município...');
     collectSectionData('#municipioFields');
+    
+    console.log('Coletando dados gerais...');
     collectSectionData('#generalFields');
+    
+    console.log('Coletando dados da residência...');
     collectSectionData('#residenceFields');
+    
+    console.log('Coletando dados dos cuidadores...');
     collectSectionData('#caregiverFields');
     
+    // Coletar dados de capacidade
     const totalResidents = document.getElementById('totalResidents');
     const vagasTotais = document.getElementById('vagasTotais');
     const vagasOcupadas = document.getElementById('vagasOcupadas');
     const vagasDisponiveis = document.getElementById('vagasDisponiveis');
     
-    if (totalResidents) houseData.totalMoradores = totalResidents.value;
-    if (vagasTotais) houseData.vagasTotais = vagasTotais.value;
-    if (vagasOcupadas) houseData.vagasOcupadas = vagasOcupadas.value;
-    if (vagasDisponiveis) houseData.vagasDisponiveis = vagasDisponiveis.value;
+    if (totalResidents) houseData.totalMoradores = parseInt(totalResidents.value) || 0;
+    if (totalResidents) houseData.totalResidents = parseInt(totalResidents.value) || 0; // Duplicado para compatibilidade
+    if (vagasTotais) houseData.vagasTotais = parseInt(vagasTotais.value) || 0;
+    if (vagasOcupadas) houseData.vagasOcupadas = parseInt(vagasOcupadas.value) || 0;
+    if (vagasDisponiveis) houseData.vagasDisponiveis = parseInt(vagasDisponiveis.value) || 0;
     
+    // Coletar dados dos moradores
     const count = parseInt(document.getElementById('numMoradores').value) || 0;
+    houseData.numeroMoradores = count;
     houseData.residents = [];
+    
+    console.log(`Coletando dados de ${count} moradores...`);
     
     for (let i = 1; i <= count; i++) {
       const resident = {};
       const residentSection = document.querySelector(`[data-resident-number="${i}"]`);
       
       if (residentSection && currentConfig.residentFields) {
+        // Coletar campos normais do morador
         currentConfig.residentFields.forEach(field => {
           const element = document.getElementById(`resident_${i}_${field.key}`);
           
           if (field.type === 'multiselect') {
-            const checkboxes = residentSection.querySelectorAll(`input[name="resident_${i}_${field.key}"]`);
-            const selectedValues = [];
-            
-            checkboxes.forEach(checkbox => {
-              if (checkbox.checked) {
-                selectedValues.push(checkbox.value);
-              }
-            });
+            // Coletar checkboxes para campos multiselect
+            const checkboxes = residentSection.querySelectorAll(`input[name="resident_${i}_${field.key}"]:checked`);
+            const selectedValues = Array.from(checkboxes).map(cb => cb.value);
             
             if (selectedValues.length > 0) {
               resident[field.key] = selectedValues;
             }
           } else if (element && element.value) {
-            resident[field.key] = element.value;
+            // Tratar diferentes tipos de dados
+            if (field.type === 'number') {
+              resident[field.key] = parseInt(element.value) || 0;
+            } else if (field.type === 'date') {
+              resident[field.key] = element.value;
+            } else {
+              resident[field.key] = element.value.trim();
+            }
+          }
+          
+          // Verificar campos condicionais
+          if (field.conditional && element) {
+            const dependentField = document.getElementById(`resident_${i}_${field.conditional.field}`);
+            if (dependentField) {
+              const shouldInclude = field.conditional.values 
+                ? field.conditional.values.includes(dependentField.value)
+                : dependentField.value === field.conditional.value;
+              
+              if (!shouldInclude && resident[field.key]) {
+                delete resident[field.key];
+              }
+            }
           }
         });
         
-        houseData.residents.push(resident);
+        // Adicionar metadados do morador
+        resident.residentNumber = i;
+        resident.addedAt = new Date().toISOString();
+        
+        // Validar dados mínimos do morador
+        if (resident.nomeCompleto || Object.keys(resident).length > 2) {
+          houseData.residents.push(resident);
+        }
       }
     }
     
-    await db.collection('houses').add(houseData);
+    // Adicionar metadados adicionais
+    houseData.formCompletedAt = new Date().toISOString();
+    houseData.userAgent = navigator.userAgent;
+    houseData.formProgress = document.getElementById('progressFill').style.width;
     
-    const emailResult = await EmailService.sendEmail(houseData);
-
-if (emailResult.success) {
-  showToast('Dados salvos e e-mail enviado com sucesso!');
-} else {
-  console.error('Erro ao enviar e-mail:', emailResult.error);
-  showToast('Dados salvos, mas houve erro ao enviar e-mail');
-}
+    // Calcular e adicionar estatísticas
+    houseData.statistics = {
+      totalFieldsFilled: Object.keys(houseData).length,
+      residentsWithPVC: houseData.residents.filter(r => r.participaPVC === 'Sim').length,
+      residentsWithFamily: houseData.residents.filter(r => r.vinculoFamiliar === 'Sim' || r.vinculoFamiliar === 'Esporadicamente').length,
+      averageAge: houseData.residents.length > 0 
+        ? Math.round(houseData.residents.reduce((sum, r) => sum + (parseInt(r.idade) || 0), 0) / houseData.residents.length)
+        : 0
+    };
+    
+    // Validar dados críticos antes de salvar
+    const criticalFields = ['nomeResidencia', 'municipio', 'tipoSRT'];
+    const missingFields = criticalFields.filter(field => !houseData[field]);
+    
+    if (missingFields.length > 0) {
+      console.warn('Campos críticos faltando:', missingFields);
+    }
+    
+    console.log('Dados coletados:', houseData);
+    console.log('Total de campos preenchidos:', Object.keys(houseData).length);
+    console.log('Total de moradores:', houseData.residents.length);
+    
+    // Salvar no Firestore
+    console.log('Salvando no banco de dados...');
+    const docRef = await db.collection('houses').add(houseData);
+    console.log('Documento salvo com ID:', docRef.id);
+    
+    // Adicionar ID ao objeto para o email
+    houseData.documentId = docRef.id;
+    
+    // Enviar email
+    console.log('Enviando email de confirmação...');
+    try {
+      const emailResult = await EmailService.sendEmail(houseData);
+      
+      if (emailResult.success) {
+        console.log('Email enviado com sucesso');
+        showToast('Dados salvos e e-mail enviado com sucesso!');
+      } else {
+        console.error('Erro ao enviar e-mail:', emailResult.error);
+        showToast('Dados salvos, mas houve erro ao enviar e-mail', 'warning');
+      }
+    } catch (emailError) {
+      console.error('Erro no envio de email:', emailError);
+      showToast('Dados salvos com sucesso! (E-mail não enviado)', 'warning');
+    }
+    
+    // Criar backup local
+    try {
+      const backupData = {
+        ...houseData,
+        backupDate: new Date().toISOString(),
+        backupVersion: '1.0'
+      };
+      
+      const backupKey = `srt_backup_${docRef.id}_${Date.now()}`;
+      localStorage.setItem(backupKey, JSON.stringify(backupData));
+      
+      // Limpar backups antigos (manter apenas os últimos 5)
+      const allKeys = Object.keys(localStorage).filter(key => key.startsWith('srt_backup_'));
+      if (allKeys.length > 5) {
+        allKeys.sort().slice(0, -5).forEach(key => localStorage.removeItem(key));
+      }
+    } catch (backupError) {
+      console.warn('Não foi possível criar backup local:', backupError);
+    }
+    
+    // Animação de sucesso
+    hideLoading();
     
     const celebration = document.createElement('div');
-    celebration.className = 'fixed inset-0 pointer-events-none z-50';
+    celebration.className = 'fixed inset-0 pointer-events-none z-50 flex items-center justify-center';
     celebration.innerHTML = `
-      <div class="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2">
+      <div class="relative">
         <svg class="w-32 h-32 text-green-500 animate-bounce-in" fill="none" viewBox="0 0 24 24" stroke="currentColor">
           <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
         </svg>
+        <div class="absolute inset-0 animate-ping">
+          <svg class="w-32 h-32 text-green-500 opacity-75" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+          </svg>
+        </div>
       </div>
     `;
     document.body.appendChild(celebration);
     
+    // Aguardar e perguntar próxima ação
     setTimeout(() => {
       celebration.remove();
-      if (confirm('Deseja cadastrar outra residência?')) {
-        clearForm();
-      } else {
-        window.location.href = 'admin.html';
-      }
+      
+      const modal = document.createElement('div');
+      modal.className = 'fixed inset-0 z-50 flex items-center justify-center p-4';
+      modal.innerHTML = `
+        <div class="absolute inset-0 bg-black/60 backdrop-blur-sm" onclick="this.parentElement.remove()"></div>
+        <div class="relative bg-white dark:bg-gray-800 rounded-2xl p-8 max-w-md w-full shadow-2xl animate-scale-in">
+          <div class="text-center">
+            <svg class="w-16 h-16 text-green-500 mx-auto mb-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+            </svg>
+            <h3 class="text-2xl font-bold text-gray-900 dark:text-white mb-2">Cadastro Realizado!</h3>
+            <p class="text-gray-600 dark:text-gray-300 mb-6">Os dados foram salvos com sucesso.</p>
+            <div class="space-y-3">
+              <button onclick="clearForm(); this.closest('.fixed').remove();" class="w-full px-6 py-3 bg-blue-600 hover:bg-blue-700 text-white rounded-xl font-medium transition-all transform hover:scale-105">
+                Cadastrar Nova Residência
+              </button>
+              <button onclick="window.location.href='admin.html'" class="w-full px-6 py-3 bg-gray-200 dark:bg-gray-700 hover:bg-gray-300 dark:hover:bg-gray-600 text-gray-700 dark:text-gray-300 rounded-xl font-medium transition-all">
+                Ir para o Painel Admin
+              </button>
+              <button onclick="this.closest('.fixed').remove();" class="w-full px-6 py-3 text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200 font-medium transition-all">
+                Continuar Preenchendo
+              </button>
+            </div>
+          </div>
+        </div>
+      `;
+      document.body.appendChild(modal);
     }, 2000);
     
   } catch (error) {
     console.error('Erro ao salvar:', error);
-    showToast('Erro ao salvar dados. Tente novamente.', 'error');
-  } finally {
     hideLoading();
+    
+    // Mostrar erro detalhado
+    showToast(`Erro ao salvar: ${error.message}`, 'error');
+    
+    // Log detalhado do erro
+    console.error('Detalhes do erro:', {
+      message: error.message,
+      code: error.code,
+      stack: error.stack
+    });
+    
+    // Tentar salvar em cache local como fallback
+    try {
+      const fallbackData = {
+        ...houseData,
+        error: error.message,
+        savedAt: new Date().toISOString(),
+        fallback: true
+      };
+      
+      const cacheKey = `srt_fallback_${Date.now()}`;
+      localStorage.setItem(cacheKey, JSON.stringify(fallbackData));
+      
+      showToast('Dados salvos localmente. Tente sincronizar mais tarde.', 'warning');
+    } catch (cacheError) {
+      console.error('Erro ao salvar no cache:', cacheError);
+    }
+  } finally {
+    // Restaurar botão
     submitBtn.disabled = false;
     submitBtn.innerHTML = `
       <svg class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
