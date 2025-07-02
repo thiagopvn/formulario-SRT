@@ -1481,7 +1481,6 @@ const submitForm = async (event) => {
   
   try {
     
-    // Função auxiliar para coletar dados de seção
     const collectSectionData = (sectionSelector, houseData) => {
   const section = document.querySelector(sectionSelector);
   if (!section) {
@@ -1491,17 +1490,18 @@ const submitForm = async (event) => {
   
   console.log(`Coletando dados da seção: ${sectionSelector}`);
   
-  // 1. Coletar todos os inputs normais (text, number, date, email, tel, etc.)
   section.querySelectorAll('input:not([type="checkbox"]):not([type="radio"]):not([id*="_validation"])').forEach(field => {
     if (!field.id || field.type === 'hidden' || field.disabled) return;
     
     const value = field.value.trim();
     if (!value) return;
     
-    // Log para debug
+    if (field.id === 'emailResponsavelPreenchimento') {
+      console.log(`EMAIL ENCONTRADO: ${field.id} = ${value}`);
+    }
+    
     console.log(`Campo encontrado: ${field.id} = ${value} (tipo: ${field.type})`);
     
-    // Tratar diferentes tipos de dados
     switch (field.type) {
       case 'number':
         houseData[field.id] = parseInt(value) || 0;
@@ -1511,17 +1511,17 @@ const submitForm = async (event) => {
         break;
       case 'email':
         houseData[field.id] = value.toLowerCase();
+        console.log(`Email coletado: ${field.id} = ${houseData[field.id]}`);
         break;
       case 'tel':
-        houseData[field.id] = value.replace(/\D/g, ''); // Remove formatação
-        houseData[field.id + '_formatted'] = value; // Salva versão formatada também
+        houseData[field.id] = value.replace(/\D/g, '');
+        houseData[field.id + '_formatted'] = value;
         break;
       default:
         houseData[field.id] = value;
     }
   });
   
-  // 2. Coletar selects
   section.querySelectorAll('select').forEach(select => {
     if (!select.id || select.disabled) return;
     
@@ -1531,7 +1531,6 @@ const submitForm = async (event) => {
     console.log(`Select encontrado: ${select.id} = ${value}`);
     houseData[select.id] = value;
     
-    // Para selects múltiplos
     if (select.multiple) {
       const selectedOptions = Array.from(select.selectedOptions).map(opt => opt.value);
       if (selectedOptions.length > 0) {
@@ -1540,7 +1539,6 @@ const submitForm = async (event) => {
     }
   });
   
-  // 3. Coletar textareas
   section.querySelectorAll('textarea').forEach(textarea => {
     if (!textarea.id || textarea.disabled) return;
     
@@ -1551,18 +1549,14 @@ const submitForm = async (event) => {
     houseData[textarea.id] = value;
   });
   
-  // 4. Coletar campos multiselect (grupos de checkboxes)
   const multiselectGroups = {};
   
   section.querySelectorAll('input[type="checkbox"]').forEach(checkbox => {
-    // Ignorar checkboxes de validação
     if (checkbox.id && checkbox.id.includes('_validation')) return;
     
-    // Obter o nome do grupo
     const fieldName = checkbox.getAttribute('data-field') || checkbox.name;
     if (!fieldName) return;
     
-    // Inicializar array se não existir
     if (!multiselectGroups[fieldName]) {
       multiselectGroups[fieldName] = {
         values: [],
@@ -1604,7 +1598,6 @@ const submitForm = async (event) => {
       const shouldShow = showWhen.split(',').includes(dependentValue);
       
       if (!shouldShow) {
-        // Remover campos condicionais não aplicáveis
         conditionalField.querySelectorAll('input, select, textarea').forEach(field => {
           if (field.id && houseData[field.id] !== undefined) {
             console.log(`Removendo campo condicional: ${field.id}`);
@@ -1639,9 +1632,16 @@ const submitForm = async (event) => {
     }
   });
 
+  if (houseData.emailResponsavelPreenchimento) {
+    console.log(`EMAIL COLETADO COM SUCESSO: ${houseData.emailResponsavelPreenchimento}`);
+  } else {
+    console.warn(`EMAIL NÃO ENCONTRADO! Campos disponíveis:`, Object.keys(houseData).filter(k => k.includes('email')));
+  }
+
   console.log(`Dados coletados de ${sectionSelector}:`, {
     totalCampos: Object.keys(houseData).length,
-    campos: Object.keys(houseData),
+    temEmail: !!houseData.emailResponsavelPreenchimento,
+    email: houseData.emailResponsavelPreenchimento,
     nomeResidencia: houseData.nomeResidencia,
     tipoSRT: houseData.tipoSRT
   });

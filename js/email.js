@@ -706,31 +706,100 @@ const EmailService = {
   },
 
   async sendEmail(data) {
-    try {
-      const recipientEmail = data.emailResponsavelPreenchimento || data.email || 'default@email.com';
-      const emailContent = await this.generateReport(data);
-      
-      const templateParams = {
-        to_email: recipientEmail,
-        from_name: this.config.fromName,
-        subject: `Cadastro SRT - ${data.nomeResidencia || 'Residência Terapêutica'} - ${new Date().toLocaleDateString('pt-BR')}`,
-        message_html: emailContent
-      };
-
-      const response = await emailjs.send(
-        this.config.serviceId,
-        this.config.templateId,
-        templateParams
-      );
-
-      console.log('Email enviado com sucesso:', response);
-      return { success: true, message: 'E-mail enviado com sucesso!' };
-      
-    } catch (error) {
-      console.error('Erro ao enviar e-mail:', error);
-      return { success: false, message: 'Erro ao enviar e-mail', error: error };
+  try {
+    let recipientEmail = null;
+    
+    const emailFields = [
+      'emailResponsavelPreenchimento',
+      'email',
+      'emailResponsavel',
+      'email_responsavel',
+      'responsavelEmail'
+    ];
+    
+    for (const field of emailFields) {
+      if (data[field] && data[field].includes('@')) {
+        recipientEmail = data[field];
+        console.log(`Email encontrado no campo: ${field} = ${recipientEmail}`);
+        break;
+      }
     }
-  },
+    
+    if (!recipientEmail) {
+      for (const [key, value] of Object.entries(data)) {
+        if (key.toLowerCase().includes('email') && value && typeof value === 'string' && value.includes('@')) {
+          recipientEmail = value;
+          console.log(`Email encontrado por busca: ${key} = ${recipientEmail}`);
+          break;
+        }
+      }
+    }
+    
+    console.log('Debug - Dados disponíveis:', {
+      camposComEmail: Object.keys(data).filter(k => k.toLowerCase().includes('email')),
+      todosOsCampos: Object.keys(data),
+      emailEncontrado: recipientEmail
+    });
+    
+    if (!recipientEmail) {
+      const municipio = data.municipio || 'municipio';
+      recipientEmail = `srt.${municipio.toLowerCase().replace(/\s+/g, '')}@saude.rj.gov.br`;
+      console.warn(`Email não encontrado, usando padrão: ${recipientEmail}`);
+    }
+    
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    if (!emailRegex.test(recipientEmail)) {
+      console.error('Email inválido:', recipientEmail);
+      throw new Error(`Email inválido: ${recipientEmail}`);
+    }
+    
+    console.log(`Enviando email para: ${recipientEmail}`);
+    
+    const emailContent = await this.generateReport(data);
+    
+    const templateParams = {
+      to_email: recipientEmail,
+      from_name: this.config.fromName,
+      subject: `Cadastro SRT - ${data.nomeResidencia || 'Residência Terapêutica'} - ${new Date().toLocaleDateString('pt-BR')}`,
+      message_html: emailContent
+    };
+
+    console.log('Enviando email com parâmetros:', {
+      destinatario: templateParams.to_email,
+      assunto: templateParams.subject,
+      de: templateParams.from_name
+    });
+
+    const response = await emailjs.send(
+      this.config.serviceId,
+      this.config.templateId,
+      templateParams
+    );
+
+    console.log('Email enviado com sucesso:', response);
+    return { 
+      success: true, 
+      message: `E-mail enviado com sucesso para ${recipientEmail}!`,
+      email: recipientEmail
+    };
+    
+  } catch (error) {
+    console.error('Erro ao enviar e-mail:', error);
+    
+    console.error('Detalhes do erro:', {
+      message: error.message,
+      code: error.code,
+      stack: error.stack,
+      dadosDisponíveis: Object.keys(data)
+    });
+    
+    return { 
+      success: false, 
+      message: `Erro ao enviar e-mail: ${error.message}`, 
+      error: error 
+    };
+  }
+},
 
   async testEmail(data) {
     const emailHTML = await this.generateReport(data);
