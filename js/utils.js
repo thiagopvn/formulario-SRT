@@ -136,136 +136,134 @@ const ExportUtils = {
     }
   },
 
-  buildCompleteDataStructure(houses, config) {
-    const headers = [];
-    const rows = [];
+ buildCompleteDataStructure(houses, config) {
+  const headers = [];
+  const rows = [];
+  
+  headers.push('ID');
+  headers.push('Data Cadastro');
+  
+  if (config.municipio) {
+    config.municipio.forEach(field => {
+      headers.push(`[MUN] ${field.label}`);
+    });
+  }
+  
+  headers.push('CAPS Vinculado');
+  headers.push('Tipo SRT');
+  headers.push('Vagas Totais');
+  headers.push('Vagas Ocupadas');
+  headers.push('Taxa Ocupação (%)');
+  headers.push('Total Moradores');
+  
+  if (config.general) {
+    config.general.forEach(field => {
+      if (!['nomeResidencia', 'nomeCaps', 'tipoSRT'].includes(field.key)) {
+        headers.push(`[GERAL] ${field.label}`);
+      }
+    });
+  }
+  
+  if (config.residence) {
+    config.residence.forEach(field => {
+      headers.push(`[RES] ${field.label}`);
+    });
+  }
+  
+  if (config.caregivers) {
+    config.caregivers.forEach(field => {
+      headers.push(`[EQUIPE] ${field.label}`);
+    });
+  }
+  
+  const maxMoradores = Math.max(...houses.map(h => h.residents?.length || 0));
+  
+  for (let i = 1; i <= maxMoradores; i++) {
+    headers.push(`[M${i}] Preenchido`);
+    if (config.residentFields) {
+      config.residentFields.forEach(field => {
+        headers.push(`[M${i}] ${field.label}`);
+      });
+    }
+  }
+  
+  let rowIndex = 0;
+  houses.forEach((house, houseIndex) => {
+    const row = [];
     
-    headers.push('ID');
-    headers.push('Data Cadastro');
+    row.push(houseIndex + 1);
+    row.push(this.formatValue(house.createdAt, 'datetime'));
     
     if (config.municipio) {
       config.municipio.forEach(field => {
-        headers.push(`[MUN] ${field.label}`);
+        row.push(this.formatValue(house[field.key], field.type));
       });
     }
     
-    headers.push('Nome da Residência');
-    headers.push('CAPS Vinculado');
-    headers.push('Tipo SRT');
-    headers.push('Vagas Totais');
-    headers.push('Vagas Ocupadas');
-    headers.push('Taxa Ocupação (%)');
-    headers.push('Total Moradores');
+    row.push(house.nomeCaps || house.capsVinculadaSRT || '');
+    row.push(house.tipoSRT || '');
+    row.push(this.formatValue(house.vagasTotais, 'number'));
+    row.push(this.formatValue(house.vagasOcupadas, 'number'));
+    
+    const taxaOcupacao = house.vagasTotais > 0 ? (house.vagasOcupadas / house.vagasTotais) : 0;
+    row.push(taxaOcupacao);
+    
+    row.push(house.residents?.length || 0);
     
     if (config.general) {
       config.general.forEach(field => {
         if (!['nomeResidencia', 'nomeCaps', 'tipoSRT'].includes(field.key)) {
-          headers.push(`[GERAL] ${field.label}`);
+          row.push(this.formatValue(house[field.key], field.type));
         }
       });
     }
     
     if (config.residence) {
       config.residence.forEach(field => {
-        headers.push(`[RES] ${field.label}`);
+        row.push(this.formatValue(house[field.key], field.type));
       });
     }
     
     if (config.caregivers) {
       config.caregivers.forEach(field => {
-        headers.push(`[EQUIPE] ${field.label}`);
+        row.push(this.formatValue(house[field.key], field.type));
       });
     }
     
-    const maxMoradores = Math.max(...houses.map(h => h.residents?.length || 0));
-    
-    for (let i = 1; i <= maxMoradores; i++) {
-      headers.push(`[M${i}] Preenchido`);
-      if (config.residentFields) {
-        config.residentFields.forEach(field => {
-          headers.push(`[M${i}] ${field.label}`);
-        });
+    for (let i = 0; i < maxMoradores; i++) {
+      if (house.residents && house.residents[i]) {
+        const resident = house.residents[i];
+        row.push('Sim');
+        
+        if (config.residentFields) {
+          config.residentFields.forEach(field => {
+            if (field.conditional) {
+              const dependentValue = resident[field.conditional.field];
+              const shouldShow = field.conditional.values 
+                ? field.conditional.values.includes(dependentValue)
+                : dependentValue === field.conditional.value;
+              if (!shouldShow) {
+                row.push('');
+                return;
+              }
+            }
+            row.push(this.formatValue(resident[field.key], field.type));
+          });
+        }
+      } else {
+        row.push('Não');
+        if (config.residentFields) {
+          config.residentFields.forEach(() => row.push(''));
+        }
       }
     }
     
-    let rowIndex = 0;
-    houses.forEach((house, houseIndex) => {
-      const row = [];
-      
-      row.push(houseIndex + 1);
-      row.push(this.formatValue(house.createdAt, 'datetime'));
-      
-      if (config.municipio) {
-        config.municipio.forEach(field => {
-          row.push(this.formatValue(house[field.key], field.type));
-        });
-      }
-      
-      row.push(house.nomeResidencia || house.nomeResidenciaTherapeutica || house.nome_da_residencia_terapeutica_caso_possua || '');
-      row.push(house.nomeCaps || house.capsVinculadaSRT || '');
-      row.push(house.tipoSRT || '');
-      row.push(this.formatValue(house.vagasTotais, 'number'));
-      row.push(this.formatValue(house.vagasOcupadas, 'number'));
-      
-      const taxaOcupacao = house.vagasTotais > 0 ? (house.vagasOcupadas / house.vagasTotais) : 0;
-      row.push(taxaOcupacao);
-      
-      row.push(house.residents?.length || 0);
-      
-      if (config.general) {
-        config.general.forEach(field => {
-          if (!['nomeResidencia', 'nomeCaps', 'tipoSRT'].includes(field.key)) {
-            row.push(this.formatValue(house[field.key], field.type));
-          }
-        });
-      }
-      
-      if (config.residence) {
-        config.residence.forEach(field => {
-          row.push(this.formatValue(house[field.key], field.type));
-        });
-      }
-      
-      if (config.caregivers) {
-        config.caregivers.forEach(field => {
-          row.push(this.formatValue(house[field.key], field.type));
-        });
-      }
-      
-      for (let i = 0; i < maxMoradores; i++) {
-        if (house.residents && house.residents[i]) {
-          const resident = house.residents[i];
-          row.push('Sim');
-          
-          if (config.residentFields) {
-            config.residentFields.forEach(field => {
-              if (field.conditional) {
-                const dependentValue = resident[field.conditional.field];
-                const shouldShow = field.conditional.values 
-                  ? field.conditional.values.includes(dependentValue)
-                  : dependentValue === field.conditional.value;
-                if (!shouldShow) {
-                  row.push('');
-                  return;
-                }
-              }
-              row.push(this.formatValue(resident[field.key], field.type));
-            });
-          }
-        } else {
-          row.push('Não');
-          if (config.residentFields) {
-            config.residentFields.forEach(() => row.push(''));
-          }
-        }
-      }
-      
-      rows.push(row);
-      rowIndex++;
-    });
-    
-    return { headers, rows };
-  },
+    rows.push(row);
+    rowIndex++;
+  });
+  
+  return { headers, rows };
+},
 
   applyCompleteStyling(worksheet, headers, rows) {
     const range = XLSX.utils.decode_range(worksheet['!ref']);

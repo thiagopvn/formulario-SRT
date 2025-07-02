@@ -620,15 +620,7 @@ const getDefaultConfig = () => ({
       mask: "9999999",
       maxLength: 7
     },
-    { 
-      key: "nomeResidencia", 
-      label: "Nome da Residência Terapêutica", 
-      type: "text", 
-      required: true,
-      placeholder: "Ex: Residência Terapêutica Esperança",
-      helpText: "Nome pelo qual a residência é conhecida",
-      maxLength: 200
-    },
+    
     { 
       key: "tipoSRT", 
       label: "Modalidade da SRT", 
@@ -1527,22 +1519,6 @@ const submitForm = async (event) => {
       default:
         houseData[field.id] = value;
     }
-    
-    // Tratamento especial para campos de nome
-    // Tratamento especial para campos de nome
-    if (field.id.toLowerCase().includes('nomeresidencia') || 
-    field.id.toLowerCase().includes('nome_residencia') ||
-    field.id.toLowerCase().includes('nome_da_residencia')) {  // Adicione esta linha
-    console.log(`Campo de nome detectado: ${field.id} = ${value}`);
-  
-  // Garantir que seja salvo como nomeResidencia
-      if (!houseData.nomeResidencia) {
-        houseData.nomeResidencia = value;
-      }
-  
-  // Salvar também com o ID original
-  houseData[field.id] = value;
-    }
   });
   
   // 2. Coletar selects
@@ -1685,13 +1661,10 @@ const submitForm = async (event) => {
     collectSectionData('#caregiverFields', houseData);
     
     // Coletar dados de capacidade
-    const totalResidents = document.getElementById('totalResidents');
     const vagasTotais = document.getElementById('vagasTotais');
     const vagasOcupadas = document.getElementById('vagasOcupadas');
     const vagasDisponiveis = document.getElementById('vagasDisponiveis');
     
-    if (totalResidents) houseData.totalMoradores = parseInt(totalResidents.value) || 0;
-    if (totalResidents) houseData.totalResidents = parseInt(totalResidents.value) || 0; // Duplicado para compatibilidade
     if (vagasTotais) houseData.vagasTotais = parseInt(vagasTotais.value) || 0;
     if (vagasOcupadas) houseData.vagasOcupadas = parseInt(vagasOcupadas.value) || 0;
     if (vagasDisponiveis) houseData.vagasDisponiveis = parseInt(vagasDisponiveis.value) || 0;
@@ -1773,7 +1746,7 @@ const submitForm = async (event) => {
     };
     
     // Validar dados críticos antes de salvar
-    const criticalFields = ['nomeResidencia', 'municipio', 'tipoSRT'];
+    const criticalFields = ['municipio', 'tipoSRT'];
     const missingFields = criticalFields.filter(field => !houseData[field]);
     
     if (missingFields.length > 0) {
