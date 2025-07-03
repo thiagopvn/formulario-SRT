@@ -377,8 +377,6 @@ const updateCapacityDisplay = (cnes, current, available, total) => {
     }, 600);
   };
   
-  animateNumber('capacityCnesDisplay', cnes);
-  animateNumber('capacityCurrentDisplay', current);
   animateNumber('capacityAvailableDisplay', available);
   animateNumber('capacityTotalDisplay', total);
 };
