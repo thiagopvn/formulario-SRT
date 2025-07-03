@@ -310,7 +310,7 @@ const displayHouses = (houses) => {
     const capsVinculado = house.nome_do_caps_em_que_o_srt_esta_vinculada || '-';
     const tipoSRT = house.tipo_do_srt || '-';
     const moradores = house.residents ? house.residents.length : (house.numeroMoradores || 0);
-    const vagas = house.vagasTotais || house.vagas || '-';
+    const vagas = house.vagasDisponiveis !== undefined ? house.vagasDisponiveis : '-';
     
     row.innerHTML = `
       <td class="px-6 py-4 whitespace-nowrap">
