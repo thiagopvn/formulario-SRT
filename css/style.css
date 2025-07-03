@@ -226,6 +226,9 @@ body {
   font-weight: 500;
   color: var(--gray-700);
   margin-bottom: 0.5rem;
+  min-width: 150px; /* Or any other suitable value */
+  white-space: normal;
+  word-wrap: break-word;
 }
 
 .dark .form-label {
