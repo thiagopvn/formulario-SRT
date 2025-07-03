@@ -153,6 +153,7 @@ const initializeApp = async () => {
   initTabs();
   
   try {
+    await loadFormConfiguration();
     await loadHouses();
     setupEventListeners();
   } catch (error) {
@@ -360,9 +361,13 @@ const filterHouses = () => {
   displayHouses(filtered);
 };
 
-window.viewHouse = (houseId) => {
+window.viewHouse = async (houseId) => {
   const house = allHouses.find(h => h.id === houseId);
   if (!house) return;
+
+  if (!formConfig) {
+    await loadFormConfiguration();
+  }
   
   const modal = document.getElementById('houseModal');
   const detailsDiv = document.getElementById('houseDetails');
@@ -372,64 +377,52 @@ window.viewHouse = (houseId) => {
 };
 
 const generateHouseDetailsHTML = (house) => {
+  if (!formConfig) {
+    console.error("A configuração do formulário (formConfig) não foi carregada.");
+    return '<p>Erro ao carregar a configuração do formulário. Não é possível exibir os detalhes.</p>';
+  }
+
   const formatValue = (value) => {
     if (value === null || value === undefined || value === '') return '-';
     if (Array.isArray(value)) return value.length > 0 ? value.join(', ') : '-';
     return value;
   };
-  
+
   const formatDate = (dateValue) => {
     if (!dateValue) return '-';
     try {
+      // Converte Timestamps do Firebase ou strings de data
       const date = dateValue.toDate ? dateValue.toDate() : new Date(dateValue);
+      if (isNaN(date.getTime())) return dateValue; // Retorna o valor original se a data for inválida
       return date.toLocaleDateString('pt-BR');
     } catch {
       return dateValue;
     }
   };
-  
+
   let html = '<div class="space-y-6">';
-  
-  const sections = [
-    {
-      title: 'Informações do Município',
-      icon: '🏛️',
-      fields: [
-        { label: 'Município', key: 'municipio' },
-        { label: 'Responsável pelo Preenchimento', key: 'responsavelPreenchimento' },
-        { label: 'E-mail do Responsável', key: 'emailResponsavelPreenchimento' }
-      ]
-    },
-    {
-      title: 'Dados do SRT',
-      icon: '📋',
-      fields: [
-        { label: 'CAPS Vinculado', key: 'capsVinculado' },
-        { label: 'Tipo SRT', key: 'tipoSRT' },
-        { label: 'Data de Habilitação', key: 'dataHabilitacao', type: 'date' }
-      ]
-    },
-    {
-      title: 'Dados da Residência',
-      icon: '🏠',
-      fields: [
-        { label: 'Nome da Residência', key: 'nomeResidencia' },
-        { label: 'Endereço Completo', key: 'enderecoCompleto' },
-        { label: 'Zona', key: 'zona' },
-        { label: 'Vagas Totais', key: 'vagasTotais' },
-        { label: 'Vagas Ocupadas', key: 'vagasOcupadas' },
-        { label: 'Vagas Disponíveis', key: 'vagasDisponiveis' }
-      ]
-    }
+
+  const sectionsConfig = [
+    { title: 'Informações do Município', icon: '🏛️', key: 'municipio' },
+    { title: 'Dados do SRT', icon: '📋', key: 'general' },
+    { title: 'Dados da Residência', icon: '🏠', key: 'residence' },
+    { title: 'Dados da Equipe/Cuidadores', icon: '👥', key: 'caregivers' }
   ];
-  
-  sections.forEach(section => {
-    const sectionFields = section.fields.filter(field => {
+
+  sectionsConfig.forEach(section => {
+    const fields = formConfig[section.key] || [];
+    const sectionData = fields.map(field => {
       const value = house[field.key];
-      return value !== undefined && value !== null && value !== '';
-    });
-    
-    if (sectionFields.length > 0) {
+      if (value !== undefined && value !== null && value !== '') {
+        return {
+          label: field.label,
+          value: field.type === 'date' ? formatDate(value) : formatValue(value)
+        };
+      }
+      return null;
+    }).filter(Boolean); // Remove os campos nulos
+
+    if (sectionData.length > 0) {
       html += `
         <div class="bg-gray-50 dark:bg-gray-700 rounded-xl p-6">
           <div class="flex items-center gap-3 mb-4">
@@ -438,58 +431,46 @@ const generateHouseDetailsHTML = (house) => {
           </div>
           <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
       `;
-      
-      sectionFields.forEach(field => {
-        const value = house[field.key];
-        const formattedValue = field.type === 'date' ? formatDate(value) : formatValue(value);
-        
+      sectionData.forEach(item => {
         html += `
           <div class="bg-white dark:bg-gray-800 rounded-lg p-4">
-            <div class="text-sm font-medium text-gray-500 dark:text-gray-400 mb-1">${field.label}</div>
-            <div class="text-gray-900 dark:text-white">${formattedValue}</div>
+            <div class="text-sm font-medium text-gray-500 dark:text-gray-400 mb-1">${item.label}</div>
+            <div class="text-gray-900 dark:text-white">${item.value}</div>
           </div>
         `;
       });
-      
       html += '</div></div>';
     }
   });
-  
-  if (house.residents && house.residents.length > 0) {
+
+  if (house.residents && house.residents.length > 0 && formConfig.residentFields) {
     html += `
       <div class="bg-gray-50 dark:bg-gray-700 rounded-xl p-6">
         <div class="flex items-center gap-3 mb-4">
-          <span class="text-2xl">👥</span>
+          <span class="text-2xl">🏥</span>
           <h3 class="text-lg font-semibold text-gray-800 dark:text-white">Moradores (${house.residents.length})</h3>
         </div>
         <div class="space-y-4">
     `;
     
     house.residents.forEach((resident, index) => {
+      const residentName = formatValue(resident.nomeCompleto) || `Morador ${index + 1}`;
+      const socialName = resident.nomeSocial ? `<span class="text-gray-500 ml-2">(${resident.nomeSocial})</span>` : '';
+
       html += `
         <div class="bg-white dark:bg-gray-800 rounded-lg p-4">
           <div class="flex items-center gap-3 mb-3">
             <div class="w-8 h-8 bg-blue-500 text-white rounded-full flex items-center justify-center text-sm font-bold">
               ${index + 1}
             </div>
-            <div class="font-medium text-gray-900 dark:text-white">
-              ${formatValue(resident.nomeCompleto)}
-              ${resident.nomeSocial ? `<span class="text-gray-500 ml-2">(${resident.nomeSocial})</span>` : ''}
-            </div>
+            <div class="font-medium text-gray-900 dark:text-white">${residentName}${socialName}</div>
           </div>
           <div class="grid grid-cols-1 md:grid-cols-2 gap-3 text-sm">
       `;
       
-      const residentFields = [
-        { label: 'CPF', key: 'cpf' },
-        { label: 'Data de Nascimento', key: 'dataNascimento', type: 'date' },
-        { label: 'Sexo', key: 'sexo' },
-        { label: 'Diagnóstico Principal', key: 'diagnosticoPrincipal' }
-      ];
-      
-      residentFields.forEach(field => {
+      formConfig.residentFields.forEach(field => {
         const value = resident[field.key];
-        if (value !== undefined && value !== null && value !== '') {
+        if (value !== undefined && value !== null && value !== '' && field.key !== 'nomeCompleto' && field.key !== 'nomeSocial') {
           const formattedValue = field.type === 'date' ? formatDate(value) : formatValue(value);
           html += `
             <div>
@@ -505,11 +486,11 @@ const generateHouseDetailsHTML = (house) => {
     
     html += '</div></div>';
   }
-  
+
   const createdAt = house.createdAt;
   if (createdAt) {
     html += `
-      <div class="bg-blue-50 dark:bg-blue-900/20 rounded-xl p-4 border border-blue-200 dark:border-blue-800">
+      <div class="bg-blue-50 dark:bg-blue-900/20 rounded-xl p-4 border border-blue-200 dark:border-blue-800 mt-6">
         <div class="flex items-center gap-2 text-blue-600 dark:text-blue-400">
           <svg class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
