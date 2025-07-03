@@ -620,18 +620,102 @@ const exportData = () => {
 
   const wb = XLSX.utils.book_new();
 
-  // Estilos
-  const headerStyle = {
-    font: { bold: true, color: { rgb: "FFFFFF" } },
-    fill: { fgColor: { rgb: "4F81BD" } },
-    alignment: { horizontal: "center", vertical: "center" }
+  // --- Estilos ---
+  const styles = {
+    title: {
+      font: { name: 'Arial', sz: 24, bold: true, color: { rgb: "FFFFFFFF" } },
+      fill: { fgColor: { rgb: "FF2d2d30" } },
+      alignment: { horizontal: "center", vertical: "center" }
+    },
+    subtitle: {
+      font: { name: 'Arial', sz: 14, bold: true, color: { rgb: "FFFFFFFF" } },
+      fill: { fgColor: { rgb: "FF454545" } },
+      alignment: { horizontal: "center", vertical: "center" }
+    },
+    header: {
+      font: { name: 'Arial', sz: 12, bold: true, color: { rgb: "FFFFFFFF" } },
+      fill: { fgColor: { rgb: "FF4F81BD" } },
+      alignment: { horizontal: "center", vertical: "center", wrapText: true },
+      border: {
+        top: { style: "thin", color: { auto: 1 } },
+        bottom: { style: "thin", color: { auto: 1 } },
+        left: { style: "thin", color: { auto: 1 } },
+        right: { style: "thin", color: { auto: 1 } }
+      }
+    },
+    cell: {
+      font: { name: 'Arial', sz: 11 },
+      border: {
+        top: { style: "thin", color: { rgb: "FFD3D3D3" } },
+        bottom: { style: "thin", color: { rgb: "FFD3D3D3" } },
+        left: { style: "thin", color: { rgb: "FFD3D3D3" } },
+        right: { style: "thin", color: { rgb: "FFD3D3D3" } }
+      }
+    },
+    cellZebra: {
+      font: { name: 'Arial', sz: 11 },
+      fill: { fgColor: { rgb: "FFF2F2F2" } },
+      border: {
+        top: { style: "thin", color: { rgb: "FFD3D3D3" } },
+        bottom: { style: "thin", color: { rgb: "FFD3D3D3" } },
+        left: { style: "thin", color: { rgb: "FFD3D3D3" } },
+        right: { style: "thin", color: { rgb: "FFD3D3D3" } }
+      }
+    },
+    summaryCard: {
+        fill: { fgColor: { rgb: "FFE8EAF6" } },
+        font: { name: 'Arial', sz: 12, color: { rgb: "FF3F51B5" } },
+        alignment: { horizontal: "center", vertical: "center" },
+        border: {
+            top: { style: "medium", color: { rgb: "FF3F51B5" } },
+        }
+    },
+    summaryValue: {
+        font: { name: 'Arial', sz: 22, bold: true, color: { rgb: "FF3F51B5" } },
+        alignment: { horizontal: "center", vertical: "center" }
+    }
   };
+
+  // --- Planilha de Resumo ---
+  const wsSummary = XLSX.utils.aoa_to_sheet([[]]);
+  wsSummary['!merges'] = [];
+
+  // Título
+  wsSummary['A1'] = { t: 's', v: 'Relatório Geral de Residências Terapêuticas', s: styles.title };
+  wsSummary['!merges'].push({ s: { r: 0, c: 0 }, e: { r: 1, c: 7 } });
+
+  // Estatísticas
+  const totalHouses = allHouses.length;
+  const totalResidents = allHouses.reduce((sum, house) => sum + (house.residents ? house.residents.length : (parseInt(house.numeroMoradores) || 0)), 0);
+  const totalCapacity = allHouses.reduce((sum, house) => sum + (parseInt(house.vagasTotais) || 0), 0);
+  const occupancyRate = totalCapacity > 0 ? ((totalResidents / totalCapacity) * 100) : 0;
+
+  wsSummary['B4'] = { t: 's', v: 'Total de Residências', s: styles.summaryCard };
+  wsSummary['B5'] = { t: 'n', v: totalHouses, s: styles.summaryValue };
+  wsSummary['!merges'].push({ s: { r: 3, c: 1 }, e: { r: 3, c: 2 } });
+  wsSummary['!merges'].push({ s: { r: 4, c: 1 }, e: { r: 4, c: 2 } });
+
+  wsSummary['D4'] = { t: 's', v: 'Total de Moradores', s: styles.summaryCard };
+  wsSummary['D5'] = { t: 'n', v: totalResidents, s: styles.summaryValue };
+  wsSummary['!merges'].push({ s: { r: 3, c: 3 }, e: { r: 3, c: 4 } });
+  wsSummary['!merges'].push({ s: { r: 4, c: 3 }, e: { r: 4, c: 4 } });
+  
+  wsSummary['F4'] = { t: 's', v: 'Taxa de Ocupação', s: styles.summaryCard };
+  wsSummary['F5'] = { t: 'n', v: occupancyRate.toFixed(1) + '%', s: styles.summaryValue };
+  wsSummary['!merges'].push({ s: { r: 3, c: 5 }, e: { r: 3, c: 6 } });
+  wsSummary['!merges'].push({ s: { r: 4, c: 5 }, e: { r: 4, c: 6 } });
+
+  wsSummary['!cols'] = [{wch: 5}, {wch: 20}, {wch: 20}, {wch: 20}, {wch: 20}, {wch: 20}, {wch: 20}, {wch: 5}];
+  wsSummary['!rows'] = [{hpt: 40}, {hpt: 20}, {hpt: 20}, {hpt: 30}, {hpt: 40}];
+
+  XLSX.utils.book_append_sheet(wb, wsSummary, 'Resumo');
+
 
   // --- Planilha de Residências ---
   const residencesSheetData = [];
   const residenceHeaders = [];
+  const headerSections = [];
 
-  // Mapeia todos os campos possíveis para as residências
   const allResidenceFields = [
     ...formConfig.municipio, 
     ...formConfig.general, 
@@ -639,39 +723,68 @@ const exportData = () => {
     ...formConfig.caregivers
   ];
 
-  allResidenceFields.forEach(field => {
-    residenceHeaders.push(field.label);
-  });
+  let col = 0;
+  const sections = {
+      'Informações do Município': formConfig.municipio.length,
+      'Dados do SRT': formConfig.general.length,
+      'Dados da Residência': formConfig.residence.length,
+      'Dados da Equipe/Cuidadores': formConfig.caregivers.length
+  };
+
+  headerSections.push(...Object.keys(sections).map(s => ({ name: s, count: sections[s] })));
+  allResidenceFields.forEach(field => residenceHeaders.push(field.label));
   residenceHeaders.push('Data de Cadastro');
 
+  const sheetData = [residenceHeaders];
+
   allHouses.forEach(house => {
-    const row = {};
+    const row = [];
     allResidenceFields.forEach(field => {
       const value = house[field.key];
       if (field.type === 'date' && value) {
-        row[field.label] = new Date(value.seconds * 1000).toLocaleDateString('pt-BR');
+        row.push(new Date(value.seconds * 1000).toLocaleDateString('pt-BR'));
       } else if (Array.isArray(value)) {
-        row[field.label] = value.join(', ');
+        row.push(value.join(', '));
       } else {
-        row[field.label] = value || '-';
+        row.push(value || '-');
       }
     });
-    row['Data de Cadastro'] = house.createdAt ? new Date(house.createdAt.seconds * 1000).toLocaleString('pt-BR') : '-';
-    residencesSheetData.push(row);
+    row.push(house.createdAt ? new Date(house.createdAt.seconds * 1000).toLocaleString('pt-BR') : '-');
+    sheetData.push(row);
   });
-
-  const wsResidences = XLSX.utils.json_to_sheet(residencesSheetData, { header: residenceHeaders });
   
-  // Aplica estilo e auto-ajuste de colunas para residências
-  const residenceColWidths = residenceHeaders.map(header => ({ wch: Math.max(header.length, 20) }));
-  wsResidences['!cols'] = residenceColWidths;
+  const wsResidences = XLSX.utils.aoa_to_sheet([[]]);
+  XLSX.utils.sheet_add_aoa(wsResidences, [[]], {origin: 'A2'}); // Start data later
+  XLSX.utils.sheet_add_aoa(wsResidences, sheetData, {origin: 'A2'});
 
-  residenceHeaders.forEach((_, C) => {
-    const cellRef = XLSX.utils.encode_cell({ r: 0, c: C });
-    if (wsResidences[cellRef]) {
-      wsResidences[cellRef].s = headerStyle;
-    }
+  // Add merged headers
+  let startCol = 0;
+  headerSections.forEach(section => {
+      if(section.count > 0) {
+          wsResidences['!merges'].push({ s: { r: 0, c: startCol }, e: { r: 0, c: startCol + section.count - 1 } });
+          const cellRef = XLSX.utils.encode_cell({ r: 0, c: startCol });
+          wsResidences[cellRef] = { t: 's', v: section.name, s: styles.subtitle };
+          startCol += section.count;
+      }
   });
+
+  // Style headers and cells
+  const colWidths = residenceHeaders.map(header => ({ wch: Math.max(header.length, 20) }));
+  wsResidences['!cols'] = colWidths;
+
+  for (let C = 0; C < residenceHeaders.length; C++) {
+      const cellRef = XLSX.utils.encode_cell({ r: 1, c: C });
+      if (wsResidences[cellRef]) wsResidences[cellRef].s = styles.header;
+  }
+
+  for (let R = 2; R < sheetData.length + 1; R++) {
+      for (let C = 0; C < residenceHeaders.length; C++) {
+          const cellRef = XLSX.utils.encode_cell({ r: R, c: C });
+          if (wsResidences[cellRef]) {
+              wsResidences[cellRef].s = (R % 2 === 0) ? styles.cell : styles.cellZebra;
+          }
+      }
+  }
 
   XLSX.utils.book_append_sheet(wb, wsResidences, 'Residências');
 
@@ -682,7 +795,7 @@ const exportData = () => {
   allHouses.forEach(house => {
     if (house.residents && house.residents.length > 0) {
       house.residents.forEach(resident => {
-        const row = { 'Residência': house.nomeResidencia || house.capsVinculado || house.id };
+        const row = { 'Residência': house.nomeResidencia || house.nome_do_caps_em_que_o_srt_esta_vinculada || house.id };
         formConfig.residentFields.forEach(field => {
           const value = resident[field.key];
           if (field.type === 'date' && value) {
@@ -698,17 +811,24 @@ const exportData = () => {
 
   if (residentsSheetData.length > 0) {
     const wsResidents = XLSX.utils.json_to_sheet(residentsSheetData, { header: residentHeaders });
-
-    // Aplica estilo e auto-ajuste de colunas para moradores
-    const residentColWidths = residentHeaders.map(header => ({ wch: Math.max(header.length, 20) }));
+    
+    const residentColWidths = residentHeaders.map(header => ({ wch: Math.max(header.length, 25) }));
     wsResidents['!cols'] = residentColWidths;
 
-    residentHeaders.forEach((_, C) => {
-      const cellRef = XLSX.utils.encode_cell({ r: 0, c: C });
-      if (wsResidents[cellRef]) {
-        wsResidents[cellRef].s = headerStyle;
-      }
-    });
+    const range = XLSX.utils.decode_range(wsResidents['!ref']);
+    for (let C = range.s.c; C <= range.e.c; ++C) {
+        const address = XLSX.utils.encode_col(C) + "1";
+        if(wsResidents[address]) wsResidents[address].s = styles.header;
+    }
+
+    for (let R = range.s.r + 1; R <= range.e.r; ++R) {
+        for (let C = range.s.c; C <= range.e.c; ++C) {
+            const cell_address = XLSX.utils.encode_cell({c:C, r:R});
+            if(wsResidents[cell_address]) {
+                wsResidents[cell_address].s = (R % 2 !== 0) ? styles.cell : styles.cellZebra;
+            }
+        }
+    }
 
     XLSX.utils.book_append_sheet(wb, wsResidents, 'Moradores');
   }
