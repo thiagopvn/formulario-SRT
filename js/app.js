@@ -125,7 +125,8 @@ const getDefaultConfig = () => {
       { key: 'nomeResidencia', label: 'Nome da Residência', type: 'text', required: true },
       { key: 'enderecoCompleto', label: 'Endereço Completo', type: 'text', required: true },
       { key: 'zona', label: 'Zona', type: 'select', required: false, options: ['Norte', 'Sul', 'Leste', 'Oeste', 'Centro'] },
-      { key: 'vagasTotais', label: 'Cadastrados no CNES', type: 'number', required: true, min: 0 }
+      { key: 'vagasTotais', label: 'Cadastrados no CNES', type: 'number', required: true, min: 0 },
+      { key: 'vagasOcupadas', label: 'Moradores Atuais', type: 'number', required: false, min: 0 }
     ],
     caregivers: [
       { key: 'coordenadorNome', label: 'Nome do Coordenador', type: 'text', required: false },
@@ -265,13 +266,13 @@ const setupEventListeners = () => {
   document.getElementById('addResidentBtn').addEventListener('click', addResident);
   
   document.addEventListener('change', (e) => {
-    if (e.target.name === 'vagasTotais') {
+    if (e.target.name === 'vagasTotais' || e.target.name === 'vagasOcupadas') {
       calculateCapacityMetrics();
     }
   });
   
   document.addEventListener('input', (e) => {
-    if (e.target.name === 'vagasTotais') {
+    if (e.target.name === 'vagasTotais' || e.target.name === 'vagasOcupadas') {
       calculateCapacityMetrics();
     }
   });
@@ -356,7 +357,7 @@ const updateProgress = () => {
 
 const calculateCapacityMetrics = () => {
   const totalSlots = parseInt(document.getElementById('vagasTotais')?.value) || 0;
-  const occupiedSlots = residents.length;
+  const occupiedSlots = parseInt(document.getElementById('vagasOcupadas')?.value) || 0;
   const availableSlots = Math.max(0, totalSlots - occupiedSlots);
   const totalResidents = residents.length;
   
@@ -672,8 +673,7 @@ const handleSubmit = async (e) => {
     formData.numeroMoradores = formData.residents ? formData.residents.length : 0;
 
     const totalSlots = parseInt(formData.vagasTotais) || 0;
-    const occupiedSlots = formData.residents ? formData.residents.length : 0;
-    formData.vagasOcupadas = occupiedSlots;
+    const occupiedSlots = parseInt(formData.vagasOcupadas) || 0;
     formData.vagasDisponiveis = Math.max(0, totalSlots - occupiedSlots);
     
     const docRef = await db.collection('srt').add(formData);
