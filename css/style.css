@@ -1296,4 +1296,57 @@ body {
     border: 1px solid #e5e7eb !important;
   }
 }
+.capacity-card {
+  position: relative;
+  overflow: hidden;
+}
 
+.capacity-card::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: -100%;
+  width: 100%;
+  height: 100%;
+  background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.2), transparent);
+  transition: left 0.6s;
+}
+
+.capacity-card:hover::before {
+  left: 100%;
+}
+
+.capacity-card:hover {
+  transform: translateY(-2px);
+}
+
+@keyframes countUp {
+  from {
+    transform: scale(0.8);
+    opacity: 0.5;
+  }
+  to {
+    transform: scale(1);
+    opacity: 1;
+  }
+}
+
+.capacity-number-animate {
+  animation: countUp 0.6s ease-out;
+}
+
+@media (max-width: 640px) {
+  .capacity-card {
+    text-align: center;
+  }
+  
+  .capacity-card .flex {
+    flex-direction: column;
+    align-items: center;
+    gap: 1rem;
+  }
+  
+  .capacity-card .text-right {
+    text-align: center;
+  }
+}

@@ -84,6 +84,7 @@ const initializeApp = async () => {
     generateFormFields();
     setupEventListeners();
     updateProgress();
+    initializeCapacityDisplay();
   } catch (error) {
     console.error('Erro ao inicializar:', error);
     showToast('Erro ao carregar configuração do formulário', 'error');
@@ -124,9 +125,9 @@ const getDefaultConfig = () => {
       { key: 'nomeResidencia', label: 'Nome da Residência', type: 'text', required: true },
       { key: 'enderecoCompleto', label: 'Endereço Completo', type: 'text', required: true },
       { key: 'zona', label: 'Zona', type: 'select', required: false, options: ['Norte', 'Sul', 'Leste', 'Oeste', 'Centro'] },
-      { key: 'vagasTotais', label: 'Vagas Totais', type: 'number', required: true },
-      { key: 'vagasOcupadas', label: 'Vagas Ocupadas', type: 'number', required: false },
-      { key: 'vagasDisponiveis', label: 'Vagas Disponíveis', type: 'number', required: false }
+      { key: 'vagasTotais', label: 'Cadastrados no CNES', type: 'number', required: true, min: 0 },
+      { key: 'vagasOcupadas', label: 'Moradores Atuais', type: 'number', required: false, min: 0 },
+      { key: 'vagasDisponiveis', label: 'Vagas Disponíveis', type: 'number', required: false, min: 0 }
     ],
     caregivers: [
       { key: 'coordenadorNome', label: 'Nome do Coordenador', type: 'text', required: false },
@@ -267,7 +268,13 @@ const setupEventListeners = () => {
   
   document.addEventListener('change', (e) => {
     if (e.target.name === 'vagasTotais' || e.target.name === 'vagasOcupadas') {
-      calculateAvailableSlots();
+      calculateCapacityMetrics();
+    }
+  });
+  
+  document.addEventListener('input', (e) => {
+    if (e.target.name === 'vagasTotais' || e.target.name === 'vagasOcupadas') {
+      calculateCapacityMetrics();
     }
   });
 };
@@ -349,15 +356,37 @@ const updateProgress = () => {
   document.getElementById('progressFill').style.width = `${progress}%`;
 };
 
-const calculateAvailableSlots = () => {
+const calculateCapacityMetrics = () => {
   const totalSlots = parseInt(document.getElementById('vagasTotais')?.value) || 0;
   const occupiedSlots = parseInt(document.getElementById('vagasOcupadas')?.value) || 0;
   const availableSlots = Math.max(0, totalSlots - occupiedSlots);
+  const totalResidents = residents.length;
   
   const availableField = document.getElementById('vagasDisponiveis');
   if (availableField) {
     availableField.value = availableSlots;
   }
+  
+  updateCapacityDisplay(totalSlots, occupiedSlots, availableSlots, totalResidents);
+};
+
+const updateCapacityDisplay = (cnes, current, available, total) => {
+  const animateNumber = (elementId, value) => {
+    const element = document.getElementById(elementId);
+    if (!element) return;
+    
+    element.classList.add('capacity-number-animate');
+    element.textContent = value;
+    
+    setTimeout(() => {
+      element.classList.remove('capacity-number-animate');
+    }, 600);
+  };
+  
+  animateNumber('capacityCnesDisplay', cnes);
+  animateNumber('capacityCurrentDisplay', current);
+  animateNumber('capacityAvailableDisplay', available);
+  animateNumber('capacityTotalDisplay', total);
 };
 
 const addResident = () => {
@@ -366,6 +395,8 @@ const addResident = () => {
   
   document.getElementById('residentsContainer').insertAdjacentHTML('beforeend', residentHTML);
   residents.push({});
+  
+  calculateCapacityMetrics();
 };
 
 const generateResidentHTML = (index) => {
@@ -407,6 +438,7 @@ window.removeResident = (index) => {
     residentCard.remove();
     residents.splice(index, 1);
     updateResidentNumbers();
+    calculateCapacityMetrics();
   }
 };
 
@@ -441,7 +473,13 @@ const updateResidentNumbers = () => {
     });
   });
 };
-
+const initializeCapacityDisplay = () => {
+  updateCapacityDisplay(0, 0, 0, 0);
+  
+  setTimeout(() => {
+    calculateCapacityMetrics();
+  }, 100);
+};
 const showPreview = () => {
   const formData = collectFormData();
   const previewHTML = generatePreviewHTML(formData);

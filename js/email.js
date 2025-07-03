@@ -157,6 +157,8 @@ const EmailService = {
   },
 
 generateCapacitySection(data) {
+  const totalResidents = data.residents ? data.residents.length : (data.numeroMoradores || 0);
+  
   return `
     <div class="section">
       <div class="section-header">
@@ -177,7 +179,7 @@ generateCapacitySection(data) {
           <p class="stat-label">Vagas Disponíveis</p>
         </div>
         <div class="stat-card">
-          <p class="stat-value">${this.formatters.value(data.numeroMoradores || data.residents?.length || 0)}</p>
+          <p class="stat-value">${totalResidents}</p>
           <p class="stat-label">Total de Moradores Cadastrados</p>
         </div>
       </div>
