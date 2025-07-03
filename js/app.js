@@ -647,7 +647,7 @@ const handleSubmit = async (e) => {
     
     let successMessage = 'Cadastro realizado com sucesso!';
     if (emailResult.success) {
-      successMessage += `<br><small class="text-green-600">E-mail enviado para: ${emailResult.email}</small>`;
+      successMessage += `<br><small class="text-green-600">E-mail enviado para: ${emailResult.email}, consulte a caixa de spam.</small>`;
     } else {
       successMessage += `<br><small class="text-orange-600">Aviso: ${emailResult.message}</small>`;
     }
