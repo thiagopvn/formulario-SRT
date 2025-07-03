@@ -620,59 +620,59 @@ const exportData = () => {
 
   const wb = XLSX.utils.book_new();
 
-  // --- Estilos ---
+  // --- Paleta de Cores e Estilos ---
+  const palette = {
+    blue: '4A90E2',
+    lightBlue: 'D4E6F1',
+    teal: '4A7A8C',
+    darkGray: '333333',
+    gray: '555555',
+    lightGray: 'F5F5F5',
+    white: 'FFFFFF',
+    sectionColors: ['7B68EE', '48D1CC', 'F08080', '9370DB'] // Lilás, Verde Água, Coral, Roxo Médio
+  };
+
   const styles = {
     title: {
-      font: { name: 'Arial', sz: 24, bold: true, color: { rgb: "FFFFFFFF" } },
-      fill: { fgColor: { rgb: "FF2d2d30" } },
+      font: { name: 'Calibri', sz: 26, bold: true, color: { rgb: palette.white } },
+      fill: { fgColor: { rgb: palette.teal } },
       alignment: { horizontal: "center", vertical: "center" }
     },
-    subtitle: {
-      font: { name: 'Arial', sz: 14, bold: true, color: { rgb: "FFFFFFFF" } },
-      fill: { fgColor: { rgb: "FF454545" } },
-      alignment: { horizontal: "center", vertical: "center" }
-    },
-    header: {
-      font: { name: 'Arial', sz: 12, bold: true, color: { rgb: "FFFFFFFF" } },
-      fill: { fgColor: { rgb: "FF4F81BD" } },
-      alignment: { horizontal: "center", vertical: "center", wrapText: true },
+    subtitle: (color) => ({
+      font: { name: 'Calibri', sz: 14, bold: true, color: { rgb: palette.white } },
+      fill: { fgColor: { rgb: color } },
+      alignment: { horizontal: "center", vertical: "center" },
       border: {
-        top: { style: "thin", color: { auto: 1 } },
-        bottom: { style: "thin", color: { auto: 1 } },
-        left: { style: "thin", color: { auto: 1 } },
-        right: { style: "thin", color: { auto: 1 } }
+        top: { style: "thin", color: { rgb: palette.white } },
+        bottom: { style: "thin", color: { rgb: palette.white } },
+        left: { style: "thin", color: { rgb: palette.white } },
+        right: { style: "thin", color: { rgb: palette.white } }
       }
+    }),
+    header: {
+      font: { name: 'Calibri', sz: 12, bold: true, color: { rgb: palette.white } },
+      fill: { fgColor: { rgb: palette.blue } },
+      alignment: { horizontal: "center", vertical: "center", wrapText: true },
+      border: { bottom: { style: "medium", color: { rgb: palette.darkGray } } }
     },
     cell: {
-      font: { name: 'Arial', sz: 11 },
-      border: {
-        top: { style: "thin", color: { rgb: "FFD3D3D3" } },
-        bottom: { style: "thin", color: { rgb: "FFD3D3D3" } },
-        left: { style: "thin", color: { rgb: "FFD3D3D3" } },
-        right: { style: "thin", color: { rgb: "FFD3D3D3" } }
-      }
+      font: { name: 'Calibri', sz: 11, color: { rgb: palette.darkGray } },
+      alignment: { vertical: "center", wrapText: true }
     },
     cellZebra: {
-      font: { name: 'Arial', sz: 11 },
-      fill: { fgColor: { rgb: "FFF2F2F2" } },
-      border: {
-        top: { style: "thin", color: { rgb: "FFD3D3D3" } },
-        bottom: { style: "thin", color: { rgb: "FFD3D3D3" } },
-        left: { style: "thin", color: { rgb: "FFD3D3D3" } },
-        right: { style: "thin", color: { rgb: "FFD3D3D3" } }
-      }
+      font: { name: 'Calibri', sz: 11, color: { rgb: palette.darkGray } },
+      fill: { fgColor: { rgb: palette.lightGray } },
+      alignment: { vertical: "center", wrapText: true }
     },
     summaryCard: {
-        fill: { fgColor: { rgb: "FFE8EAF6" } },
-        font: { name: 'Arial', sz: 12, color: { rgb: "FF3F51B5" } },
-        alignment: { horizontal: "center", vertical: "center" },
-        border: {
-            top: { style: "medium", color: { rgb: "FF3F51B5" } },
-        }
+      font: { name: 'Calibri', sz: 14, bold: true, color: { rgb: palette.gray } },
+      fill: { fgColor: { rgb: palette.lightBlue } },
+      alignment: { horizontal: "center", vertical: "center" },
+      border: { bottom: { style: "thick", color: { rgb: palette.blue } } }
     },
     summaryValue: {
-        font: { name: 'Arial', sz: 22, bold: true, color: { rgb: "FF3F51B5" } },
-        alignment: { horizontal: "center", vertical: "center" }
+      font: { name: 'Calibri', sz: 28, bold: true, color: { rgb: palette.teal } },
+      alignment: { horizontal: "center", vertical: "center" }
     }
   };
 
@@ -680,11 +680,9 @@ const exportData = () => {
   const wsSummary = XLSX.utils.aoa_to_sheet([[]]);
   wsSummary['!merges'] = [];
 
-  // Título
   wsSummary['A1'] = { t: 's', v: 'Relatório Geral de Residências Terapêuticas', s: styles.title };
-  wsSummary['!merges'].push({ s: { r: 0, c: 0 }, e: { r: 1, c: 7 } });
+  wsSummary['!merges'].push({ s: { r: 0, c: 0 }, e: { r: 1, c: 9 } });
 
-  // Estatísticas
   const totalHouses = allHouses.length;
   const totalResidents = allHouses.reduce((sum, house) => sum + (house.residents ? house.residents.length : (parseInt(house.numeroMoradores) || 0)), 0);
   const totalCapacity = allHouses.reduce((sum, house) => sum + (parseInt(house.vagasTotais) || 0), 0);
@@ -695,24 +693,23 @@ const exportData = () => {
   wsSummary['!merges'].push({ s: { r: 3, c: 1 }, e: { r: 3, c: 2 } });
   wsSummary['!merges'].push({ s: { r: 4, c: 1 }, e: { r: 4, c: 2 } });
 
-  wsSummary['D4'] = { t: 's', v: 'Total de Moradores', s: styles.summaryCard };
-  wsSummary['D5'] = { t: 'n', v: totalResidents, s: styles.summaryValue };
-  wsSummary['!merges'].push({ s: { r: 3, c: 3 }, e: { r: 3, c: 4 } });
-  wsSummary['!merges'].push({ s: { r: 4, c: 3 }, e: { r: 4, c: 4 } });
+  wsSummary['E4'] = { t: 's', v: 'Total de Moradores', s: styles.summaryCard };
+  wsSummary['E5'] = { t: 'n', v: totalResidents, s: styles.summaryValue };
+  wsSummary['!merges'].push({ s: { r: 3, c: 4 }, e: { r: 3, c: 5 } });
+  wsSummary['!merges'].push({ s: { r: 4, c: 4 }, e: { r: 4, c: 5 } });
   
-  wsSummary['F4'] = { t: 's', v: 'Taxa de Ocupação', s: styles.summaryCard };
-  wsSummary['F5'] = { t: 'n', v: occupancyRate.toFixed(1) + '%', s: styles.summaryValue };
-  wsSummary['!merges'].push({ s: { r: 3, c: 5 }, e: { r: 3, c: 6 } });
-  wsSummary['!merges'].push({ s: { r: 4, c: 5 }, e: { r: 4, c: 6 } });
+  wsSummary['H4'] = { t: 's', v: 'Taxa de Ocupação', s: styles.summaryCard };
+  wsSummary['H5'] = { t: 'n', v: occupancyRate.toFixed(1) + '%', s: styles.summaryValue };
+  wsSummary['!merges'].push({ s: { r: 3, c: 7 }, e: { r: 3, c: 8 } });
+  wsSummary['!merges'].push({ s: { r: 4, c: 7 }, e: { r: 4, c: 8 } });
 
-  wsSummary['!cols'] = [{wch: 5}, {wch: 20}, {wch: 20}, {wch: 20}, {wch: 20}, {wch: 20}, {wch: 20}, {wch: 5}];
-  wsSummary['!rows'] = [{hpt: 40}, {hpt: 20}, {hpt: 20}, {hpt: 30}, {hpt: 40}];
+  wsSummary['!cols'] = [null, {wch: 20}, {wch: 20}, null, {wch: 20}, {wch: 20}, null, {wch: 20}, {wch: 20}];
+  wsSummary['!rows'] = [{hpt: 50}, null, {hpt: 25}, {hpt: 35}, {hpt: 50}];
 
   XLSX.utils.book_append_sheet(wb, wsSummary, 'Resumo');
 
-
   // --- Planilha de Residências ---
-  const residencesSheetData = [];
+  const residenceSheetData = [];
   const residenceHeaders = [];
   const headerSections = [];
 
@@ -723,7 +720,6 @@ const exportData = () => {
     ...formConfig.caregivers
   ];
 
-  let col = 0;
   const sections = {
       'Informações do Município': formConfig.municipio.length,
       'Dados do SRT': formConfig.general.length,
@@ -741,7 +737,7 @@ const exportData = () => {
     const row = [];
     allResidenceFields.forEach(field => {
       const value = house[field.key];
-      if (field.type === 'date' && value) {
+      if (field.type === 'date' && value && value.seconds) {
         row.push(new Date(value.seconds * 1000).toLocaleDateString('pt-BR'));
       } else if (Array.isArray(value)) {
         row.push(value.join(', '));
@@ -749,28 +745,26 @@ const exportData = () => {
         row.push(value || '-');
       }
     });
-    row.push(house.createdAt ? new Date(house.createdAt.seconds * 1000).toLocaleString('pt-BR') : '-');
+    row.push(house.createdAt && house.createdAt.seconds ? new Date(house.createdAt.seconds * 1000).toLocaleString('pt-BR') : '-');
     sheetData.push(row);
   });
   
   const wsResidences = XLSX.utils.aoa_to_sheet([[]]);
   wsResidences['!merges'] = [];
-  XLSX.utils.sheet_add_aoa(wsResidences, [[]], {origin: 'A2'}); // Start data later
   XLSX.utils.sheet_add_aoa(wsResidences, sheetData, {origin: 'A2'});
 
-  // Add merged headers
   let startCol = 0;
-  headerSections.forEach(section => {
+  headerSections.forEach((section, i) => {
       if(section.count > 0) {
+          const color = palette.sectionColors[i % palette.sectionColors.length];
           wsResidences['!merges'].push({ s: { r: 0, c: startCol }, e: { r: 0, c: startCol + section.count - 1 } });
           const cellRef = XLSX.utils.encode_cell({ r: 0, c: startCol });
-          wsResidences[cellRef] = { t: 's', v: section.name, s: styles.subtitle };
+          wsResidences[cellRef] = { t: 's', v: section.name, s: styles.subtitle(color) };
           startCol += section.count;
       }
   });
 
-  // Style headers and cells
-  const colWidths = residenceHeaders.map(header => ({ wch: Math.max(header.length, 20) }));
+  const colWidths = residenceHeaders.map(header => ({ wch: Math.max(header.length, 22) }));
   wsResidences['!cols'] = colWidths;
 
   for (let C = 0; C < residenceHeaders.length; C++) {
@@ -786,6 +780,7 @@ const exportData = () => {
           }
       }
   }
+  wsResidences['!rows'] = [{hpt: 30}, {hpt: 40}];
 
   XLSX.utils.book_append_sheet(wb, wsResidences, 'Residências');
 
@@ -830,14 +825,15 @@ const exportData = () => {
             }
         }
     }
+    wsResidents['!rows'] = [{hpt: 40}];
 
     XLSX.utils.book_append_sheet(wb, wsResidents, 'Moradores');
   }
 
-  const fileName = `relatorio_srt_${new Date().toISOString().split('T')[0]}.xlsx`;
+  const fileName = `Relatorio_SRT_${new Date().toLocaleDateString('pt-BR').replace(/\//g, '-')}.xlsx`;
   XLSX.writeFile(wb, fileName);
   
-  showToast('Dados exportados com sucesso!');
+  showToast('Relatório exportado com sucesso!');
 };
 
 const loadFormConfiguration = async () => {
