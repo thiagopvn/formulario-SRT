@@ -85,7 +85,7 @@ const EmailService = {
 
   sectionTitles: {
     municipio: 'Informações do Município',
-    general: 'Dados da SRT',
+    general: 'Dados do SRT',
     residence: 'Dados da Residência Terapêutica',
     caregivers: 'Dados da Equipe/Cuidadores',
     residentFields: 'Dados Individuais dos Moradores'
