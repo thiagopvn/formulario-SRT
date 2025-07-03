@@ -307,8 +307,8 @@ const displayHouses = (houses) => {
     row.style.animationDelay = `${index * 50}ms`;
     row.classList.add('animate-fade-in');
     
-    const capsVinculado = house.capsVinculado || house.caps || '-';
-    const tipoSRT = house.tipoSRT || house.tipo || '-';
+    const capsVinculado = house.capsVinculado || '-';
+    const tipoSRT = house.tipoSRT || '-';
     const moradores = house.residents ? house.residents.length : (house.numeroMoradores || 0);
     const vagas = house.vagasTotais || house.vagas || '-';
     
@@ -347,8 +347,8 @@ const filterHouses = () => {
   const search = document.getElementById('searchInput').value.toLowerCase();
   
   const filtered = allHouses.filter(house => {
-    const capsVinculado = (house.capsVinculado || house.caps || '').toLowerCase();
-    const tipoSRT = (house.tipoSRT || house.tipo || '').toLowerCase();
+    const capsVinculado = (house.capsVinculado || '').toLowerCase();
+    const tipoSRT = (house.tipoSRT || '').toLowerCase();
     const municipio = (house.municipio || '').toLowerCase();
     const nomeResidencia = (house.nomeResidencia || '').toLowerCase();
     
