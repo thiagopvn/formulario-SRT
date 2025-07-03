@@ -381,7 +381,7 @@ const updateChart = () => {
   
   const houseOccupancy = allHouses.map(house => ({
     name: house.nomeResidencia || 'Sem nome',
-    rate: house.vagasTotais > 0 ? ((house.vagasOcupadas / house.vagasTotais) * 100) : 0
+    rate: parseInt(house.vagasTotais) > 0 ? ((parseInt(house.vagasOcupadas) / parseInt(house.vagasTotais)) * 100) : 0
   })).slice(0, 10);
   
   occupancyChart.data.labels = houseOccupancy.map(h => h.name);
@@ -389,6 +389,9 @@ const updateChart = () => {
   occupancyChart.update();
 };
 
+// =================================================================================
+// FUNÇÃO MODIFICADA - INÍCIO
+// =================================================================================
 const displayHouses = (houses) => {
   const tbody = document.querySelector('#housesTable tbody');
   tbody.innerHTML = '';
@@ -402,13 +405,16 @@ const displayHouses = (houses) => {
     const tipoColor = house.tipoSRT === 'Tipo I' 
       ? 'bg-blue-100 text-blue-800 dark:bg-blue-900/20 dark:text-blue-400' 
       : 'bg-purple-100 text-purple-800 dark:bg-purple-900/20 dark:text-purple-400';
+
+    // 1. **COLUNA REMOVIDA**: A primeira coluna "Nome da Casa" foi removida daqui.
+    // 2. **DADOS CORRIGIDOS**: As chaves dos objetos foram ajustadas para buscar os dados corretamente.
+    //    - CAPS Vinculado: `house.capsVinculadaSRT` ou `house.nomeCaps`.
+    //    - Moradores: `house.vagasOcupadas` (prioridade) ou o tamanho da lista `house.residents`.
+    //    - Vagas: Os valores são convertidos para números com `parseInt` para garantir o cálculo correto da barra de progresso.
     
     row.innerHTML = `
       <td class="px-6 py-4 whitespace-nowrap">
-        <div class="text-sm font-medium text-gray-900 dark:text-white">${house.nomeResidencia || house.nomeResidenciaTherapeutica || house.nome_da_residencia_terapeutica_caso_possua || '(Sem nome)'}</div>
-      </td>
-      <td class="px-6 py-4 whitespace-nowrap">
-        <div class="text-sm text-gray-600 dark:text-gray-300">${house.nomeCaps || house.capsVinculadaSRT || '-'}</div>
+        <div class="text-sm text-gray-600 dark:text-gray-300">${house.capsVinculadaSRT || house.nomeCaps || '-'}</div>
       </td>
       <td class="px-6 py-4 whitespace-nowrap">
         <span class="px-3 py-1 inline-flex text-xs leading-5 font-semibold rounded-full ${tipoColor}">
@@ -420,15 +426,15 @@ const displayHouses = (houses) => {
           <svg class="w-4 h-4 mr-1 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z" />
           </svg>
-          ${house.residents?.length || 0}
+          ${house.vagasOcupadas || house.residents?.length || 0}
         </div>
       </td>
       <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-600 dark:text-gray-300">
         <div class="flex items-center">
           <div class="w-24 bg-gray-200 dark:bg-gray-700 rounded-full h-2 mr-2">
-            <div class="bg-gradient-to-r from-blue-500 to-purple-600 h-2 rounded-full transition-all duration-500" style="width: ${house.vagasTotais > 0 ? (house.vagasOcupadas / house.vagasTotais * 100) : 0}%"></div>
+            <div class="bg-gradient-to-r from-blue-500 to-purple-600 h-2 rounded-full transition-all duration-500" style="width: ${parseInt(house.vagasTotais) > 0 ? (parseInt(house.vagasOcupadas) / parseInt(house.vagasTotais) * 100) : 0}%"></div>
           </div>
-          <span>${house.vagasOcupadas || 0}/${house.vagasTotais || 0}</span>
+          <span>${parseInt(house.vagasOcupadas) || 0}/${parseInt(house.vagasTotais) || 0}</span>
         </div>
       </td>
       <td class="px-6 py-4 whitespace-nowrap text-sm font-medium">
@@ -448,6 +454,9 @@ const displayHouses = (houses) => {
     tbody.appendChild(row);
   });
 };
+// =================================================================================
+// FUNÇÃO MODIFICADA - FIM
+// =================================================================================
 
 const viewHouseDetails = (houseId) => {
   const house = allHouses.find(h => h.id === houseId);
@@ -673,15 +682,15 @@ const viewHouseDetails = (houseId) => {
           <p class="text-sm text-gray-600 dark:text-gray-400">Disponibilidade</p>
         </div>
       </div>
-      ${house.vagasTotais > 0 ? `
+      ${parseInt(house.vagasTotais) > 0 ? `
         <div class="mt-4">
           <div class="flex items-center justify-between mb-2">
             <span class="text-sm font-medium text-gray-700 dark:text-gray-300">Taxa de Ocupação</span>
-            <span class="text-sm font-bold text-gray-900 dark:text-white">${((house.vagasOcupadas / house.vagasTotais) * 100).toFixed(1)}%</span>
+            <span class="text-sm font-bold text-gray-900 dark:text-white">${((parseInt(house.vagasOcupadas) / parseInt(house.vagasTotais)) * 100).toFixed(1)}%</span>
           </div>
           <div class="w-full bg-gray-200 dark:bg-gray-700 rounded-full h-3">
             <div class="bg-gradient-to-r from-blue-500 to-purple-600 h-3 rounded-full transition-all duration-500" 
-                 style="width: ${(house.vagasOcupadas / house.vagasTotais) * 100}%"></div>
+                 style="width: ${(parseInt(house.vagasOcupadas) / parseInt(house.vagasTotais)) * 100}%"></div>
           </div>
         </div>
       ` : ''}
@@ -1968,7 +1977,7 @@ const createFieldElement = (field, index, section) => {
     number: 'bg-green-100 text-green-600 dark:bg-green-900/20 dark:text-green-400',
     date: 'bg-purple-100 text-purple-600 dark:bg-purple-900/20 dark:text-purple-400',
     select: 'bg-yellow-100 text-yellow-600 dark:bg-yellow-900/20 dark:text-yellow-400',
-     multiselect: 'bg-orange-100 text-orange-600 dark:bg-orange-900/20 dark:text-orange-400',
+    multiselect: 'bg-orange-100 text-orange-600 dark:bg-orange-900/20 dark:text-orange-400',
     textarea: 'bg-pink-100 text-pink-600 dark:bg-pink-900/20 dark:text-pink-400',
     tel: 'bg-indigo-100 text-indigo-600 dark:bg-indigo-900/20 dark:text-indigo-400',
     email: 'bg-red-100 text-red-600 dark:bg-red-900/20 dark:text-red-400'
@@ -2422,14 +2431,12 @@ const generateSummaryReport = (filteredHouses, startDate, endDate) => {
   
   return `
     <div class="space-y-6 animate-fade-in">
-      <!-- Cabeçalho do Relatório -->
       <div class="text-center mb-8 bg-gradient-to-r from-blue-500 to-purple-600 text-white rounded-xl p-8">
         <h3 class="text-3xl font-bold mb-2">Relatório Resumido - SRT</h3>
         <p class="text-lg">Período: ${startDate.toLocaleDateString('pt-BR')} a ${endDate.toLocaleDateString('pt-BR')}</p>
         <p class="text-sm mt-2 opacity-90">Total de ${totalHouses} residências analisadas</p>
       </div>
       
-      <!-- Cards de Indicadores Principais -->
       <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
         <div class="bg-gradient-to-br from-blue-500 to-blue-600 rounded-xl p-6 text-white hover-lift">
           <div class="flex items-center justify-between mb-2">
@@ -2476,7 +2483,6 @@ const generateSummaryReport = (filteredHouses, startDate, endDate) => {
         </div>
       </div>
       
-      <!-- Distribuição por Tipo e Habilitação -->
       <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
         <div class="bg-white dark:bg-gray-800 rounded-xl p-6 shadow-lg">
           <h4 class="text-lg font-semibold text-gray-800 dark:text-white mb-4 flex items-center gap-2">
@@ -2530,7 +2536,6 @@ const generateSummaryReport = (filteredHouses, startDate, endDate) => {
         </div>
       </div>
       
-      <!-- Top 5 Municípios -->
       <div class="bg-white dark:bg-gray-800 rounded-xl p-6 shadow-lg">
         <h4 class="text-lg font-semibold text-gray-800 dark:text-white mb-4 flex items-center gap-2">
           <svg class="w-5 h-5 text-purple-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -2584,7 +2589,6 @@ const generateSummaryReport = (filteredHouses, startDate, endDate) => {
         </div>
       </div>
       
-      <!-- Perfil dos Moradores -->
       <div class="bg-white dark:bg-gray-800 rounded-xl p-6 shadow-lg">
         <h4 class="text-lg font-semibold text-gray-800 dark:text-white mb-4 flex items-center gap-2">
           <svg class="w-5 h-5 text-indigo-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -2594,7 +2598,6 @@ const generateSummaryReport = (filteredHouses, startDate, endDate) => {
         </h4>
         
         <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-          <!-- Faixa Etária -->
           <div>
             <h5 class="text-sm font-medium text-gray-700 dark:text-gray-300 mb-3">Distribuição por Idade</h5>
             <div class="space-y-2">
@@ -2610,7 +2613,6 @@ const generateSummaryReport = (filteredHouses, startDate, endDate) => {
             </div>
           </div>
           
-          <!-- Gênero -->
           <div>
             <h5 class="text-sm font-medium text-gray-700 dark:text-gray-300 mb-3">Distribuição por Gênero</h5>
             <div class="space-y-2">
@@ -2628,7 +2630,6 @@ const generateSummaryReport = (filteredHouses, startDate, endDate) => {
             </div>
           </div>
           
-          <!-- PVC e Vínculos -->
           <div>
             <h5 class="text-sm font-medium text-gray-700 dark:text-gray-300 mb-3">Indicadores Sociais</h5>
             <div class="space-y-2">
@@ -2652,7 +2653,6 @@ const generateSummaryReport = (filteredHouses, startDate, endDate) => {
           </div>
         </div>
         
-        <!-- Benefícios -->
         ${Object.keys(moradoresAnalise.comBeneficios).length > 0 ? `
           <div class="mt-6 pt-6 border-t border-gray-200 dark:border-gray-700">
             <h5 class="text-sm font-medium text-gray-700 dark:text-gray-300 mb-3">Benefícios Recebidos</h5>
@@ -2669,7 +2669,6 @@ const generateSummaryReport = (filteredHouses, startDate, endDate) => {
         ` : ''}
       </div>
       
-      <!-- Equipe e Profissionais -->
       <div class="bg-white dark:bg-gray-800 rounded-xl p-6 shadow-lg">
         <h4 class="text-lg font-semibold text-gray-800 dark:text-white mb-4 flex items-center gap-2">
           <svg class="w-5 h-5 text-pink-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -2697,7 +2696,6 @@ const generateSummaryReport = (filteredHouses, startDate, endDate) => {
         </div>
       </div>
       
-      <!-- Indicadores de Qualidade -->
       <div class="bg-white dark:bg-gray-800 rounded-xl p-6 shadow-lg">
         <h4 class="text-lg font-semibold text-gray-800 dark:text-white mb-4 flex items-center gap-2">
           <svg class="w-5 h-5 text-yellow-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -2745,7 +2743,6 @@ const generateSummaryReport = (filteredHouses, startDate, endDate) => {
         </div>
       </div>
       
-      <!-- Rodapé do Relatório -->
       <div class="text-center text-sm text-gray-500 dark:text-gray-400 pt-6 border-t border-gray-200 dark:border-gray-700">
         <p>Relatório gerado em ${new Date().toLocaleString('pt-BR')}</p>
         <p class="mt-1">Sistema de Gerenciamento de Residências Terapêuticas - SRT</p>
