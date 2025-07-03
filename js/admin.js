@@ -613,29 +613,107 @@ const updateChart = () => {
 };
 
 const exportData = () => {
-  const exportData = allHouses.map(house => {
-    const baseData = {
-      'CAPS Vinculado': house.capsVinculado || house.caps || '',
-      'Tipo SRT': house.tipoSRT || house.tipo || '',
-      'Nome da Residência': house.nomeResidencia || '',
-      'Município': house.municipio || '',
-      'Endereço': house.enderecoCompleto || '',
-      'Zona': house.zona || '',
-      'Vagas Totais': house.vagasTotais || '',
-      'Vagas Ocupadas': house.vagasOcupadas || '',
-      'Vagas Disponíveis': house.vagasDisponiveis || '',
-      'Número de Moradores': house.residents ? house.residents.length : (house.numeroMoradores || 0),
-      'Data de Cadastro': house.createdAt ? house.createdAt.toDate().toLocaleDateString('pt-BR') : ''
-    };
-    
-    return baseData;
-  });
-  
-  const ws = XLSX.utils.json_to_sheet(exportData);
+  if (!formConfig) {
+    showToast('A configuração do formulário ainda está carregando. Tente novamente em alguns segundos.', 'error');
+    return;
+  }
+
   const wb = XLSX.utils.book_new();
-  XLSX.utils.book_append_sheet(wb, ws, 'Residências SRT');
+
+  // Estilos
+  const headerStyle = {
+    font: { bold: true, color: { rgb: "FFFFFF" } },
+    fill: { fgColor: { rgb: "4F81BD" } },
+    alignment: { horizontal: "center", vertical: "center" }
+  };
+
+  // --- Planilha de Residências ---
+  const residencesSheetData = [];
+  const residenceHeaders = [];
+
+  // Mapeia todos os campos possíveis para as residências
+  const allResidenceFields = [
+    ...formConfig.municipio, 
+    ...formConfig.general, 
+    ...formConfig.residence, 
+    ...formConfig.caregivers
+  ];
+
+  allResidenceFields.forEach(field => {
+    residenceHeaders.push(field.label);
+  });
+  residenceHeaders.push('Data de Cadastro');
+
+  allHouses.forEach(house => {
+    const row = {};
+    allResidenceFields.forEach(field => {
+      const value = house[field.key];
+      if (field.type === 'date' && value) {
+        row[field.label] = new Date(value.seconds * 1000).toLocaleDateString('pt-BR');
+      } else if (Array.isArray(value)) {
+        row[field.label] = value.join(', ');
+      } else {
+        row[field.label] = value || '-';
+      }
+    });
+    row['Data de Cadastro'] = house.createdAt ? new Date(house.createdAt.seconds * 1000).toLocaleString('pt-BR') : '-';
+    residencesSheetData.push(row);
+  });
+
+  const wsResidences = XLSX.utils.json_to_sheet(residencesSheetData, { header: residenceHeaders });
   
-  const fileName = `residencias_srt_${new Date().toISOString().split('T')[0]}.xlsx`;
+  // Aplica estilo e auto-ajuste de colunas para residências
+  const residenceColWidths = residenceHeaders.map(header => ({ wch: Math.max(header.length, 20) }));
+  wsResidences['!cols'] = residenceColWidths;
+
+  residenceHeaders.forEach((_, C) => {
+    const cellRef = XLSX.utils.encode_cell({ r: 0, c: C });
+    if (wsResidences[cellRef]) {
+      wsResidences[cellRef].s = headerStyle;
+    }
+  });
+
+  XLSX.utils.book_append_sheet(wb, wsResidences, 'Residências');
+
+  // --- Planilha de Moradores ---
+  const residentsSheetData = [];
+  const residentHeaders = ['Residência', ...formConfig.residentFields.map(f => f.label)];
+
+  allHouses.forEach(house => {
+    if (house.residents && house.residents.length > 0) {
+      house.residents.forEach(resident => {
+        const row = { 'Residência': house.nomeResidencia || house.capsVinculado || house.id };
+        formConfig.residentFields.forEach(field => {
+          const value = resident[field.key];
+          if (field.type === 'date' && value) {
+            row[field.label] = new Date(value).toLocaleDateString('pt-BR');
+          } else {
+            row[field.label] = value || '-';
+          }
+        });
+        residentsSheetData.push(row);
+      });
+    }
+  });
+
+  if (residentsSheetData.length > 0) {
+    const wsResidents = XLSX.utils.json_to_sheet(residentsSheetData, { header: residentHeaders });
+
+    // Aplica estilo e auto-ajuste de colunas para moradores
+    const residentColWidths = residentHeaders.map(header => ({ wch: Math.max(header.length, 20) }));
+    wsResidents['!cols'] = residentColWidths;
+
+    residentHeaders.forEach((_, C) => {
+      const cellRef = XLSX.utils.encode_cell({ r: 0, c: C });
+      if (wsResidents[cellRef]) {
+        wsResidents[cellRef].s = headerStyle;
+      }
+    });
+
+    XLSX.utils.book_append_sheet(wb, wsResidents, 'Moradores');
+  }
+
+  const fileName = `relatorio_srt_${new Date().toISOString().split('T')[0]}.xlsx`;
   XLSX.writeFile(wb, fileName);
   
   showToast('Dados exportados com sucesso!');
