@@ -754,6 +754,7 @@ const exportData = () => {
   });
   
   const wsResidences = XLSX.utils.aoa_to_sheet([[]]);
+  wsResidences['!merges'] = [];
   XLSX.utils.sheet_add_aoa(wsResidences, [[]], {origin: 'A2'}); // Start data later
   XLSX.utils.sheet_add_aoa(wsResidences, sheetData, {origin: 'A2'});
 
