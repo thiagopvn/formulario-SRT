@@ -8,11 +8,11 @@
   <script src="https://unpkg.com/aos@2.3.1/dist/aos.js"></script>
   <link href="https://unpkg.com/aos@2.3.1/dist/aos.css" rel="stylesheet">
   <script src="https://cdn.jsdelivr.net/particles.js/2.0.0/particles.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
   <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-auth-compat.js"></script>
-  <script src="https://cdn.jsdelivr.net/npm/xlsx-js-style@1.2.0/dist/xlsx.bundle.js"></script>
-  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
   <script>
     tailwind.config = {
       darkMode: 'class',
@@ -123,35 +123,6 @@
       left: 100%;
     }
     
-    .chart-container {
-      position: relative;
-      height: 300px;
-    }
-    
-    .loading-skeleton {
-      background: linear-gradient(90deg, #f3f4f6 25%, #e5e7eb 50%, #f3f4f6 75%);
-      background-size: 200% 100%;
-      animation: loading 1.5s infinite;
-    }
-    
-    @keyframes loading {
-      0% { background-position: 200% 0; }
-      100% { background-position: -200% 0; }
-    }
-    
-    .table-row-hover {
-      transition: all 0.2s ease;
-    }
-    
-    .table-row-hover:hover {
-      background-color: rgba(59, 130, 246, 0.05);
-      transform: scale(1.01);
-    }
-    
-    .dark .table-row-hover:hover {
-      background-color: rgba(139, 92, 246, 0.1);
-    }
-    
     #particles-js {
       position: fixed;
       width: 100%;
@@ -184,27 +155,30 @@
       height: 300px;
     }
     
-    .floating-label {
-      transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    .table-row-hover {
+      transition: all 0.2s ease;
     }
     
-    .input-group:focus-within .floating-label,
-    .input-group input:not(:placeholder-shown) ~ .floating-label {
-      transform: translateY(-1.5rem) scale(0.85);
-      color: #3b82f6;
+    .table-row-hover:hover {
+      background-color: rgba(59, 130, 246, 0.05);
+      transform: scale(1.01);
     }
     
-    .drag-handle {
-      cursor: grab;
+    .dark .table-row-hover:hover {
+      background-color: rgba(139, 92, 246, 0.1);
     }
     
-    .drag-handle:active {
-      cursor: grabbing;
+    .tab-content {
+      display: none;
+      opacity: 0;
+      transform: translateY(20px);
+      transition: all 0.3s ease;
     }
     
-    .dragging {
-      opacity: 0.5;
-      transform: rotate(2deg);
+    .tab-content.active {
+      display: block;
+      opacity: 1;
+      transform: translateY(0);
     }
     
     @media (max-width: 768px) {
@@ -217,59 +191,41 @@
 <body class="bg-gray-50 dark:bg-gray-900 transition-colors duration-300">
   <div id="particles-js"></div>
   
-  <div id="loginDiv" class="min-h-screen flex items-center justify-center p-4">
-    <div class="fixed top-0 left-0 w-full h-full pointer-events-none overflow-hidden">
-      <div class="absolute top-20 left-20 w-72 h-72 bg-blue-300 dark:bg-blue-600 rounded-full mix-blend-multiply dark:mix-blend-screen filter blur-3xl opacity-20 animate-float"></div>
-      <div class="absolute top-40 right-20 w-96 h-96 bg-purple-300 dark:bg-purple-600 rounded-full mix-blend-multiply dark:mix-blend-screen filter blur-3xl opacity-20 animate-float" style="animation-delay: 2s"></div>
-      <div class="absolute bottom-20 left-1/2 w-80 h-80 bg-pink-300 dark:bg-pink-600 rounded-full mix-blend-multiply dark:mix-blend-screen filter blur-3xl opacity-20 animate-float" style="animation-delay: 4s"></div>
-    </div>
-    
-    <div class="w-full max-w-md relative z-10">
-      <div class="glass-morphism rounded-2xl shadow-2xl p-8 animate-scale-in">
-        <div class="text-center mb-8">
-          <h1 class="text-4xl font-black gradient-text mb-2">Painel Administrativo</h1>
-          <p class="text-gray-600 dark:text-gray-400">Serviço de Residência Terapêuticas</p>
+  <div id="loginDiv" class="min-h-screen flex items-center justify-center p-4" style="display: none;">
+    <div class="bg-white dark:bg-gray-800 rounded-2xl shadow-2xl p-8 w-full max-w-md">
+      <div class="text-center mb-8">
+        <h1 class="text-3xl font-black gradient-text mb-2">SRT Admin</h1>
+        <p class="text-gray-600 dark:text-gray-400">Acesso ao Painel Administrativo</p>
+      </div>
+      
+      <form id="loginForm" class="space-y-6">
+        <div>
+          <label for="loginEmail" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">E-mail</label>
+          <input type="email" id="loginEmail" required class="w-full px-4 py-3 bg-gray-100 dark:bg-gray-700 border-0 rounded-xl focus:ring-2 focus:ring-blue-500 transition-all">
         </div>
         
-        <form id="loginForm" class="space-y-6">
-          <div class="input-group relative">
-            <input type="email" id="loginEmail" placeholder=" " required class="w-full px-12 py-4 bg-white dark:bg-gray-800 border-2 border-gray-200 dark:border-gray-700 rounded-xl focus:border-blue-500 dark:focus:border-blue-400 focus:outline-none transition-all peer">
-            <label for="loginEmail" class="floating-label absolute left-12 top-4 text-gray-500 dark:text-gray-400 pointer-events-none">E-mail</label>
-            <div class="absolute left-4 top-4 text-gray-400">
-              <svg class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 12a4 4 0 10-8 0 4 4 0 008 0zm0 0v1.5a2.5 2.5 0 005 0V12a9 9 0 10-9 9m4.5-1.206a8.959 8.959 0 01-4.5 1.207" />
-              </svg>
-            </div>
-          </div>
-          
-          <div class="input-group relative">
-            <input type="password" id="loginPassword" placeholder=" " required class="w-full px-12 py-4 bg-white dark:bg-gray-800 border-2 border-gray-200 dark:border-gray-700 rounded-xl focus:border-blue-500 dark:focus:border-blue-400 focus:outline-none transition-all peer">
-            <label for="loginPassword" class="floating-label absolute left-12 top-4 text-gray-500 dark:text-gray-400 pointer-events-none">Senha</label>
-            <div class="absolute left-4 top-4 text-gray-400">
-              <svg class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" />
-              </svg>
-            </div>
-          </div>
-          
-          <button type="submit" id="loginBtn" class="w-full py-4 bg-gradient-to-r from-blue-500 to-purple-600 hover:from-blue-600 hover:to-purple-700 text-white rounded-xl font-semibold transition-all transform hover:scale-105 active:scale-95 morph-button flex items-center justify-center gap-2">
-            <span>Entrar</span>
-            <svg class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M14 5l7 7m0 0l-7 7m7-7H3" />
-            </svg>
-          </button>
-          
-          <div id="loginError" class="text-red-500 text-center text-sm"></div>
-        </form>
-      </div>
+        <div>
+          <label for="loginPassword" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Senha</label>
+          <input type="password" id="loginPassword" required class="w-full px-4 py-3 bg-gray-100 dark:bg-gray-700 border-0 rounded-xl focus:ring-2 focus:ring-blue-500 transition-all">
+        </div>
+        
+        <div id="loginError" class="text-red-500 text-sm text-center"></div>
+        
+        <button type="submit" id="loginBtn" class="w-full px-6 py-3 bg-gradient-to-r from-blue-500 to-purple-600 hover:from-blue-600 hover:to-purple-700 text-white rounded-xl font-medium transition-all transform hover:scale-105 active:scale-95 flex items-center justify-center gap-2">
+          <span>Entrar</span>
+          <svg class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M14 5l7 7m0 0l-7 7m7-7H3" />
+          </svg>
+        </button>
+      </form>
     </div>
   </div>
 
-  <div id="adminPanel" class="flex h-screen" style="display:none;">
+  <div id="adminPanel" class="flex h-screen" style="display: none;">
     <aside class="w-64 bg-white dark:bg-gray-800 shadow-xl fixed h-full z-40 transform -translate-x-full md:translate-x-0 transition-transform duration-300" id="sidebar">
       <div class="p-6 border-b border-gray-200 dark:border-gray-700">
         <div class="flex items-center justify-between">
-          <h2 class="text-2xl font-black gradient-text">Painel do Administrador</h2>
+          <h2 class="text-2xl font-black gradient-text">SRT Admin</h2>
           <button class="md:hidden" id="mobileMenuToggle">
             <svg class="w-6 h-6 text-gray-600 dark:text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
               <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
@@ -285,13 +241,13 @@
           </svg>
           <span>Casas</span>
         </button>
-
-        <button class="nav-item sidebar-item w-full px-4 py-3 text-gray-600 dark:text-gray-400 rounded-xl font-medium flex items-center gap-3 transition-all hover:bg-gray-100 dark:hover:bg-gray-700" onclick="window.location.href='usuario.html'">
-        <svg class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+        
+        <a href="usuario.html" class="nav-item sidebar-item w-full px-4 py-3 text-gray-600 dark:text-gray-400 rounded-xl font-medium flex items-center gap-3 transition-all hover:bg-gray-100 dark:hover:bg-gray-700">
+          <svg class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z" />
-        </svg>
-        <span>Usuários</span>
-        </button>
+          </svg>
+          <span>Usuários</span>
+        </a>
         
         <button class="nav-item sidebar-item w-full px-4 py-3 text-gray-600 dark:text-gray-400 rounded-xl font-medium flex items-center gap-3 transition-all hover:bg-gray-100 dark:hover:bg-gray-700" data-tab="config">
           <svg class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -328,27 +284,19 @@
     </aside>
 
     <main class="flex-1 md:ml-64 overflow-auto">
-      <div class="tab-content active" id="housesTab">
+      <div id="housesTab" class="tab-content active">
         <header class="bg-white dark:bg-gray-800 shadow-sm px-6 py-4">
           <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
             <div>
-              <h1 class="text-2xl font-bold text-gray-800 dark:text-white">Casas Cadastradas</h1>
-              <p class="text-sm text-gray-600 dark:text-gray-400">Gerencie as residências terapêuticas</p>
+              <h1 class="text-2xl font-bold text-gray-800 dark:text-white">Residências Terapêuticas</h1>
+              <p class="text-sm text-gray-600 dark:text-gray-400">Gerencie as casas cadastradas no sistema</p>
             </div>
-            <div class="flex flex-col sm:flex-row gap-3">
-              <div class="relative">
-                <input type="text" id="searchInput" placeholder="Buscar casa..." class="pl-10 pr-4 py-2 bg-gray-100 dark:bg-gray-700 border-0 rounded-xl focus:ring-2 focus:ring-blue-500 transition-all">
-                <svg class="w-5 h-5 absolute left-3 top-2.5 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
-                </svg>
-              </div>
-              <button id="exportBtn" class="px-4 py-2 bg-gradient-to-r from-green-500 to-green-600 hover:from-green-600 hover:to-green-700 text-white rounded-xl font-medium transition-all transform hover:scale-105 active:scale-95 flex items-center gap-2">
-                <svg class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
-                </svg>
-                <span>Exportar</span>
-              </button>
-            </div>
+            <button id="exportBtn" class="px-4 py-2 bg-gradient-to-r from-green-500 to-green-600 hover:from-green-600 hover:to-green-700 text-white rounded-xl font-medium transition-all transform hover:scale-105 active:scale-95 flex items-center gap-2">
+              <svg class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+              </svg>
+              <span>Exportar</span>
+            </button>
           </div>
         </header>
         
@@ -366,12 +314,6 @@
                   </div>
                 </div>
                 <p class="text-sm text-gray-600 dark:text-gray-400">Total de Casas</p>
-                <div class="mt-2 flex items-center text-xs text-green-600 dark:text-green-400">
-                  <svg class="w-4 h-4 mr-1" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 7h8m0 0v8m0-8l-8 8-4-4-6 6" />
-                  </svg>
-                  <span>+12%</span>
-                </div>
               </div>
             </div>
             
@@ -387,12 +329,6 @@
                   </div>
                 </div>
                 <p class="text-sm text-gray-600 dark:text-gray-400">Total de Moradores</p>
-                <div class="mt-2 flex items-center text-xs text-green-600 dark:text-green-400">
-                  <svg class="w-4 h-4 mr-1" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 7h8m0 0v8m0-8l-8 8-4-4-6 6" />
-                  </svg>
-                  <span>+8%</span>
-                </div>
               </div>
             </div>
             
@@ -408,12 +344,6 @@
                   </div>
                 </div>
                 <p class="text-sm text-gray-600 dark:text-gray-400">Média por Casa</p>
-                <div class="mt-2 flex items-center text-xs text-gray-600 dark:text-gray-400">
-                  <svg class="w-4 h-4 mr-1" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20 12H4" />
-                  </svg>
-                  <span>0%</span>
-                </div>
               </div>
             </div>
             
@@ -424,25 +354,31 @@
                   <h3 class="text-3xl font-bold text-gray-800 dark:text-white" id="occupancyRate">0%</h3>
                   <div class="p-3 bg-orange-100 dark:bg-orange-900/20 rounded-xl">
                     <svg class="w-6 h-6 text-orange-600 dark:text-orange-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-3 7h3m-3 4h3m-6-4h.01M9 16h.01" />
+                      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" />
                     </svg>
                   </div>
                 </div>
                 <p class="text-sm text-gray-600 dark:text-gray-400">Taxa de Ocupação</p>
-                <div class="mt-2 flex items-center text-xs text-red-600 dark:text-red-400">
-                  <svg class="w-4 h-4 mr-1" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 17h8m0 0V9m0 8l-8-8-4 4-6-6" />
-                  </svg>
-                  <span>-3%</span>
-                </div>
               </div>
             </div>
           </div>
 
-          <div class="bg-white dark:bg-gray-800 rounded-xl p-6 shadow-lg mb-8">
-            <h3 class="text-lg font-semibold text-gray-800 dark:text-white mb-4">Taxa de Ocupação por Casa</h3>
-            <div class="chart-container">
-              <canvas id="occupancyChart"></canvas>
+          <div class="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-8">
+            <div class="lg:col-span-2 bg-white dark:bg-gray-800 rounded-xl p-6 shadow-lg">
+              <h3 class="text-lg font-semibold text-gray-800 dark:text-white mb-4">Taxa de Ocupação por Casa</h3>
+              <div class="h-64">
+                <canvas id="occupancyChart"></canvas>
+              </div>
+            </div>
+            
+            <div class="bg-white dark:bg-gray-800 rounded-xl p-6 shadow-lg">
+              <h3 class="text-lg font-semibold text-gray-800 dark:text-white mb-4">Buscar Casa</h3>
+              <div class="relative">
+                <input type="text" id="searchInput" placeholder="Buscar por nome, CAPS ou município..." class="w-full pl-10 pr-4 py-2 bg-gray-100 dark:bg-gray-700 border-0 rounded-xl focus:ring-2 focus:ring-blue-500 transition-all">
+                <svg class="w-5 h-5 absolute left-3 top-2.5 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+                </svg>
+              </div>
             </div>
           </div>
 
@@ -465,12 +401,12 @@
         </div>
       </div>
 
-      <div class="tab-content" id="configTab" style="display:none;">
+      <div id="configTab" class="tab-content">
         <header class="bg-white dark:bg-gray-800 shadow-sm px-6 py-4">
-          <div class="flex items-center justify-between">
+          <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
             <div>
               <h1 class="text-2xl font-bold text-gray-800 dark:text-white">Configurações do Formulário</h1>
-              <p class="text-sm text-gray-600 dark:text-gray-400">Gerencie os campos do formulário de forma visual</p>
+              <p class="text-sm text-gray-600 dark:text-gray-400">Gerencie os campos do formulário de cadastro</p>
             </div>
             <button id="addFieldBtn" class="px-4 py-2 bg-gradient-to-r from-blue-500 to-purple-600 hover:from-blue-600 hover:to-purple-700 text-white rounded-xl font-medium transition-all transform hover:scale-105 active:scale-95 flex items-center gap-2">
               <svg class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -481,155 +417,96 @@
           </div>
         </header>
         
-        <div class="p-6 space-y-6">
-          <div class="bg-white dark:bg-gray-800 rounded-xl shadow-lg overflow-hidden" data-section="municipio" data-aos="fade-up">
-            <div class="bg-gradient-to-r from-teal-500 to-teal-600 p-6 text-white">
-              <div class="flex items-center justify-between">
-                <div class="flex items-center gap-4">
-                  <div class="p-3 bg-white/20 rounded-xl">
-                    <svg class="w-8 h-8" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z" />
-                      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 11a3 3 0 11-6 0 3 3 0 016 0z" />
-                    </svg>
-                  </div>
-                  <div>
-                    <h3 class="text-xl font-bold">Informações do Município</h3>
-                    <p class="text-teal-100">Dados gerais do município</p>
-                  </div>
-                </div>
-                <span class="px-3 py-1 bg-white/20 rounded-full text-sm font-medium field-count">9 campos</span>
+        <div class="p-6">
+          <div class="grid grid-cols-1 lg:grid-cols-2 xl:grid-cols-3 gap-6">
+            <div class="bg-white dark:bg-gray-800 rounded-xl p-6 shadow-lg" data-section="municipio">
+              <div class="flex items-center justify-between mb-4">
+                <h3 class="text-lg font-semibold text-gray-800 dark:text-white">Informações do Município</h3>
+                <span class="field-count text-sm text-gray-500 dark:text-gray-400">0 campos</span>
               </div>
+              <div id="municipioFieldsList" class="space-y-3"></div>
             </div>
-            <div class="p-6" id="municipioFieldsList"></div>
-          </div>
-          
-          <div class="bg-white dark:bg-gray-800 rounded-xl shadow-lg overflow-hidden" data-section="general" data-aos="fade-up" data-aos-delay="100">
-            <div class="bg-gradient-to-r from-blue-500 to-blue-600 p-6 text-white">
-              <div class="flex items-center justify-between">
-                <div class="flex items-center gap-4">
-                  <div class="p-3 bg-white/20 rounded-xl">
-                    <svg class="w-8 h-8" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
-                    </svg>
-                  </div>
-                  <div>
-                    <h3 class="text-xl font-bold">Dados do SRT</h3>
-                    <p class="text-blue-100">Informações gerais da residência</p>
-                  </div>
-                </div>
-                <span class="px-3 py-1 bg-white/20 rounded-full text-sm font-medium field-count">13 campos</span>
+            
+            <div class="bg-white dark:bg-gray-800 rounded-xl p-6 shadow-lg" data-section="general">
+              <div class="flex items-center justify-between mb-4">
+                <h3 class="text-lg font-semibold text-gray-800 dark:text-white">Dados do SRT</h3>
+                <span class="field-count text-sm text-gray-500 dark:text-gray-400">0 campos</span>
               </div>
+              <div id="generalFieldsList" class="space-y-3"></div>
             </div>
-            <div class="p-6" id="generalFieldsList"></div>
-          </div>
-          
-          <div class="bg-white dark:bg-gray-800 rounded-xl shadow-lg overflow-hidden" data-section="residence" data-aos="fade-up" data-aos-delay="200">
-            <div class="bg-gradient-to-r from-purple-500 to-purple-600 p-6 text-white">
-              <div class="flex items-center justify-between">
-                <div class="flex items-center gap-4">
-                  <div class="p-3 bg-white/20 rounded-xl">
-                    <svg class="w-8 h-8" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6" />
-                    </svg>
-                  </div>
-                  <div>
-                    <h3 class="text-xl font-bold">Dados da Residência</h3>
-                    <p class="text-purple-100">Endereço e estrutura física</p>
-                  </div>
-                </div>
-                <span class="px-3 py-1 bg-white/20 rounded-full text-sm font-medium field-count">16 campos</span>
+            
+            <div class="bg-white dark:bg-gray-800 rounded-xl p-6 shadow-lg" data-section="residence">
+              <div class="flex items-center justify-between mb-4">
+                <h3 class="text-lg font-semibold text-gray-800 dark:text-white">Dados da Residência</h3>
+                <span class="field-count text-sm text-gray-500 dark:text-gray-400">0 campos</span>
               </div>
+              <div id="residenceFieldsList" class="space-y-3"></div>
             </div>
-            <div class="p-6" id="residenceFieldsList"></div>
-          </div>
-          
-          <div class="bg-white dark:bg-gray-800 rounded-xl shadow-lg overflow-hidden" data-section="caregivers" data-aos="fade-up" data-aos-delay="300">
-            <div class="bg-gradient-to-r from-pink-500 to-pink-600 p-6 text-white">
-              <div class="flex items-center justify-between">
-                <div class="flex items-center gap-4">
-                  <div class="p-3 bg-white/20 rounded-xl">
-                    <svg class="w-8 h-8" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M18 9v3m0 0v3m0-3h3m-3 0h-3m-2-5a4 4 0 11-8 0 4 4 0 018 0zM3 20a6 6 0 0112 0v1H3v-1z" />
-                    </svg>
-                  </div>
-                  <div>
-                    <h3 class="text-xl font-bold">Equipe/Cuidadores</h3>
-                    <p class="text-pink-100">Informações sobre a equipe</p>
-                  </div>
-                </div>
-                <span class="px-3 py-1 bg-white/20 rounded-full text-sm font-medium field-count">11 campos</span>
+            
+            <div class="bg-white dark:bg-gray-800 rounded-xl p-6 shadow-lg" data-section="caregivers">
+              <div class="flex items-center justify-between mb-4">
+                <h3 class="text-lg font-semibold text-gray-800 dark:text-white">Dados da Equipe</h3>
+                <span class="field-count text-sm text-gray-500 dark:text-gray-400">0 campos</span>
               </div>
+              <div id="caregiversFieldsList" class="space-y-3"></div>
             </div>
-            <div class="p-6" id="caregiversFieldsList"></div>
-          </div>
-          
-          <div class="bg-white dark:bg-gray-800 rounded-xl shadow-lg overflow-hidden" data-section="residentFields" data-aos="fade-up" data-aos-delay="400">
-            <div class="bg-gradient-to-r from-green-500 to-green-600 p-6 text-white">
-              <div class="flex items-center justify-between">
-                <div class="flex items-center gap-4">
-                  <div class="p-3 bg-white/20 rounded-xl">
-                    <svg class="w-8 h-8" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z" />
-                    </svg>
-                  </div>
-                  <div>
-                    <h3 class="text-xl font-bold">Dados dos Moradores</h3>
-                    <p class="text-green-100">Campos individuais de cada morador</p>
-                  </div>
-                </div>
-                <span class="px-3 py-1 bg-white/20 rounded-full text-sm font-medium field-count">20 campos</span>
+            
+            <div class="bg-white dark:bg-gray-800 rounded-xl p-6 shadow-lg" data-section="residentFields">
+              <div class="flex items-center justify-between mb-4">
+                <h3 class="text-lg font-semibold text-gray-800 dark:text-white">Dados dos Moradores</h3>
+                <span class="field-count text-sm text-gray-500 dark:text-gray-400">0 campos</span>
               </div>
+              <div id="residentFieldsFieldsList" class="space-y-3"></div>
             </div>
-            <div class="p-6" id="residentFieldsFieldsList"></div>
           </div>
         </div>
       </div>
 
-      <div class="tab-content" id="reportsTab" style="display:none;">
+      <div id="reportsTab" class="tab-content">
         <header class="bg-white dark:bg-gray-800 shadow-sm px-6 py-4">
-          <div>
-            <h1 class="text-2xl font-bold text-gray-800 dark:text-white">Relatórios e Análises</h1>
-            <p class="text-sm text-gray-600 dark:text-gray-400">Visualize insights dos dados</p>
+          <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+            <div>
+              <h1 class="text-2xl font-bold text-gray-800 dark:text-white">Relatórios</h1>
+              <p class="text-sm text-gray-600 dark:text-gray-400">Gere relatórios personalizados dos dados</p>
+            </div>
           </div>
         </header>
         
         <div class="p-6">
-          <div class="bg-white dark:bg-gray-800 rounded-xl shadow-lg p-6 mb-6">
-            <div class="grid grid-cols-1 md:grid-cols-4 gap-4">
+          <div class="bg-white dark:bg-gray-800 rounded-xl p-6 shadow-lg mb-6">
+            <h3 class="text-lg font-semibold text-gray-800 dark:text-white mb-4">Gerar Relatório</h3>
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-4 mb-4">
               <div>
-                <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Data Inicial</label>
+                <label for="startDate" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Data Inicial</label>
                 <input type="date" id="startDate" class="w-full px-4 py-2 bg-gray-100 dark:bg-gray-700 border-0 rounded-xl focus:ring-2 focus:ring-blue-500 transition-all">
               </div>
               <div>
-                <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Data Final</label>
+                <label for="endDate" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Data Final</label>
                 <input type="date" id="endDate" class="w-full px-4 py-2 bg-gray-100 dark:bg-gray-700 border-0 rounded-xl focus:ring-2 focus:ring-blue-500 transition-all">
               </div>
               <div>
-                <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Tipo de Relatório</label>
+                <label for="reportType" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Tipo de Relatório</label>
                 <select id="reportType" class="w-full px-4 py-2 bg-gray-100 dark:bg-gray-700 border-0 rounded-xl focus:ring-2 focus:ring-blue-500 transition-all">
                   <option value="summary">Resumo Geral</option>
                   <option value="occupancy">Análise de Ocupação</option>
                   <option value="residents">Perfil dos Moradores</option>
                 </select>
               </div>
-              <div class="flex items-end">
-                <button id="generateReportBtn" class="w-full px-4 py-2 bg-gradient-to-r from-blue-500 to-purple-600 hover:from-blue-600 hover:to-purple-700 text-white rounded-xl font-medium transition-all transform hover:scale-105 active:scale-95 flex items-center justify-center gap-2">
-                  <svg class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 17v-2m3 2v-4m3 4v-6m2 10H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
-                  </svg>
-                  <span>Gerar Relatório</span>
-                </button>
-              </div>
             </div>
+            <button id="generateReportBtn" class="px-6 py-2 bg-gradient-to-r from-green-500 to-green-600 hover:from-green-600 hover:to-green-700 text-white rounded-xl font-medium transition-all transform hover:scale-105 active:scale-95 flex items-center gap-2">
+              <svg class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 17v-2m3 2v-4m3 4v-6m2 10H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+              </svg>
+              <span>Gerar Relatório</span>
+            </button>
           </div>
           
-          <div id="reportContent" class="bg-white dark:bg-gray-800 rounded-xl shadow-lg p-8">
-            <div class="text-center py-12">
-              <svg class="w-24 h-24 mx-auto text-gray-400 mb-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1" d="M9 17v-2m3 2v-4m3 4v-6m2 10H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
-              </svg>
-              <h3 class="text-lg font-medium text-gray-900 dark:text-gray-100 mb-2">Nenhum relatório gerado</h3>
-              <p class="text-gray-500 dark:text-gray-400">Selecione os filtros e clique em gerar relatório</p>
+          <div class="bg-white dark:bg-gray-800 rounded-xl shadow-lg overflow-hidden">
+            <div class="p-6">
+              <h3 class="text-lg font-semibold text-gray-800 dark:text-white mb-4">Resultado do Relatório</h3>
+              <div id="reportContent" class="text-gray-600 dark:text-gray-400">
+                Selecione um período e tipo de relatório para visualizar os dados.
+              </div>
             </div>
           </div>
         </div>
@@ -649,25 +526,27 @@
   </div>
 
   <div id="houseModal" class="fixed inset-0 z-50 hidden">
-    <div class="modal-backdrop absolute inset-0 bg-black/60 backdrop-blur-sm" onclick="document.getElementById('houseModal').style.display='none'"></div>
-    <div class="modal-content absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 w-full max-w-4xl max-h-[90vh] bg-white dark:bg-gray-800 rounded-2xl shadow-2xl overflow-hidden animate-scale-in">
+    <div class="modal-backdrop absolute inset-0 bg-black/60 backdrop-blur-sm" onclick="closeHouseModal()"></div>
+    <div class="modal-content absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 w-full max-w-6xl max-h-[90vh] bg-white dark:bg-gray-800 rounded-2xl shadow-2xl overflow-hidden animate-scale-in">
       <div class="bg-gradient-to-r from-blue-500 to-purple-600 p-6 text-white">
         <div class="flex items-center justify-between">
-          <h2 class="text-2xl font-bold">Detalhes da Casa</h2>
-          <button class="modal-close p-2 hover:bg-white/20 rounded-lg transition-colors" onclick="document.getElementById('houseModal').style.display='none'">
+          <h2 class="text-2xl font-bold">Detalhes da Residência</h2>
+          <button class="modal-close p-2 hover:bg-white/20 rounded-lg transition-colors" onclick="closeHouseModal()">
             <svg class="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
               <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
             </svg>
           </button>
         </div>
       </div>
-      <div id="houseDetails" class="p-6 overflow-y-auto max-h-[calc(90vh-100px)]"></div>
+      <div class="p-6 overflow-y-auto max-h-[calc(90vh-120px)]">
+        <div id="houseDetails"></div>
+      </div>
     </div>
   </div>
 
   <div id="fieldModal" class="fixed inset-0 z-50 hidden">
     <div class="modal-backdrop absolute inset-0 bg-black/60 backdrop-blur-sm" onclick="closeFieldModal()"></div>
-    <div class="modal-content absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 w-full max-w-2xl max-h-[90vh] bg-white dark:bg-gray-800 rounded-2xl shadow-2xl overflow-hidden animate-scale-in">
+    <div class="modal-content absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 w-full max-w-2xl bg-white dark:bg-gray-800 rounded-2xl shadow-2xl overflow-hidden animate-scale-in">
       <div class="bg-gradient-to-r from-blue-500 to-purple-600 p-6 text-white">
         <div class="flex items-center justify-between">
           <h2 id="fieldModalTitle" class="text-2xl font-bold">Adicionar Campo</h2>
@@ -678,117 +557,109 @@
           </button>
         </div>
       </div>
-      <div class="p-6 overflow-y-auto max-h-[calc(90vh-100px)]">
-        <form id="fieldForm" class="space-y-6">
-          <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <div>
-              <label for="fieldSection" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Seção</label>
-              <select id="fieldSection" required class="w-full px-4 py-2 bg-gray-100 dark:bg-gray-700 border-0 rounded-xl focus:ring-2 focus:ring-blue-500 transition-all">
-                <option value="">Selecione...</option>
-                <option value="municipio">Informações do Município</option>
-                <option value="general">Dados do SRT</option>
-                <option value="residence">Dados da Residência</option>
-                <option value="caregivers">Equipe/Cuidadores</option>
-                <option value="residentFields">Dados dos Moradores</option>
-              </select>
-            </div>
-            
-            <div>
-              <label for="fieldType" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Tipo do Campo</label>
-              <select id="fieldType" required class="w-full px-4 py-2 bg-gray-100 dark:bg-gray-700 border-0 rounded-xl focus:ring-2 focus:ring-blue-500 transition-all">
-                <option value="">Selecione...</option>
-                <option value="text">Texto</option>
-                <option value="number">Número</option>
-                <option value="date">Data</option>
-                <option value="select">Lista de Opções</option>
-                <option value="multiselect">Lista de Múltipla Seleção</option>
-                <option value="textarea">Texto Longo</option>
-                <option value="tel">Telefone</option>
-                <option value="email">E-mail</option>
-              </select>
-            </div>
+      <form id="fieldForm" class="p-6">
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
+          <div>
+            <label for="fieldSection" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Seção</label>
+            <select id="fieldSection" required class="w-full px-4 py-2 bg-gray-100 dark:bg-gray-700 border-0 rounded-xl focus:ring-2 focus:ring-blue-500 transition-all">
+              <option value="municipio">Informações do Município</option>
+              <option value="general">Dados do SRT</option>
+              <option value="residence">Dados da Residência</option>
+              <option value="caregivers">Dados da Equipe</option>
+              <option value="residentFields">Dados dos Moradores</option>
+            </select>
           </div>
           
           <div>
-            <label for="fieldLabel" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Nome do Campo</label>
-            <input type="text" id="fieldLabel" placeholder="Ex: Nome Completo" required class="w-full px-4 py-2 bg-gray-100 dark:bg-gray-700 border-0 rounded-xl focus:ring-2 focus:ring-blue-500 transition-all">
+            <label for="fieldType" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Tipo do Campo</label>
+            <select id="fieldType" required class="w-full px-4 py-2 bg-gray-100 dark:bg-gray-700 border-0 rounded-xl focus:ring-2 focus:ring-blue-500 transition-all">
+              <option value="text">Texto</option>
+              <option value="number">Número</option>
+              <option value="date">Data</option>
+              <option value="select">Lista</option>
+              <option value="multiselect">Múltipla Seleção</option>
+              <option value="textarea">Texto Longo</option>
+              <option value="tel">Telefone</option>
+              <option value="email">E-mail</option>
+            </select>
+          </div>
+        </div>
+        
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
+          <div>
+            <label for="fieldLabel" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Rótulo do Campo</label>
+            <input type="text" id="fieldLabel" required class="w-full px-4 py-2 bg-gray-100 dark:bg-gray-700 border-0 rounded-xl focus:ring-2 focus:ring-blue-500 transition-all">
           </div>
           
           <div>
-            <label for="fieldKey" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Identificador (automático)</label>
-            <input type="text" id="fieldKey" readonly class="w-full px-4 py-2 bg-gray-50 dark:bg-gray-900 border-0 rounded-xl text-gray-500">
+            <label for="fieldKey" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Chave do Campo</label>
+            <input type="text" id="fieldKey" required class="w-full px-4 py-2 bg-gray-100 dark:bg-gray-700 border-0 rounded-xl focus:ring-2 focus:ring-blue-500 transition-all">
           </div>
-          
-          <div id="optionsContainer" class="hidden">
-            <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Opções da Lista</label>
-            <div id="optionsList" class="space-y-2"></div>
-            <button type="button" id="addOptionBtn" class="mt-2 px-4 py-2 bg-gray-100 dark:bg-gray-700 hover:bg-gray-200 dark:hover:bg-gray-600 rounded-xl text-sm font-medium transition-all flex items-center gap-2">
-              <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6v6m0 0v6m0-6h6m-6 0H6" />
-              </svg>
-              Adicionar Opção
-            </button>
+        </div>
+        
+        <div class="mb-4">
+          <label class="flex items-center gap-2">
+            <input type="checkbox" id="fieldRequired" class="w-5 h-5 text-blue-600 bg-gray-100 border-gray-300 rounded focus:ring-blue-500">
+            <span class="text-sm font-medium text-gray-700 dark:text-gray-300">Campo obrigatório</span>
+          </label>
+        </div>
+        
+        <div id="optionsContainer" class="mb-4 hidden">
+          <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Opções</label>
+          <div id="optionsList" class="space-y-2 mb-2"></div>
+          <button type="button" id="addOptionBtn" class="px-4 py-2 bg-blue-100 dark:bg-blue-900/20 text-blue-600 dark:text-blue-400 rounded-xl font-medium transition-all hover:bg-blue-200 dark:hover:bg-blue-900/30">
+            Adicionar Opção
+          </button>
+        </div>
+        
+        <div id="numberConstraints" class="grid grid-cols-2 gap-4 mb-4 hidden">
+          <div>
+            <label for="fieldMin" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Valor Mínimo</label>
+            <input type="number" id="fieldMin" class="w-full px-4 py-2 bg-gray-100 dark:bg-gray-700 border-0 rounded-xl focus:ring-2 focus:ring-blue-500 transition-all">
           </div>
-          
-          <div class="space-y-4">
-            <label class="flex items-center gap-3 cursor-pointer">
-              <input type="checkbox" id="fieldRequired" class="w-5 h-5 text-blue-600 bg-gray-100 border-gray-300 rounded focus:ring-blue-500">
-              <span class="text-sm font-medium text-gray-700 dark:text-gray-300">Campo obrigatório</span>
-            </label>
-            
-            <div id="numberConstraints" class="hidden grid grid-cols-2 gap-4">
-              <div>
-                <label for="fieldMin" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Valor Mínimo</label>
-                <input type="number" id="fieldMin" class="w-full px-4 py-2 bg-gray-100 dark:bg-gray-700 border-0 rounded-xl focus:ring-2 focus:ring-blue-500 transition-all">
-              </div>
-              
-              <div>
-                <label for="fieldMax" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Valor Máximo</label>
-                <input type="number" id="fieldMax" class="w-full px-4 py-2 bg-gray-100 dark:bg-gray-700 border-0 rounded-xl focus:ring-2 focus:ring-blue-500 transition-all">
-              </div>
-            </div>
+          <div>
+            <label for="fieldMax" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Valor Máximo</label>
+            <input type="number" id="fieldMax" class="w-full px-4 py-2 bg-gray-100 dark:bg-gray-700 border-0 rounded-xl focus:ring-2 focus:ring-blue-500 transition-all">
           </div>
-          
-          <div class="flex gap-3 justify-end pt-4 border-t border-gray-200 dark:border-gray-700">
-            <button type="button" onclick="closeFieldModal()" class="px-6 py-2 bg-gray-100 dark:bg-gray-700 hover:bg-gray-200 dark:hover:bg-gray-600 rounded-xl font-medium transition-all">
-              Cancelar
-            </button>
-            <button type="submit" class="px-6 py-2 bg-gradient-to-r from-blue-500 to-purple-600 hover:from-blue-600 hover:to-purple-700 text-white rounded-xl font-medium transition-all transform hover:scale-105 active:scale-95 flex items-center gap-2">
-              <svg class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7" />
-              </svg>
-              Salvar Campo
-            </button>
-          </div>
-        </form>
-      </div>
+        </div>
+        
+        <div class="flex gap-3 justify-end pt-4 border-t border-gray-200 dark:border-gray-700">
+          <button type="button" onclick="closeFieldModal()" class="px-6 py-2 bg-gray-100 dark:bg-gray-700 hover:bg-gray-200 dark:hover:bg-gray-600 rounded-xl font-medium transition-all">
+            Cancelar
+          </button>
+          <button type="submit" class="px-6 py-2 bg-gradient-to-r from-blue-500 to-purple-600 hover:from-blue-600 hover:to-purple-700 text-white rounded-xl font-medium transition-all transform hover:scale-105 active:scale-95 flex items-center gap-2">
+            <svg class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7" />
+            </svg>
+            <span>Salvar</span>
+          </button>
+        </div>
+      </form>
     </div>
   </div>
 
   <div id="toastContainer" class="fixed top-4 right-4 z-50 space-y-4"></div>
 
- <script src="js/utils.js"></script>
-<script src="js/admin.js"></script>
   <script>
     particlesJS('particles-js', {
       particles: {
-        number: { value: 60, density: { enable: true, value_area: 800 } },
-        color: { value: '#8b5cf6' },
+        number: { value: 80, density: { enable: true, value_area: 800 } },
+        color: { value: '#3b82f6' },
         shape: { type: 'circle' },
-        opacity: { value: 0.3, random: true },
+        opacity: { value: 0.5, random: false },
         size: { value: 3, random: true },
         line_linked: {
           enable: true,
           distance: 150,
-          color: '#8b5cf6',
-          opacity: 0.2,
+          color: '#3b82f6',
+          opacity: 0.4,
           width: 1
         },
         move: {
           enable: true,
-          speed: 1,
+          speed: 2,
           direction: 'none',
-          random: true,
+          random: false,
           straight: false,
           out_mode: 'out',
           bounce: false
@@ -797,7 +668,7 @@
       interactivity: {
         detect_on: 'canvas',
         events: {
-          onhover: { enable: true, mode: 'grab' },
+          onhover: { enable: true, mode: 'repulse' },
           onclick: { enable: true, mode: 'push' },
           resize: true
         }
@@ -806,11 +677,18 @@
     });
     
     AOS.init({
-      duration: 600,
+      duration: 800,
       easing: 'ease-out-cubic',
       once: true,
       offset: 50
     });
+
+    window.closeHouseModal = () => {
+      document.getElementById('houseModal').style.display = 'none';
+    };
   </script>
+  <script src="js/admin.js"></script>
+  <script src="js/utils.js"></script>
 </body>
 </html>
+

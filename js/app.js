@@ -9,49 +9,12 @@ const firebaseConfig = {
 };
 
 firebase.initializeApp(firebaseConfig);
-emailjs.init("d0sJQnEpzJuuj6k-Z");
 const db = firebase.firestore();
 
-let currentConfig = null;
-
-const validationMessages = {
-  required: 'Este campo é obrigatório',
-  email: 'Digite um e-mail válido (exemplo@dominio.com)',
-  tel: 'Digite um telefone válido com DDD',
-  cep: 'CEP deve ter 8 dígitos (00000-000)',
-  cnesCaps: 'CNES deve ter exatamente 7 dígitos',
-  dataNascimento: 'Data de nascimento não pode ser futura',
-  dataInauguracao: 'Data de inauguração não pode ser futura',
-  idade: 'Idade deve estar entre 18 e 120 anos',
-  vagasOcupadas: 'Vagas ocupadas não pode ser maior que vagas totais',
-  numMoradores: 'Número de moradores deve ser igual às vagas ocupadas',
-  totalProfissionais: 'Total de profissionais deve ser a soma de todos os tipos',
-  relacaoCuidadorMorador: 'Formato: X:Y (exemplo: 1:4)'
-};
-
-const customValidators = {
-  cep: (value) => {
-    const cepClean = value.replace(/\D/g, '');
-    return cepClean.length === 8;
-  },
-  
-  cnes: (value) => {
-    const cnesClean = value.replace(/\D/g, '');
-    return cnesClean.length === 7;
-  },
-  
-  telefone: (value) => {
-    const telClean = value.replace(/\D/g, '');
-    return telClean.length === 10 || telClean.length === 11;
-  },
-  
-  dateNotFuture: (value) => {
-    const inputDate = new Date(value);
-    const today = new Date();
-    today.setHours(0, 0, 0, 0);
-    return inputDate <= today;
-  }
-};
+let currentStep = 1;
+let totalSteps = 5;
+let formConfig = null;
+let residents = [];
 
 const showLoading = () => {
   const overlay = document.getElementById('loadingOverlay');
@@ -95,90 +58,6 @@ const showToast = (message, type = 'success') => {
   }, 3000);
 };
 
-const updateProgress = () => {
-  const sections = ['municipio', 'general', 'residence', 'caregivers'];
-  let totalFields = 0;
-  let filledFields = 0;
-  
-  sections.forEach(section => {
-    const sectionElement = document.getElementById(`${section}Fields`);
-    if (!sectionElement) return;
-    
-    let sectionTotal = 0;
-    let sectionFilled = 0;
-    
-    const normalInputs = sectionElement.querySelectorAll('input[required]:not([type="checkbox"]):not([id*="_validation"]), select[required], textarea[required]');
-    sectionTotal += normalInputs.length;
-    sectionFilled += Array.from(normalInputs).filter(input => input.value.trim()).length;
-    
-    const multiselectGroups = new Set();
-    sectionElement.querySelectorAll('input[type="checkbox"][data-field]').forEach(checkbox => {
-      const fieldName = checkbox.getAttribute('data-field');
-      if (fieldName) {
-        multiselectGroups.add(fieldName);
-      }
-    });
-    
-    multiselectGroups.forEach(fieldName => {
-      const hiddenValidation = document.getElementById(`${fieldName}_validation`);
-      if (hiddenValidation && hiddenValidation.required) {
-        sectionTotal += 1;
-        
-        const checkboxes = sectionElement.querySelectorAll(`input[type="checkbox"][data-field="${fieldName}"]`);
-        const hasChecked = Array.from(checkboxes).some(cb => cb.checked);
-        if (hasChecked) {
-          sectionFilled += 1;
-        }
-      }
-    });
-    
-    totalFields += sectionTotal;
-    filledFields += sectionFilled;
-    
-    const sectionProgress = sectionTotal > 0 ? (sectionFilled / sectionTotal) * 100 : 0;
-    const progressBar = document.querySelector(`[data-section="${section}"]`);
-    const progressText = document.querySelector(`[data-section-percent="${section}"]`);
-    
-    if (progressBar) progressBar.style.width = `${sectionProgress}%`;
-    if (progressText) progressText.textContent = `${Math.round(sectionProgress)}%`;
-  });
-  
-  const residentInputs = document.querySelectorAll('#residentsContainer input[required]:not([type="checkbox"]):not([id*="_validation"]), #residentsContainer select[required], #residentsContainer textarea[required]');
-  totalFields += residentInputs.length;
-  filledFields += Array.from(residentInputs).filter(input => input.value.trim()).length;
-  
-  const residentMultiselectGroups = new Set();
-  document.querySelectorAll('#residentsContainer input[type="checkbox"][data-field]').forEach(checkbox => {
-    const fieldName = checkbox.getAttribute('data-field');
-    if (fieldName) {
-      residentMultiselectGroups.add(fieldName);
-    }
-  });
-  
-  residentMultiselectGroups.forEach(fieldName => {
-    const hiddenValidation = document.getElementById(`${fieldName}_validation`);
-    if (hiddenValidation && hiddenValidation.required) {
-      totalFields += 1;
-      
-      const checkboxes = document.querySelectorAll(`#residentsContainer input[type="checkbox"][data-field="${fieldName}"]`);
-      const hasChecked = Array.from(checkboxes).some(cb => cb.checked);
-      if (hasChecked) {
-        filledFields += 1;
-      }
-    }
-  });
-  
-  const overallProgress = totalFields > 0 ? (filledFields / totalFields) * 100 : 0;
-  const progressBar = document.getElementById('progressFill');
-  progressBar.style.width = `${overallProgress}%`;
-  
-  if (overallProgress === 100) {
-    progressBar.classList.add('animate-pulse-glow');
-  } else {
-    progressBar.classList.remove('animate-pulse-glow');
-  }
-};
-
 const initTheme = () => {
   const theme = localStorage.getItem('theme') || 'light';
   document.documentElement.classList.toggle('dark', theme === 'dark');
@@ -196,1807 +75,597 @@ const initTheme = () => {
   });
 };
 
-const applyInputMask = (input, mask) => {
-  input.addEventListener('input', (e) => {
-    let value = e.target.value.replace(/\D/g, '');
-    let maskedValue = '';
-    let maskIndex = 0;
-    
-    for (let i = 0; i < mask.length && maskIndex < value.length; i++) {
-      if (mask[i] === '9') {
-        maskedValue += value[maskIndex];
-        maskIndex++;
-      } else {
-        maskedValue += mask[i];
-      }
-    }
-    
-    e.target.value = maskedValue;
-  });
+const initializeApp = async () => {
+  showLoading();
+  initTheme();
+  
+  try {
+    await loadFormConfiguration();
+    generateFormFields();
+    setupEventListeners();
+    updateProgress();
+  } catch (error) {
+    console.error('Erro ao inicializar:', error);
+    showToast('Erro ao carregar configuração do formulário', 'error');
+  } finally {
+    hideLoading();
+  }
 };
 
-// Substitua a função createEnhancedInputGroup em js/app.js pela versão corrigida:
-
-const createEnhancedInputGroup = (field, prefix = '') => {
-  const group = document.createElement('div');
-  group.className = 'form-group relative';
-  
-  const inputId = prefix + field.key;
-  
-  const labelContainer = document.createElement('div');
-  labelContainer.className = 'flex items-center justify-between mb-2';
-  
-  const label = document.createElement('label');
-  label.setAttribute('for', inputId);
-  label.className = `block text-sm font-medium text-gray-700 dark:text-gray-300 ${field.required ? 'required-indicator' : ''}`;
-  label.textContent = field.label;
-  
-  if (field.helpText) {
-    const tooltipWrapper = document.createElement('span');
-    tooltipWrapper.className = 'tooltip-wrapper ml-2';
-    tooltipWrapper.innerHTML = `
-      <svg class="w-4 h-4 text-gray-400 hover:text-gray-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
-      </svg>
-      <span class="tooltip-content">${field.helpText}</span>
-    `;
-    label.appendChild(tooltipWrapper);
-  }
-  
-  labelContainer.appendChild(label);
-  
-  let input;
-  
-  if (field.type === 'select' && field.options) {
-    input = document.createElement('select');
-    input.className = 'w-full px-4 py-3 bg-white dark:bg-gray-700 border-2 border-gray-200 dark:border-gray-600 rounded-xl focus:border-blue-500 dark:focus:border-blue-400 focus:outline-none transition-all';
+const loadFormConfiguration = async () => {
+  try {
+    const configRef = db.collection('config').doc('srt');
+    const configSnap = await configRef.get();
     
-    const defaultOption = document.createElement('option');
-    defaultOption.value = '';
-    defaultOption.textContent = field.placeholder || 'Selecione uma opção...';
-    defaultOption.disabled = true;
-    defaultOption.selected = true;
-    input.appendChild(defaultOption);
-    
-    field.options.forEach(opt => {
-      const option = document.createElement('option');
-      option.value = opt;
-      option.textContent = opt;
-      if (field.defaultValue === opt) option.selected = true;
-      input.appendChild(option);
-    });
-    
-    input.id = inputId;
-    input.name = inputId;
-    if (field.required) input.required = true;
-  } 
-  else if (field.type === 'multiselect' && field.options) {
-    input = document.createElement('div');
-    input.className = 'checkbox-group max-h-48 overflow-y-auto space-y-2 p-4 bg-gray-50 dark:bg-gray-700/50 rounded-xl border-2 border-gray-200 dark:border-gray-600';
-    input.id = inputId;
-    
-    field.options.forEach((opt, index) => {
-      const checkboxWrapper = document.createElement('label');
-      checkboxWrapper.className = 'flex items-center gap-3 cursor-pointer hover:bg-white dark:hover:bg-gray-700 p-2 rounded-lg transition-all';
-      
-      const checkbox = document.createElement('input');
-      checkbox.type = 'checkbox';
-      checkbox.name = inputId;
-      checkbox.value = opt;
-      checkbox.className = 'w-5 h-5 text-blue-600 bg-gray-100 border-gray-300 rounded focus:ring-blue-500 dark:focus:ring-blue-600 dark:ring-offset-gray-800 focus:ring-2 dark:bg-gray-700 dark:border-gray-600';
-      checkbox.id = `${inputId}_${index}`;
-      checkbox.setAttribute('data-field', inputId);
-      
-      const labelText = document.createElement('span');
-      labelText.className = 'text-sm font-medium text-gray-700 dark:text-gray-300';
-      labelText.textContent = opt;
-      
-      checkboxWrapper.appendChild(checkbox);
-      checkboxWrapper.appendChild(labelText);
-      input.appendChild(checkboxWrapper);
-    });
-    
-    if (field.required) {
-      const hiddenInput = document.createElement('input');
-      hiddenInput.type = 'hidden';
-      hiddenInput.id = `${inputId}_validation`;
-      hiddenInput.name = `${inputId}_validation`;
-      hiddenInput.required = true;
-      hiddenInput.setCustomValidity('Selecione pelo menos uma opção');
-      
-      const checkboxes = input.querySelectorAll('input[type="checkbox"]');
-      
-      const validateSelection = () => {
-        const checkedCount = input.querySelectorAll('input[type="checkbox"]:checked').length;
-        if (checkedCount > 0) {
-          hiddenInput.setCustomValidity('');
-          hiddenInput.value = 'valid';
-          input.classList.remove('border-red-500');
-          input.classList.add('border-green-500');
-          
-          const errorMsg = group.querySelector('.error-message');
-          if (errorMsg) errorMsg.remove();
-        } else {
-          hiddenInput.setCustomValidity('Selecione pelo menos uma opção');
-          hiddenInput.value = '';
-          input.classList.remove('border-green-500');
-          if (field.required) {
-            input.classList.add('border-red-500');
-          }
-        }
-      };
-      
-      checkboxes.forEach(cb => {
-        cb.addEventListener('change', validateSelection);
-        cb.addEventListener('change', updateProgress);
-      });
-      
-      group.appendChild(hiddenInput);
-      validateSelection();
+    if (configSnap.exists) {
+      formConfig = configSnap.data();
     } else {
-      input.querySelectorAll('input[type="checkbox"]').forEach(checkbox => {
-        checkbox.addEventListener('change', updateProgress);
-      });
+      formConfig = getDefaultConfig();
     }
-  }
-  else if (field.type === 'textarea') {
-    input = document.createElement('textarea');
-    input.rows = 3;
-    input.className = 'w-full px-4 py-3 bg-white dark:bg-gray-700 border-2 border-gray-200 dark:border-gray-600 rounded-xl focus:border-blue-500 dark:focus:border-blue-400 focus:outline-none transition-all resize-none';
-    if (field.placeholder) input.placeholder = field.placeholder;
-    
-    input.id = inputId;
-    input.name = inputId;
-    if (field.required) input.required = true;
-  } 
-  else {
-    input = document.createElement('input');
-    input.type = field.type;
-    input.className = 'w-full px-4 py-3 bg-white dark:bg-gray-700 border-2 border-gray-200 dark:border-gray-600 rounded-xl focus:border-blue-500 dark:focus:border-blue-400 focus:outline-none transition-all';
-    if (field.placeholder) input.placeholder = field.placeholder;
-    if (field.min !== undefined) input.min = field.min;
-    if (field.max !== undefined) input.max = field.max;
-    if (field.maxLength) input.maxLength = field.maxLength;
-    if (field.pattern) input.pattern = field.pattern;
-    
-    if (field.type === 'date' && field.max === 'today') {
-      input.max = new Date().toISOString().split('T')[0];
-    }
-    
-    input.id = inputId;
-    input.name = inputId;
-    if (field.required) input.required = true;
-  }
-  
-  if (field.type !== 'multiselect' && field.mask) {
-    applyInputMask(input, field.mask);
-  }
-  
-  if (field.type !== 'multiselect') {
-    input.addEventListener('invalid', (e) => {
-      e.preventDefault();
-      showFieldError(input, field);
-    });
-    
-    input.addEventListener('input', () => {
-      removeFieldError(input);
-      updateProgress();
-      
-      if (input.checkValidity() && input.value) {
-        input.classList.add('border-green-500', 'dark:border-green-400', 'animate-pulse-border');
-        setTimeout(() => {
-          input.classList.remove('border-green-500', 'dark:border-green-400', 'animate-pulse-border');
-        }, 1000);
-      }
-    });
-  }
-  
-  group.appendChild(labelContainer);
-  group.appendChild(input);
-  
-  if (field.helpText) {
-    const helpText = document.createElement('p');
-    helpText.className = 'help-text';
-    helpText.textContent = field.helpText;
-    group.appendChild(helpText);
-  }
-  
-  if ((field.type === 'text' || field.type === 'textarea') && field.maxLength) {
-    const counter = document.createElement('p');
-    counter.className = 'char-counter';
-    counter.textContent = `0/${field.maxLength}`;
-    
-    input.addEventListener('input', () => {
-      counter.textContent = `${input.value.length}/${field.maxLength}`;
-      if (input.value.length > field.maxLength * 0.9) {
-        counter.classList.add('warning');
-      } else {
-        counter.classList.remove('warning');
-      }
-    });
-    
-    group.appendChild(counter);
-  }
-  
-  if (field.conditional) {
-    group.classList.add('conditional-field', 'hidden');
-    group.dataset.dependsOn = field.conditional.field;
-    if (field.conditional.value) {
-      group.dataset.showWhen = field.conditional.value;
-    } else if (field.conditional.values) {
-      group.dataset.showWhen = field.conditional.values.join(',');
-    }
-  }
-  
-  return group;
-};
-
-const showFieldError = (field, fieldConfig) => {
-  const formGroup = field.closest('.form-group');
-  if (!formGroup) return;
-  
-  formGroup.classList.add('has-error');
-  field.classList.add('border-red-500', 'animate-shake');
-  
-  setTimeout(() => field.classList.remove('animate-shake'), 500);
-  
-  let errorElement = formGroup.querySelector('.error-message');
-  if (!errorElement) {
-    errorElement = document.createElement('p');
-    errorElement.className = 'error-message';
-    formGroup.appendChild(errorElement);
-  }
-  
-  let errorMessage = validationMessages.required;
-  
-  if (field.validity.patternMismatch) {
-    errorMessage = fieldConfig.helpText || 'Formato inválido';
-  } else if (field.validity.typeMismatch) {
-    errorMessage = validationMessages[field.type] || 'Valor inválido';
-  } else if (field.validity.rangeUnderflow || field.validity.rangeOverflow) {
-    errorMessage = `Valor deve estar entre ${field.min} e ${field.max}`;
-  }
-  
-  errorElement.innerHTML = `
-    <svg class="w-4 h-4 inline-block" fill="currentColor" viewBox="0 0 20 20">
-      <path fill-rule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7 4a1 1 0 11-2 0 1 1 0 012 0zm-1-9a1 1 0 00-1 1v4a1 1 0 102 0V6a1 1 0 00-1-1z" clip-rule="evenodd" />
-    </svg>
-    ${errorMessage}
-  `;
-};
-
-const removeFieldError = (field) => {
-  const formGroup = field.closest('.form-group');
-  if (!formGroup) return;
-  
-  formGroup.classList.remove('has-error');
-  field.classList.remove('border-red-500');
-  
-  const errorElement = formGroup.querySelector('.error-message');
-  if (errorElement) {
-    errorElement.remove();
+  } catch (error) {
+    console.error('Erro ao carregar configuração:', error);
+    formConfig = getDefaultConfig();
   }
 };
 
-const getDefaultConfig = () => ({
-  municipio: [
-    { 
-      key: "regiaoSaude", 
-      label: "Região de Saúde", 
-      type: "text", 
-      required: true,
-      placeholder: "Ex: Metropolitana I, Baixada Litorânea",
-      helpText: "Digite o nome da região de saúde conforme divisão estadual",
-      maxLength: 100
-    },
-    { 
-      key: "municipio", 
-      label: "Nome do Município", 
-      type: "text", 
-      required: true,
-      placeholder: "Ex: Rio de Janeiro, Niterói",
-      helpText: "Nome completo do município sem abreviações",
-      maxLength: 100
-    },
-    { 
-      key: "coordenacaoSaudeMental", 
-      label: "Coordenação de Saúde Mental Municipal", 
-      type: "text", 
-      required: true,
-      placeholder: "Nome completo da coordenação",
-      helpText: "Informe o nome oficial da coordenação responsável pela saúde mental",
-      maxLength: 200
-    },
-    { 
-      key: "responsavelPreenchimento", 
-      label: "Responsável pelo Preenchimento", 
-      type: "text", 
-      required: true,
-      placeholder: "Nome completo do responsável",
-      helpText: "Pessoa responsável pelas informações fornecidas",
-      maxLength: 150
-    },
-    { 
-      key: "telefoneResponsavelPreenchimento", 
-      label: "Telefone do Responsável", 
-      type: "tel", 
-      required: true,
-      placeholder: "(21) 99999-9999",
-      helpText: "Telefone com DDD para contato",
-      mask: "(99) 99999-9999",
-      pattern: "\\([0-9]{2}\\) [0-9]{4,5}-[0-9]{4}"
-    },
-    { 
-      key: "emailResponsavelPreenchimento", 
-      label: "E-mail do Responsável", 
-      type: "email", 
-      required: true,
-      placeholder: "exemplo@prefeitura.rj.gov.br",
-      helpText: "E-mail institucional válido para contato",
-      maxLength: 150
-    },
-    { 
-      key: "dataPreenchimentoMunicipio", 
-      label: "Data do Preenchimento", 
-      type: "date", 
-      required: true,
-      helpText: "Data em que este formulário está sendo preenchido",
-      max: "today"
-    },
-    { 
-      key: "capsVinculadaSRT", 
-      label: "CAPS de Referência da SRT", 
-      type: "text", 
-      required: true,
-      placeholder: "Ex: CAPS III João Ferreira da Silva",
-      helpText: "Nome completo do CAPS que acompanha esta residência",
-      maxLength: 200
-    },
-    { 
-      key: "cnesCapsVinculada", 
-      label: "CNES do CAPS", 
-      type: "text", 
-      required: true,
-      placeholder: "0000000",
-      helpText: "Código CNES com 7 dígitos",
-      mask: "9999999",
-      pattern: "[0-9]{7}",
-      maxLength: 7
-    }
-  ],
-  
-  general: [
-    { 
-      key: "dataPreenchimento", 
-      label: "Data do Preenchimento", 
-      type: "date", 
-      required: true,
-      helpText: "Data atual do preenchimento deste cadastro",
-      max: "today"
-    },
-    { 
-      key: "responsavelNome", 
-      label: "Responsável pela Residência", 
-      type: "text", 
-      required: true,
-      placeholder: "Nome completo do coordenador/responsável",
-      helpText: "Profissional responsável pela gestão da residência",
-      maxLength: 150
-    },
-    { 
-      key: "responsavelCargo", 
-      label: "Cargo/Função", 
-      type: "text", 
-      required: true,
-      placeholder: "Ex: Coordenador, Enfermeiro RT",
-      helpText: "Cargo ou função do responsável na residência",
-      maxLength: 100
-    },
-    { 
-      key: "contatoResponsavel", 
-      label: "Telefone de Contato", 
-      type: "tel", 
-      required: true,
-      placeholder: "(21) 99999-9999",
-      helpText: "Telefone direto do responsável",
-      mask: "(99) 99999-9999"
-    },
-    { 
-      key: "nomeCaps", 
-      label: "Nome Completo do CAPS", 
-      type: "text", 
-      required: true,
-      placeholder: "CAPS + tipo + nome (Ex: CAPS III Centro)",
-      helpText: "Identificação completa do CAPS vinculado",
-      maxLength: 200
-    },
-    { 
-      key: "cnesCaps", 
-      label: "Código CNES do CAPS", 
-      type: "text", 
-      required: true,
-      placeholder: "0000000",
-      helpText: "Cadastro Nacional de Estabelecimentos de Saúde - 7 dígitos",
-      mask: "9999999",
-      maxLength: 7
-    },
-    
-    { 
-      key: "tipoSRT", 
-      label: "Modalidade da SRT", 
-      type: "select", 
-      options: ["Tipo I", "Tipo II"], 
-      required: true,
-      helpText: "Tipo I: até 8 moradores | Tipo II: até 10 moradores com maior necessidade de cuidados"
-    },
-    { 
-      key: "esferaGestao", 
-      label: "Esfera de Gestão", 
-      type: "select", 
-      options: ["Municipal", "Estadual", "Federal"], 
-      required: true,
-      helpText: "Nível administrativo responsável pela gestão"
-    },
-    { 
-      key: "situacaoHabilitacao", 
-      label: "Situação da Habilitação no MS", 
-      type: "select", 
-      options: ["Habilitada", "Em processo de habilitação", "Não habilitada"], 
-      required: true,
-      helpText: "Status atual junto ao Ministério da Saúde"
-    },
-    { 
-      key: "numeroPortaria", 
-      label: "Número da Portaria de Habilitação", 
-      type: "text",
-      placeholder: "Ex: Portaria nº 123/2023",
-      helpText: "Preencher apenas se habilitada",
-      conditional: { field: "situacaoHabilitacao", value: "Habilitada" }
-    },
-    { 
-      key: "dataPortaria", 
-      label: "Data da Portaria", 
-      type: "date",
-      helpText: "Data de publicação da portaria",
-      conditional: { field: "situacaoHabilitacao", value: "Habilitada" }
-    },
-    { 
-      key: "dataInauguracao", 
-      label: "Data de Início do Funcionamento", 
-      type: "date", 
-      required: true,
-      helpText: "Quando a residência começou a receber moradores",
-      max: "today"
-    }
-  ],
-  
-  residence: [
-    { 
-      key: "logradouro", 
-      label: "Endereço (Rua/Avenida)", 
-      type: "text", 
-      required: true,
-      placeholder: "Ex: Rua das Flores, Avenida Brasil",
-      helpText: "Nome completo do logradouro",
-      maxLength: 200
-    },
-    { 
-      key: "numero", 
-      label: "Número", 
-      type: "text", 
-      required: true,
-      placeholder: "Ex: 123, S/N",
-      helpText: "Número do imóvel ou S/N",
-      maxLength: 20
-    },
-    { 
-      key: "complemento", 
-      label: "Complemento", 
-      type: "text",
-      placeholder: "Ex: Casa 2, Fundos, Bloco A",
-      helpText: "Informações adicionais do endereço (opcional)",
-      maxLength: 100
-    },
-    { 
-      key: "bairro", 
-      label: "Bairro", 
-      type: "text", 
-      required: true,
-      placeholder: "Nome do bairro",
-      helpText: "Bairro onde está localizada a residência",
-      maxLength: 100
-    },
-    { 
-      key: "cep", 
-      label: "CEP", 
-      type: "text", 
-      required: true,
-      placeholder: "00000-000",
-      helpText: "Código Postal com 8 dígitos",
-      mask: "99999-999",
-      pattern: "[0-9]{5}-[0-9]{3}"
-    },
-    { 
-      key: "municipio", 
-      label: "Município", 
-      type: "text", 
-      required: true,
-      placeholder: "Nome do município",
-      helpText: "Município onde está localizada a residência",
-      maxLength: 100
-    },
-    { 
-      key: "uf", 
-      label: "Estado", 
-      type: "select", 
-      options: ["AC","AL","AP","AM","BA","CE","DF","ES","GO","MA","MT","MS","MG","PA","PB","PR","PE","PI","RJ","RN","RS","RO","RR","SC","SP","SE","TO"], 
-      required: true,
-      helpText: "Unidade Federativa",
-      defaultValue: "RJ"
-    },
-    { 
-      key: "localizacao", 
-      label: "Zona", 
-      type: "select", 
-      options: ["Urbana", "Rural"], 
-      required: true,
-      helpText: "Tipo de área onde está localizada"
-    },
-    { 
-      key: "quartos", 
-      label: "Quantidade de Quartos", 
-      type: "number", 
-      required: true,
-      placeholder: "0",
-      helpText: "Total de quartos disponíveis para moradores",
-      min: 1,
-      max: 20
-    },
-    { 
-      key: "salas", 
-      label: "Quantidade de Salas", 
-      type: "number", 
-      required: true,
-      placeholder: "0",
-      helpText: "Salas de estar/convivência",
-      min: 0,
-      max: 10
-    },
-    { 
-      key: "cozinhas", 
-      label: "Quantidade de Cozinhas", 
-      type: "number", 
-      required: true,
-      placeholder: "0",
-      helpText: "Total de cozinhas na residência",
-      min: 1,
-      max: 5
-    },
-    { 
-      key: "banheiros", 
-      label: "Quantidade de Banheiros", 
-      type: "number", 
-      required: true,
-      placeholder: "0",
-      helpText: "Total de banheiros completos",
-      min: 1,
-      max: 10
-    },
-    { 
-      key: "varanda", 
-      label: "Quantidade de Varandas/Áreas Externas", 
-      type: "number",
-      placeholder: "0",
-      helpText: "Espaços externos cobertos (opcional)",
-      min: 0,
-      max: 5
-    },
-    { 
-      key: "lavanderia", 
-      label: "Quantidade de Lavanderias", 
-      type: "number",
-      placeholder: "0",
-      helpText: "Áreas de serviço (opcional)",
-      min: 0,
-      max: 5
-    },
-    { 
-      key: "despensa", 
-      label: "Quantidade de Despensas", 
-      type: "number",
-      placeholder: "0",
-      helpText: "Espaços para armazenamento (opcional)",
-      min: 0,
-      max: 5
-    },
-    { 
-      key: "outros", 
-      label: "Outros Cômodos", 
-      type: "text",
-      placeholder: "Ex: Escritório, sala de TV, quintal",
-      helpText: "Descreva outros espaços disponíveis (opcional)",
-      maxLength: 200
-    }
-  ],
-  
-  caregivers: [
-    { 
-      key: "totalProfissionais", 
-      label: "Total de Profissionais na Equipe", 
-      type: "number", 
-      required: true,
-      placeholder: "0",
-      helpText: "Soma de todos os profissionais que atuam na residência",
-      min: 1,
-      max: 50
-    },
-    { 
-      key: "totalCuidadores", 
-      label: "Número de Cuidadores", 
-      type: "number", 
-      required: true,
-      placeholder: "0",
-      helpText: "Cuidadores diretos dos moradores",
-      min: 0,
-      max: 30
-    },
-    { 
-      key: "totalTecnicos", 
-      label: "Número de Técnicos de Enfermagem", 
-      type: "number", 
-      required: true,
-      placeholder: "0",
-      helpText: "Técnicos de enfermagem na equipe",
-      min: 0,
-      max: 20
-    },
-    { 
-      key: "totalEnfermeiros", 
-      label: "Número de Enfermeiros", 
-      type: "number", 
-      required: true,
-      placeholder: "0",
-      helpText: "Enfermeiros com nível superior",
-      min: 0,
-      max: 10
-    },
-    { 
-      key: "totalOutros", 
-      label: "Outros Profissionais", 
-      type: "number",
-      placeholder: "0",
-      helpText: "Psicólogos, assistentes sociais, terapeutas, etc.",
-      min: 0,
-      max: 20
-    },
-    { 
-      key: "escalaTrabalho", 
-      label: "Descrição da Escala de Trabalho", 
-      type: "textarea", 
-      required: true,
-      placeholder: "Ex: Plantões 12x36h com 2 cuidadores por turno. Enfermeiro disponível de segunda a sexta das 8h às 17h",
-      helpText: "Detalhe como funciona a escala da equipe",
-      maxLength: 500
-    },
-    { 
-      key: "relacaoCuidadorMorador", 
-      label: "Proporção Cuidador/Morador", 
-      type: "text", 
-      required: true,
-      placeholder: "Ex: 1:4 (1 cuidador para 4 moradores)",
-      helpText: "Quantos moradores cada cuidador acompanha",
-      pattern: "[0-9]+:[0-9]+"
-    },
-    { 
-      key: "cuidadoresPorTurno", 
-      label: "Cuidadores por Turno", 
-      type: "number", 
-      required: true,
-      placeholder: "0",
-      helpText: "Quantidade mínima de cuidadores em cada plantão",
-      min: 1,
-      max: 10
-    },
-    { 
-      key: "participaEducacao", 
-      label: "A equipe participa de Educação Permanente?", 
-      type: "select", 
-      options: ["Sim", "Não"], 
-      required: true,
-      helpText: "Capacitações e treinamentos regulares"
-    },
-    { 
-      key: "quemPromoveEducacao", 
-      label: "Detalhes da Educação Permanente", 
-      type: "textarea",
-      placeholder: "Ex: Capacitações mensais promovidas pela SMS sobre manejo de crise, medicação, direitos dos usuários",
-      helpText: "Quem promove, frequência e principais temas (preencher se respondeu Sim)",
-      conditional: { field: "participaEducacao", value: "Sim" },
-      maxLength: 500
-    },
-    { 
-      key: "reunioesRegulares", 
-      label: "Realiza reuniões de equipe regulares?", 
-      type: "select", 
-      options: ["Sim", "Não"], 
-      required: true,
-      helpText: "Reuniões para discussão de casos e planejamento"
-    },
-    { 
-  key: "vinculoEmpregaticio", 
-  label: "Qual vínculo empregatício dos profissionais da SRT?", 
-  type: "multiselect", 
-  options: ["Servidor estatutário", "RPA", "Contrato municipal", "CLT-OSS", "Outros"], 
-  required: true,
-  helpText: "Selecione todos os tipos de vínculo existentes"
-},
-  ],
-  
-  residentFields: [
-    { 
-      key: "nomeCompleto", 
-      label: "Nome Completo do Morador", 
-      type: "text", 
-      required: true,
-      placeholder: "Nome completo conforme documentos",
-      helpText: "Nome civil completo do morador",
-      maxLength: 200
-    },
-    { 
-      key: "nomeSocial", 
-      label: "Nome Social", 
-      type: "text",
-      placeholder: "Nome pelo qual prefere ser chamado(a)",
-      helpText: "Preencher se diferente do nome civil",
-      maxLength: 200
-    },
-    { 
-      key: "dataNascimento", 
-      label: "Data de Nascimento", 
-      type: "date", 
-      required: true,
-      helpText: "Data completa de nascimento",
-      min: "1900-01-01",
-      max: "today"
-    },
-    { 
-      key: "idade", 
-      label: "Idade Atual", 
-      type: "number", 
-      required: true,
-      placeholder: "0",
-      helpText: "Idade em anos completos",
-      min: 18,
-      max: 120
-    },
-    { 
-      key: "instituicaoOrigem", 
-      label: "Hospital/Instituição de Origem", 
-      type: "text", 
-      required: true,
-      placeholder: "Ex: Hospital Psiquiátrico João de Deus",
-      helpText: "De onde veio antes de morar na SRT",
-      maxLength: 200
-    },
-    { 
-      key: "cnesOrigem", 
-      label: "CNES da Instituição de Origem", 
-      type: "text",
-      placeholder: "0000000",
-      helpText: "Código CNES se disponível (opcional)",
-      mask: "9999999",
-      maxLength: 7
-    },
-    { 
-      key: "tempoInternacao", 
-      label: "Tempo de Internação Anterior (anos)", 
-      type: "number", 
-      required: true,
-      placeholder: "0",
-      helpText: "Quantos anos ficou internado antes da SRT",
-      min: 0,
-      max: 80
-    },
-    { 
-      key: "racaCor", 
-      label: "Raça/Cor", 
-      type: "select", 
-      options: ["Branca", "Preta", "Parda", "Amarela", "Indígena", "Não declarada"], 
-      required: true,
-      helpText: "Autodeclaração conforme IBGE"
-    },
-    { 
-      key: "generoNascimento", 
-      label: "Sexo Biológico", 
-      type: "select", 
-      options: ["Masculino", "Feminino"], 
-      required: true,
-      helpText: "Sexo designado ao nascimento"
-    },
-    { 
-      key: "identidadeGenero", 
-      label: "Identidade de Gênero", 
-      type: "select", 
-      options: ["Homem cisgênero", "Mulher cisgênero", "Homem trans", "Mulher trans", "Não-binário", "Outro", "Prefere não informar"],
-      helpText: "Como a pessoa se identifica",
-      defaultValue: "Prefere não informar"
-    },
-    { 
-      key: "origemTerritorial", 
-      label: "Município de Origem", 
-      type: "text", 
-      required: true,
-      placeholder: "Ex: Rio de Janeiro, Niterói",
-      helpText: "Cidade natal ou de origem do morador",
-      maxLength: 100
-    },
-    { 
-      key: "vinculoMunicipio", 
-      label: "Vínculo com o Município Atual", 
-      type: "text",
-      placeholder: "Ex: Nasceu aqui, tem família na cidade",
-      helpText: "Relação do morador com o município da SRT",
-      maxLength: 200
-    },
-    { 
-      key: "participaPVC", 
-      label: "Beneficiário do Programa de Volta para Casa?", 
-      type: "select", 
-      options: ["Sim", "Não", "Em processo"], 
-      required: true,
-      helpText: "Recebe o auxílio-reabilitação psicossocial"
-    },
-    { 
-      key: "vinculoFamiliar", 
-      label: "Mantém Contato com Familiares?", 
-      type: "select", 
-      options: ["Sim", "Não", "Esporadicamente"], 
-      required: true,
-      helpText: "Se há algum tipo de contato familiar"
-    },
-    { 
-      key: "descricaoVinculo", 
-      label: "Descrição do Vínculo Familiar", 
-      type: "textarea",
-      placeholder: "Ex: Recebe visitas mensais da irmã. Fala por telefone com o filho semanalmente",
-      helpText: "Detalhe o tipo e frequência do contato (se houver)",
-      conditional: { field: "vinculoFamiliar", values: ["Sim", "Esporadicamente"] },
-      maxLength: 300
-    },
-    { 
-      key: "frequenciaCaps", 
-      label: "Frequência de Comparecimento ao CAPS", 
-      type: "select", 
-      options: ["Diária", "2-3x por semana", "Semanal", "Quinzenal", "Mensal", "Não frequenta"], 
-      required: true,
-      helpText: "Com que regularidade vai ao CAPS"
-    },
-    { 
-      key: "frequenciaUBS", 
-      label: "Acompanhamento na Atenção Básica", 
-      type: "select", 
-      options: ["Regular (conforme necessidade)", "Apenas emergências", "Não faz acompanhamento"], 
-      required: true,
-      helpText: "Como é o acompanhamento na UBS/ESF"
-    },
-    { 
-      key: "escola", 
-      label: "Frequenta Alguma Instituição de Ensino?", 
-      type: "select", 
-      options: ["Sim", "Não"], 
-      required: true,
-      helpText: "Escola, EJA, cursos, etc."
-    },
-    { 
-      key: "qualEscola", 
-      label: "Qual Instituição/Curso?", 
-      type: "text",
-      placeholder: "Ex: EJA na Escola Municipal João Silva",
-      helpText: "Nome da escola ou curso que frequenta",
-      conditional: { field: "escola", value: "Sim" },
-      maxLength: 200
-    },
-    { 
-      key: "crasCreas", 
-      label: "É Acompanhado pelo CRAS/CREAS?", 
-      type: "select", 
-      options: ["Sim - CRAS", "Sim - CREAS", "Sim - Ambos", "Não"], 
-      required: true,
-      helpText: "Se recebe acompanhamento da assistência social"
-    },
-    { 
-  key: "beneficios", 
-  label: "Benefícios que possui:", 
-  type: "multiselect", 
-  options: ["PVC", "BPC", "Aposentadoria", "Pensão", "Bolsa Rio", "Outros"], 
-  required: true,
-  helpText: "Selecione todos os benefícios que o morador recebe"
-},
-{ 
-  key: "comorbidades", 
-  label: "Morador que possui algum tipo de comorbidade?", 
-  type: "multiselect", 
-  options: ["Hipertensão", "Diabetes", "Cardiopatia", "Neuropatia", "DPOC", "Asma", "Obesidade", "Outros"], 
-  required: false,
-  helpText: "Marque todas as comorbidades do morador"
-}
-  ]
-});
-
-const renderFormFields = () => {
-  if (currentConfig.municipio) {
-    const container = document.getElementById('municipioFields');
-    currentConfig.municipio.forEach((field, index) => {
-      const fieldGroup = createEnhancedInputGroup(field);
-      fieldGroup.style.animationDelay = `${index * 50}ms`;
-      fieldGroup.classList.add('animate-fade-in');
-      container.appendChild(fieldGroup);
-    });
-  }
-  
-  if (currentConfig.general) {
-    const container = document.getElementById('generalFields');
-    currentConfig.general.forEach((field, index) => {
-      const fieldGroup = createEnhancedInputGroup(field);
-      fieldGroup.style.animationDelay = `${index * 50}ms`;
-      fieldGroup.classList.add('animate-fade-in');
-      container.appendChild(fieldGroup);
-    });
-  }
-  
-  if (currentConfig.residence) {
-    const container = document.getElementById('residenceFields');
-    currentConfig.residence.forEach((field, index) => {
-      const fieldGroup = createEnhancedInputGroup(field);
-      fieldGroup.style.animationDelay = `${index * 50}ms`;
-      fieldGroup.classList.add('animate-fade-in');
-      container.appendChild(fieldGroup);
-    });
-  }
-  
-  if (currentConfig.caregivers) {
-    const container = document.getElementById('caregiverFields');
-    currentConfig.caregivers.forEach((field, index) => {
-      const fieldGroup = createEnhancedInputGroup(field);
-      fieldGroup.style.animationDelay = `${index * 50}ms`;
-      fieldGroup.classList.add('animate-fade-in');
-      container.appendChild(fieldGroup);
-    });
-  }
-  
-  setupConditionalFields();
+const getDefaultConfig = () => {
+  return {
+    municipio: [
+      { key: 'municipio', label: 'Município', type: 'text', required: true },
+      { key: 'responsavelPreenchimento', label: 'Responsável pelo Preenchimento', type: 'text', required: true },
+      { key: 'emailResponsavelPreenchimento', label: 'E-mail do Responsável', type: 'email', required: true }
+    ],
+    general: [
+      { key: 'capsVinculado', label: 'CAPS Vinculado', type: 'text', required: true },
+      { key: 'tipoSRT', label: 'Tipo SRT', type: 'select', required: true, options: ['SRT I', 'SRT II', 'SRT III'] },
+      { key: 'dataHabilitacao', label: 'Data de Habilitação', type: 'date', required: false }
+    ],
+    residence: [
+      { key: 'nomeResidencia', label: 'Nome da Residência', type: 'text', required: true },
+      { key: 'enderecoCompleto', label: 'Endereço Completo', type: 'text', required: true },
+      { key: 'zona', label: 'Zona', type: 'select', required: false, options: ['Norte', 'Sul', 'Leste', 'Oeste', 'Centro'] },
+      { key: 'vagasTotais', label: 'Vagas Totais', type: 'number', required: true },
+      { key: 'vagasOcupadas', label: 'Vagas Ocupadas', type: 'number', required: false },
+      { key: 'vagasDisponiveis', label: 'Vagas Disponíveis', type: 'number', required: false }
+    ],
+    caregivers: [
+      { key: 'coordenadorNome', label: 'Nome do Coordenador', type: 'text', required: false },
+      { key: 'coordenadorTelefone', label: 'Telefone do Coordenador', type: 'tel', required: false },
+      { key: 'equipeComposicao', label: 'Composição da Equipe', type: 'textarea', required: false }
+    ],
+    residentFields: [
+      { key: 'nomeCompleto', label: 'Nome Completo', type: 'text', required: true },
+      { key: 'nomeSocial', label: 'Nome Social', type: 'text', required: false },
+      { key: 'cpf', label: 'CPF', type: 'text', required: false },
+      { key: 'dataNascimento', label: 'Data de Nascimento', type: 'date', required: false },
+      { key: 'sexo', label: 'Sexo', type: 'select', required: false, options: ['Masculino', 'Feminino', 'Outro'] },
+      { key: 'diagnosticoPrincipal', label: 'Diagnóstico Principal', type: 'text', required: false }
+    ]
+  };
 };
 
-const setupConditionalFields = () => {
-  document.querySelectorAll('[data-depends-on]').forEach(field => {
-    const dependsOn = field.dataset.dependsOn;
-    const showWhen = field.dataset.showWhen;
-    const dependentField = document.getElementById(dependsOn);
-    
-    if (!dependentField) return;
-    
-    const checkVisibility = () => {
-      const values = showWhen.split(',');
-      const shouldShow = values.includes(dependentField.value);
-      
-      if (shouldShow) {
-        field.classList.remove('hidden');
-        field.querySelectorAll('input, select, textarea').forEach(input => {
-          if (input.dataset.wasRequired === 'true') {
-            input.required = true;
-          }
-        });
-      } else {
-        field.classList.add('hidden');
-        field.querySelectorAll('input, select, textarea').forEach(input => {
-          input.dataset.wasRequired = input.required;
-          input.required = false;
-          input.value = '';
-        });
-      }
-      updateProgress();
-    };
-    
-    dependentField.addEventListener('change', checkVisibility);
-    checkVisibility();
-  });
-};
-
-const updateResidentBlocks = () => {
-  const countInput = document.getElementById('numMoradores');
-  if (!countInput) return;
+const generateFormFields = () => {
+  const sections = [
+    { key: 'municipio', containerId: 'municipioFields' },
+    { key: 'general', containerId: 'generalFields' },
+    { key: 'residence', containerId: 'residenceFields' },
+    { key: 'caregivers', containerId: 'caregiversFields' }
+  ];
   
-  const count = parseInt(countInput.value) || 0;
-  const container = document.getElementById('residentsContainer');
-  if (!container) return;
-  
-  const currentBlocks = container.children.length;
-  
-  if (count > currentBlocks) {
-    for (let i = currentBlocks + 1; i <= count; i++) {
-      const block = createResidentBlock(i);
-      container.appendChild(block);
-      setupConditionalFieldsForResident(i);
-    }
-  } else if (count < currentBlocks) {
-    const blocksToKeep = [];
-    for (let i = 0; i < count; i++) {
-      if (container.children[i]) {
-        blocksToKeep.push({
-          element: container.children[i],
-          data: collectResidentData(i + 1)
-        });
-      }
-    }
+  sections.forEach(section => {
+    const container = document.getElementById(section.containerId);
+    const fields = formConfig[section.key] || [];
     
     container.innerHTML = '';
     
-    blocksToKeep.forEach((blockInfo, index) => {
-      const newBlock = createResidentBlock(index + 1);
-      container.appendChild(newBlock);
-      restoreResidentData(index + 1, blockInfo.data);
-      setupConditionalFieldsForResident(index + 1);
+    fields.forEach(field => {
+      const fieldHTML = generateFieldHTML(field);
+      container.insertAdjacentHTML('beforeend', fieldHTML);
     });
-  }
-  
-  updateProgress();
+  });
 };
 
-const createResidentBlock = (i) => {
-  const block = document.createElement('div');
-  block.className = 'bg-white dark:bg-gray-700 rounded-xl p-6 shadow-lg border-2 border-gray-200 dark:border-gray-600 relative overflow-hidden group hover-lift animate-slide-up';
-  block.style.animationDelay = `${(i - 1) * 100}ms`;
-  block.dataset.residentNumber = i;
+const generateFieldHTML = (field) => {
+  const requiredAttr = field.required ? 'required' : '';
+  const requiredLabel = field.required ? '<span class="text-red-500">*</span>' : '';
   
-  const accentBar = document.createElement('div');
-  accentBar.className = 'absolute top-0 left-0 w-1 h-full bg-gradient-to-b from-blue-500 to-purple-600 transition-all group-hover:w-2';
-  block.appendChild(accentBar);
+  let inputHTML = '';
   
-  const header = document.createElement('h3');
-  header.className = 'text-xl font-bold text-gray-800 dark:text-white mb-4 flex items-center gap-2';
-  header.innerHTML = `
-    <span class="w-8 h-8 bg-gradient-to-br from-blue-500 to-purple-600 rounded-full flex items-center justify-center text-white text-sm font-bold">${i}</span>
-    Morador ${i}
-  `;
-  block.appendChild(header);
+  switch (field.type) {
+    case 'text':
+    case 'email':
+    case 'tel':
+      inputHTML = `
+        <div class="floating-label">
+          <input type="${field.type}" id="${field.key}" name="${field.key}" ${requiredAttr} 
+                 class="w-full px-4 py-3 bg-gray-100 dark:bg-gray-700 border-0 rounded-xl focus:ring-2 focus:ring-blue-500 transition-all" 
+                 placeholder=" ">
+          <label for="${field.key}">${field.label} ${requiredLabel}</label>
+        </div>
+      `;
+      break;
+      
+    case 'number':
+      const minAttr = field.min !== undefined ? `min="${field.min}"` : '';
+      const maxAttr = field.max !== undefined ? `max="${field.max}"` : '';
+      inputHTML = `
+        <div class="floating-label">
+          <input type="number" id="${field.key}" name="${field.key}" ${requiredAttr} ${minAttr} ${maxAttr}
+                 class="w-full px-4 py-3 bg-gray-100 dark:bg-gray-700 border-0 rounded-xl focus:ring-2 focus:ring-blue-500 transition-all" 
+                 placeholder=" ">
+          <label for="${field.key}">${field.label} ${requiredLabel}</label>
+        </div>
+      `;
+      break;
+      
+    case 'date':
+      inputHTML = `
+        <div class="floating-label">
+          <input type="date" id="${field.key}" name="${field.key}" ${requiredAttr}
+                 class="w-full px-4 py-3 bg-gray-100 dark:bg-gray-700 border-0 rounded-xl focus:ring-2 focus:ring-blue-500 transition-all" 
+                 placeholder=" ">
+          <label for="${field.key}">${field.label} ${requiredLabel}</label>
+        </div>
+      `;
+      break;
+      
+    case 'select':
+      const options = field.options || [];
+      inputHTML = `
+        <div class="floating-label">
+          <select id="${field.key}" name="${field.key}" ${requiredAttr}
+                  class="w-full px-4 py-3 bg-gray-100 dark:bg-gray-700 border-0 rounded-xl focus:ring-2 focus:ring-blue-500 transition-all">
+            <option value="">Selecione...</option>
+            ${options.map(option => `<option value="${option}">${option}</option>`).join('')}
+          </select>
+          <label for="${field.key}">${field.label} ${requiredLabel}</label>
+        </div>
+      `;
+      break;
+      
+    case 'multiselect':
+      const multioptions = field.options || [];
+      inputHTML = `
+        <div>
+          <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-3">
+            ${field.label} ${requiredLabel}
+          </label>
+          <div class="checkbox-group">
+            ${multioptions.map(option => `
+              <label class="checkbox-item">
+                <input type="checkbox" name="${field.key}" value="${option}" class="w-5 h-5 text-blue-600 bg-gray-100 border-gray-300 rounded focus:ring-blue-500">
+                <span class="text-sm font-medium text-gray-700 dark:text-gray-300">${option}</span>
+              </label>
+            `).join('')}
+          </div>
+        </div>
+      `;
+      break;
+      
+    case 'textarea':
+      inputHTML = `
+        <div class="floating-label">
+          <textarea id="${field.key}" name="${field.key}" ${requiredAttr} rows="4"
+                    class="w-full px-4 py-3 bg-gray-100 dark:bg-gray-700 border-0 rounded-xl focus:ring-2 focus:ring-blue-500 transition-all resize-none" 
+                    placeholder=" "></textarea>
+          <label for="${field.key}">${field.label} ${requiredLabel}</label>
+        </div>
+      `;
+      break;
+  }
   
-  const progressDiv = document.createElement('div');
-  progressDiv.className = 'section-progress mb-4';
-  progressDiv.innerHTML = `
-    <span class="section-progress-text">Progresso do morador:</span>
-    <div class="section-progress-bar">
-      <div class="section-progress-fill" data-section="resident-${i}" style="width: 0%"></div>
+  return `<div class="form-field">${inputHTML}</div>`;
+};
+
+const setupEventListeners = () => {
+  document.getElementById('nextBtn').addEventListener('click', nextStep);
+  document.getElementById('prevBtn').addEventListener('click', prevStep);
+  document.getElementById('srtForm').addEventListener('submit', handleSubmit);
+  document.getElementById('previewBtn').addEventListener('click', showPreview);
+  document.getElementById('clearBtn').addEventListener('click', clearForm);
+  document.getElementById('addResidentBtn').addEventListener('click', addResident);
+  
+  document.addEventListener('change', (e) => {
+    if (e.target.name === 'vagasTotais' || e.target.name === 'vagasOcupadas') {
+      calculateAvailableSlots();
+    }
+  });
+};
+
+const nextStep = () => {
+  if (validateCurrentStep()) {
+    if (currentStep < totalSteps) {
+      currentStep++;
+      updateStepDisplay();
+      updateProgress();
+    }
+  }
+};
+
+const prevStep = () => {
+  if (currentStep > 1) {
+    currentStep--;
+    updateStepDisplay();
+    updateProgress();
+  }
+};
+
+const validateCurrentStep = () => {
+  const currentSection = document.getElementById(`step${currentStep}`);
+  const requiredFields = currentSection.querySelectorAll('[required]');
+  let isValid = true;
+  
+  requiredFields.forEach(field => {
+    if (!field.value.trim()) {
+      field.classList.add('animate-shake');
+      field.focus();
+      isValid = false;
+      
+      setTimeout(() => {
+        field.classList.remove('animate-shake');
+      }, 500);
+      
+      return false;
+    }
+  });
+  
+  if (!isValid) {
+    showToast('Por favor, preencha todos os campos obrigatórios', 'error');
+  }
+  
+  return isValid;
+};
+
+const updateStepDisplay = () => {
+  document.querySelectorAll('.form-section').forEach(section => {
+    section.classList.remove('active');
+  });
+  
+  document.getElementById(`step${currentStep}`).classList.add('active');
+  
+  document.querySelectorAll('.step-indicator').forEach((indicator, index) => {
+    const stepNumber = index + 1;
+    const circle = indicator.querySelector('div');
+    const span = indicator.querySelector('span');
+    
+    if (stepNumber <= currentStep) {
+      circle.className = 'w-8 h-8 bg-blue-500 text-white rounded-full flex items-center justify-center text-sm font-bold';
+      span.className = 'text-sm font-medium text-blue-600 dark:text-blue-400';
+      indicator.classList.add('active');
+    } else {
+      circle.className = 'w-8 h-8 bg-gray-300 dark:bg-gray-600 text-gray-600 dark:text-gray-400 rounded-full flex items-center justify-center text-sm font-bold';
+      span.className = 'text-sm font-medium text-gray-500 dark:text-gray-400';
+      indicator.classList.remove('active');
+    }
+  });
+  
+  document.getElementById('prevBtn').style.display = currentStep === 1 ? 'none' : 'flex';
+  document.getElementById('nextBtn').style.display = currentStep === totalSteps ? 'none' : 'flex';
+  document.getElementById('submitBtn').style.display = currentStep === totalSteps ? 'flex' : 'none';
+};
+
+const updateProgress = () => {
+  const progress = (currentStep / totalSteps) * 100;
+  document.getElementById('progressFill').style.width = `${progress}%`;
+};
+
+const calculateAvailableSlots = () => {
+  const totalSlots = parseInt(document.getElementById('vagasTotais')?.value) || 0;
+  const occupiedSlots = parseInt(document.getElementById('vagasOcupadas')?.value) || 0;
+  const availableSlots = Math.max(0, totalSlots - occupiedSlots);
+  
+  const availableField = document.getElementById('vagasDisponiveis');
+  if (availableField) {
+    availableField.value = availableSlots;
+  }
+};
+
+const addResident = () => {
+  const residentIndex = residents.length;
+  const residentHTML = generateResidentHTML(residentIndex);
+  
+  document.getElementById('residentsContainer').insertAdjacentHTML('beforeend', residentHTML);
+  residents.push({});
+};
+
+const generateResidentHTML = (index) => {
+  const fields = formConfig.residentFields || [];
+  
+  let fieldsHTML = '';
+  fields.forEach(field => {
+    const fieldKey = `resident_${index}_${field.key}`;
+    const fieldHTML = generateFieldHTML({
+      ...field,
+      key: fieldKey
+    });
+    fieldsHTML += fieldHTML;
+  });
+  
+  return `
+    <div class="resident-card" data-resident="${index}">
+      <div class="resident-header">
+        <div class="flex items-center gap-3">
+          <div class="resident-number">${index + 1}</div>
+          <h4 class="text-lg font-semibold text-gray-800 dark:text-white">Morador ${index + 1}</h4>
+        </div>
+        <button type="button" onclick="removeResident(${index})" class="text-red-600 hover:text-red-800 dark:text-red-400 transition-colors">
+          <svg class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+          </svg>
+        </button>
+      </div>
+      <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+        ${fieldsHTML}
+      </div>
     </div>
-    <span class="section-progress-text" data-section-percent="resident-${i}">0%</span>
   `;
-  block.appendChild(progressDiv);
-  
-  const grid = document.createElement('div');
-  grid.className = 'grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4';
-  
-  if (currentConfig && currentConfig.residentFields) {
-    currentConfig.residentFields.forEach((field, index) => {
-      const fieldGroup = createEnhancedInputGroup(field, `resident_${i}_`);
-      fieldGroup.style.animationDelay = `${index * 30}ms`;
-      fieldGroup.classList.add('animate-fade-in');
-      grid.appendChild(fieldGroup);
-    });
-  }
-  
-  block.appendChild(grid);
-  
-  block.querySelectorAll('input, select, textarea').forEach(element => {
-    element.addEventListener('input', updateProgress);
-    element.addEventListener('change', updateProgress);
-  });
-  
-  return block;
 };
 
-const collectResidentData = (residentNum) => {
-  const data = {};
-  if (currentConfig && currentConfig.residentFields) {
-    currentConfig.residentFields.forEach(field => {
-      const input = document.getElementById(`resident_${residentNum}_${field.key}`);
-      if (input) {
-        data[field.key] = input.value;
-      }
-    });
+window.removeResident = (index) => {
+  const residentCard = document.querySelector(`[data-resident="${index}"]`);
+  if (residentCard) {
+    residentCard.remove();
+    residents.splice(index, 1);
+    updateResidentNumbers();
   }
-  return data;
 };
 
-const restoreResidentData = (residentNum, data) => {
-  if (!data) return;
-  
-  Object.keys(data).forEach(key => {
-    const input = document.getElementById(`resident_${residentNum}_${key}`);
-    if (input && data[key]) {
-      input.value = data[key];
-      input.dispatchEvent(new Event('input', { bubbles: true }));
+const updateResidentNumbers = () => {
+  const residentCards = document.querySelectorAll('.resident-card');
+  residentCards.forEach((card, index) => {
+    card.setAttribute('data-resident', index);
+    const numberElement = card.querySelector('.resident-number');
+    const titleElement = card.querySelector('h4');
+    
+    if (numberElement) numberElement.textContent = index + 1;
+    if (titleElement) titleElement.textContent = `Morador ${index + 1}`;
+    
+    const removeButton = card.querySelector('button[onclick]');
+    if (removeButton) {
+      removeButton.setAttribute('onclick', `removeResident(${index})`);
     }
-  });
-};
-
-const setupConditionalFieldsForResident = (residentNum) => {
-  const prefix = `resident_${residentNum}_`;
-  
-  currentConfig.residentFields.forEach(field => {
-    if (field.conditional) {
-      const fieldElement = document.getElementById(prefix + field.key)?.closest('.form-group');
-      const dependentField = document.getElementById(prefix + field.conditional.field);
-      
-      if (!fieldElement || !dependentField) return;
-      
-      fieldElement.dataset.dependsOn = prefix + field.conditional.field;
-      if (field.conditional.value) {
-        fieldElement.dataset.showWhen = field.conditional.value;
-      } else if (field.conditional.values) {
-        fieldElement.dataset.showWhen = field.conditional.values.join(',');
-      }
-      
-      const checkVisibility = () => {
-        const shouldShow = field.conditional.values 
-          ? field.conditional.values.includes(dependentField.value)
-          : dependentField.value === field.conditional.value;
+    
+    const inputs = card.querySelectorAll('input, select, textarea');
+    inputs.forEach(input => {
+      const oldName = input.name;
+      if (oldName.startsWith('resident_')) {
+        const fieldKey = oldName.split('_').slice(2).join('_');
+        input.name = `resident_${index}_${fieldKey}`;
+        input.id = `resident_${index}_${fieldKey}`;
         
-        if (shouldShow) {
-          fieldElement.classList.remove('hidden');
-          const input = fieldElement.querySelector('input, select, textarea');
-          const hiddenValidation = fieldElement.querySelector('input[id*="_validation"]');
-          
-          if (input && input.dataset.wasRequired === 'true') {
-            input.required = true;
-          }
-          if (hiddenValidation && hiddenValidation.dataset.wasRequired === 'true') {
-            hiddenValidation.required = true;
-          }
-        } else {
-          fieldElement.classList.add('hidden');
-          const input = fieldElement.querySelector('input, select, textarea');
-          const hiddenValidation = fieldElement.querySelector('input[id*="_validation"]');
-          const checkboxes = fieldElement.querySelectorAll('input[type="checkbox"]');
-          
-          if (input) {
-            input.dataset.wasRequired = input.required;
-            input.required = false;
-            input.value = '';
-          }
-          if (hiddenValidation) {
-            hiddenValidation.dataset.wasRequired = hiddenValidation.required;
-            hiddenValidation.required = false;
-          }
-          checkboxes.forEach(cb => cb.checked = false);
+        const label = card.querySelector(`label[for="${oldName}"]`);
+        if (label) {
+          label.setAttribute('for', input.id);
         }
-        updateProgress();
-      };
-      
-      dependentField.addEventListener('change', checkVisibility);
-      checkVisibility();
-    }
+      }
+    });
   });
 };
 
-const updateVagasDisponiveis = () => {
-  const total = parseInt(document.getElementById('vagasTotais').value) || 0;
-  const ocupadas = parseInt(document.getElementById('vagasOcupadas').value) || 0;
-  const disponiveis = Math.max(0, total - ocupadas);
-  document.getElementById('vagasDisponiveis').value = disponiveis;
+const showPreview = () => {
+  const formData = collectFormData();
+  const previewHTML = generatePreviewHTML(formData);
   
-  const disponiveisCard = document.getElementById('vagasDisponiveis').closest('.group');
-  if (disponiveis === 0) {
-    disponiveisCard.classList.add('animate-pulse');
-  } else {
-    disponiveisCard.classList.remove('animate-pulse');
+  document.getElementById('previewContent').innerHTML = previewHTML;
+  document.getElementById('previewModal').style.display = 'block';
+};
+
+const collectFormData = () => {
+  const formData = {};
+  const form = document.getElementById('srtForm');
+  const formDataObj = new FormData(form);
+  
+  for (let [key, value] of formDataObj.entries()) {
+    if (key.startsWith('resident_')) {
+      const parts = key.split('_');
+      const residentIndex = parseInt(parts[1]);
+      const fieldKey = parts.slice(2).join('_');
+      
+      if (!formData.residents) formData.residents = [];
+      if (!formData.residents[residentIndex]) formData.residents[residentIndex] = {};
+      
+      formData.residents[residentIndex][fieldKey] = value;
+    } else {
+      const checkboxes = form.querySelectorAll(`input[name="${key}"][type="checkbox"]:checked`);
+      if (checkboxes.length > 0) {
+        formData[key] = Array.from(checkboxes).map(cb => cb.value);
+      } else {
+        formData[key] = value;
+      }
+    }
   }
   
-  if (ocupadas > total) {
-    document.getElementById('vagasOcupadas').classList.add('border-red-500');
-    document.getElementById('vagasTotais').classList.add('border-red-500');
-  } else {
-    document.getElementById('vagasOcupadas').classList.remove('border-red-500');
-    document.getElementById('vagasTotais').classList.remove('border-red-500');
+  formData.residents = (formData.residents || []).filter(resident => 
+    resident && Object.values(resident).some(value => value && value.trim())
+  );
+  
+  return formData;
+};
+
+const generatePreviewHTML = (data) => {
+  const formatValue = (value) => {
+    if (value === null || value === undefined || value === '') return null;
+    if (Array.isArray(value)) return value.length > 0 ? value.join(', ') : null;
+    return value;
+  };
+  
+  const formatDate = (dateValue) => {
+    if (!dateValue) return null;
+    try {
+      const date = new Date(dateValue);
+      return date.toLocaleDateString('pt-BR');
+    } catch {
+      return dateValue;
+    }
+  };
+  
+  let html = '<div class="space-y-6">';
+  
+  const sections = [
+    {
+      title: 'Informações do Município',
+      icon: '🏛️',
+      fields: formConfig.municipio || []
+    },
+    {
+      title: 'Dados do SRT',
+      icon: '📋',
+      fields: formConfig.general || []
+    },
+    {
+      title: 'Dados da Residência',
+      icon: '🏠',
+      fields: formConfig.residence || []
+    },
+    {
+      title: 'Dados da Equipe/Cuidadores',
+      icon: '👥',
+      fields: formConfig.caregivers || []
+    }
+  ];
+  
+  sections.forEach(section => {
+    const sectionFields = section.fields.filter(field => {
+      const value = data[field.key];
+      return value !== undefined && value !== null && value !== '';
+    });
+    
+    if (sectionFields.length > 0) {
+      html += `
+        <div class="bg-gray-50 dark:bg-gray-700 rounded-xl p-6">
+          <div class="flex items-center gap-3 mb-4">
+            <span class="text-2xl">${section.icon}</span>
+            <h3 class="text-lg font-semibold text-gray-800 dark:text-white">${section.title}</h3>
+          </div>
+          <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+      `;
+      
+      sectionFields.forEach(field => {
+        const value = data[field.key];
+        const formattedValue = field.type === 'date' ? formatDate(value) : formatValue(value);
+        
+        if (formattedValue !== null) {
+          html += `
+            <div class="bg-white dark:bg-gray-800 rounded-lg p-4">
+              <div class="text-sm font-medium text-gray-500 dark:text-gray-400 mb-1">${field.label}</div>
+              <div class="text-gray-900 dark:text-white">${formattedValue}</div>
+            </div>
+          `;
+        }
+      });
+      
+      html += '</div></div>';
+    }
+  });
+  
+  if (data.residents && data.residents.length > 0) {
+    html += `
+      <div class="bg-gray-50 dark:bg-gray-700 rounded-xl p-6">
+        <div class="flex items-center gap-3 mb-4">
+          <span class="text-2xl">🏥</span>
+          <h3 class="text-lg font-semibold text-gray-800 dark:text-white">Moradores (${data.residents.length})</h3>
+        </div>
+        <div class="space-y-4">
+    `;
+    
+    data.residents.forEach((resident, index) => {
+      const residentFields = (formConfig.residentFields || []).filter(field => {
+        const value = resident[field.key];
+        return value !== undefined && value !== null && value !== '';
+      });
+      
+      if (residentFields.length > 0) {
+        html += `
+          <div class="bg-white dark:bg-gray-800 rounded-lg p-4">
+            <div class="flex items-center gap-3 mb-3">
+              <div class="w-8 h-8 bg-blue-500 text-white rounded-full flex items-center justify-center text-sm font-bold">
+                ${index + 1}
+              </div>
+              <div class="font-medium text-gray-900 dark:text-white">
+                ${formatValue(resident.nomeCompleto) || `Morador ${index + 1}`}
+                ${resident.nomeSocial ? `<span class="text-gray-500 ml-2">(${resident.nomeSocial})</span>` : ''}
+              </div>
+            </div>
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-3 text-sm">
+        `;
+        
+        residentFields.forEach(field => {
+          const value = resident[field.key];
+          const formattedValue = field.type === 'date' ? formatDate(value) : formatValue(value);
+          
+          if (formattedValue !== null && field.key !== 'nomeCompleto') {
+            html += `
+              <div>
+                <span class="text-gray-500 dark:text-gray-400">${field.label}:</span>
+                <span class="text-gray-900 dark:text-white ml-1">${formattedValue}</span>
+              </div>
+            `;
+          }
+        });
+        
+        html += '</div></div>';
+      }
+    });
+    
+    html += '</div></div>';
   }
+  
+  html += '</div>';
+  return html;
 };
 
 const clearForm = () => {
   if (confirm('Tem certeza que deseja limpar todos os dados do formulário?')) {
     document.getElementById('srtForm').reset();
     document.getElementById('residentsContainer').innerHTML = '';
+    residents = [];
+    currentStep = 1;
+    updateStepDisplay();
     updateProgress();
-    
-    const inputs = document.querySelectorAll('input, select, textarea');
-    inputs.forEach(input => {
-      input.classList.add('animate-shake');
-      setTimeout(() => input.classList.remove('animate-shake'), 500);
-    });
-    
     showToast('Formulário limpo com sucesso!');
   }
 };
 
-const validateForm = () => {
-  const numMoradores = parseInt(document.getElementById('numMoradores').value) || 0;
-  const vagasOcupadas = parseInt(document.getElementById('vagasOcupadas').value) || 0;
+const handleSubmit = async (e) => {
+  e.preventDefault();
   
-  if (numMoradores !== vagasOcupadas) {
-    const moradoresInput = document.getElementById('numMoradores');
-    const vagasInput = document.getElementById('vagasOcupadas');
-    
-    [moradoresInput, vagasInput].forEach(input => {
-      input.classList.add('border-red-500', 'animate-shake');
-      setTimeout(() => {
-        input.classList.remove('border-red-500', 'animate-shake');
-      }, 1000);
-    });
-    
-    showToast('O número de moradores deve ser igual ao número de vagas ocupadas.', 'error');
-    return false;
-  }
-  
-  const totalProfissionais = parseInt(document.getElementById('totalProfissionais')?.value) || 0;
-  const totalCuidadores = parseInt(document.getElementById('totalCuidadores')?.value) || 0;
-  const totalTecnicos = parseInt(document.getElementById('totalTecnicos')?.value) || 0;
-  const totalEnfermeiros = parseInt(document.getElementById('totalEnfermeiros')?.value) || 0;
-  const totalOutros = parseInt(document.getElementById('totalOutros')?.value) || 0;
-  
-  const somaTotal = totalCuidadores + totalTecnicos + totalEnfermeiros + totalOutros;
-  
-  if (totalProfissionais > 0 && somaTotal > 0 && totalProfissionais !== somaTotal) {
-    const totalField = document.getElementById('totalProfissionais');
-    if (totalField) {
-      totalField.classList.add('border-red-500', 'animate-shake');
-      setTimeout(() => totalField.classList.remove('border-red-500', 'animate-shake'), 1000);
-    }
-    showToast(`Total de profissionais deve ser ${somaTotal} (soma dos tipos)`, 'error');
-    return false;
-  }
-  
-  return true;
-};
-
-const submitForm = async (event) => {
-  event.preventDefault();
-  
-  if (!validateForm()) return;
-  
-  const submitBtn = document.getElementById('submitBtn');
-  submitBtn.disabled = true;
-  submitBtn.innerHTML = `
-    <svg class="animate-spin w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
-    </svg>
-    <span>Enviando...</span>
-  `;
-  
-  showLoading();
-  
-  const houseData = {
-  createdAt: new Date(),
-  submittedAt: new Date(),
-  status: 'active',
-  formVersion: '2.0'
-  };
-  try {
-    
-    const collectSectionData = (sectionSelector, houseData) => {
-  const section = document.querySelector(sectionSelector);
-  if (!section) {
-    console.warn(`Seção não encontrada: ${sectionSelector}`);
+  if (!validateCurrentStep()) {
     return;
   }
   
-  console.log(`Coletando dados da seção: ${sectionSelector}`);
+  showLoading();
   
-  section.querySelectorAll('input:not([type="checkbox"]):not([type="radio"]):not([id*="_validation"])').forEach(field => {
-    if (!field.id || field.type === 'hidden' || field.disabled) return;
+  try {
+    const formData = collectFormData();
+    formData.createdAt = firebase.firestore.FieldValue.serverTimestamp();
+    formData.numeroMoradores = formData.residents ? formData.residents.length : 0;
     
-    const value = field.value.trim();
-    if (!value) return;
+    const docRef = await db.collection('srt').add(formData);
+    formData.id = docRef.id;
     
-    if (field.id === 'emailResponsavelPreenchimento') {
-      console.log(`EMAIL ENCONTRADO: ${field.id} = ${value}`);
+    const emailResult = await EmailService.sendEmail(formData);
+    
+    let successMessage = 'Cadastro realizado com sucesso!';
+    if (emailResult.success) {
+      successMessage += `<br><small class="text-green-600">E-mail enviado para: ${emailResult.email}</small>`;
+    } else {
+      successMessage += `<br><small class="text-orange-600">Aviso: ${emailResult.message}</small>`;
     }
     
-    console.log(`Campo encontrado: ${field.id} = ${value} (tipo: ${field.type})`);
-    
-    switch (field.type) {
-      case 'number':
-        houseData[field.id] = parseInt(value) || 0;
-        break;
-      case 'date':
-        houseData[field.id] = value;
-        break;
-      case 'email':
-        houseData[field.id] = value.toLowerCase();
-        console.log(`Email coletado: ${field.id} = ${houseData[field.id]}`);
-        break;
-      case 'tel':
-        houseData[field.id] = value.replace(/\D/g, '');
-        houseData[field.id + '_formatted'] = value;
-        break;
-      default:
-        houseData[field.id] = value;
-    }
-  });
-  
-  section.querySelectorAll('select').forEach(select => {
-    if (!select.id || select.disabled) return;
-    
-    const value = select.value;
-    if (!value || value === '') return;
-    
-    console.log(`Select encontrado: ${select.id} = ${value}`);
-    houseData[select.id] = value;
-    
-    if (select.multiple) {
-      const selectedOptions = Array.from(select.selectedOptions).map(opt => opt.value);
-      if (selectedOptions.length > 0) {
-        houseData[select.id] = selectedOptions;
-      }
-    }
-  });
-  
-  section.querySelectorAll('textarea').forEach(textarea => {
-    if (!textarea.id || textarea.disabled) return;
-    
-    const value = textarea.value.trim();
-    if (!value) return;
-    
-    console.log(`Textarea encontrado: ${textarea.id} = ${value.substring(0, 50)}...`);
-    houseData[textarea.id] = value;
-  });
-  
-  const multiselectGroups = {};
-  
-  section.querySelectorAll('input[type="checkbox"]').forEach(checkbox => {
-    if (checkbox.id && checkbox.id.includes('_validation')) return;
-    
-    const fieldName = checkbox.getAttribute('data-field') || checkbox.name;
-    if (!fieldName) return;
-    
-    if (!multiselectGroups[fieldName]) {
-      multiselectGroups[fieldName] = {
-        values: [],
-        element: checkbox
-      };
-    }
-
-    if (checkbox.checked) {
-      multiselectGroups[fieldName].values.push(checkbox.value);
-      console.log(`Checkbox marcado: ${fieldName} -> ${checkbox.value}`);
-    }
-  });
-
-  Object.keys(multiselectGroups).forEach(fieldName => {
-    const group = multiselectGroups[fieldName];
-    if (group.values.length > 0) {
-      houseData[fieldName] = group.values;
-      console.log(`Multiselect ${fieldName}:`, group.values);
-    }
-  });
-
-  const radioGroups = {};
-  
-  section.querySelectorAll('input[type="radio"]:checked').forEach(radio => {
-    if (!radio.name || radio.disabled) return;
-    
-    radioGroups[radio.name] = radio.value;
-    console.log(`Radio selecionado: ${radio.name} = ${radio.value}`);
-  });
-
-  Object.assign(houseData, radioGroups);
-
-  section.querySelectorAll('[data-depends-on]').forEach(conditionalField => {
-    const dependsOn = conditionalField.dataset.dependsOn;
-    const showWhen = conditionalField.dataset.showWhen;
-    
-    if (dependsOn && showWhen) {
-      const dependentValue = houseData[dependsOn];
-      const shouldShow = showWhen.split(',').includes(dependentValue);
-      
-      if (!shouldShow) {
-        conditionalField.querySelectorAll('input, select, textarea').forEach(field => {
-          if (field.id && houseData[field.id] !== undefined) {
-            console.log(`Removendo campo condicional: ${field.id}`);
-            delete houseData[field.id];
-          }
-        });
-      }
-    }
-  });
-
-  if (houseData.nomeResidenciaTherapeutica && !houseData.nomeResidencia) {
-    houseData.nomeResidencia = houseData.nomeResidenciaTherapeutica;
-    console.log('Copiando nomeResidenciaTherapeutica para nomeResidencia');
-  }
-
-  if (houseData.cep) {
-    const cepLimpo = houseData.cep.replace(/\D/g, '');
-    if (cepLimpo.length === 8) {
-      houseData.cep = `${cepLimpo.substring(0, 5)}-${cepLimpo.substring(5)}`;
-    }
-  }
-
-  const numericFields = [
-    'quartos', 'salas', 'cozinhas', 'banheiros', 'varanda', 'lavanderia', 'despensa',
-    'totalProfissionais', 'totalCuidadores', 'totalTecnicos', 'totalEnfermeiros', 'totalOutros',
-    'cuidadoresPorTurno', 'vagasTotais', 'vagasOcupadas', 'totalResidents'
-  ];
-  
-  numericFields.forEach(fieldName => {
-    if (houseData[fieldName] && typeof houseData[fieldName] === 'string') {
-      houseData[fieldName] = parseInt(houseData[fieldName]) || 0;
-    }
-  });
-
-  if (houseData.emailResponsavelPreenchimento) {
-    console.log(`EMAIL COLETADO COM SUCESSO: ${houseData.emailResponsavelPreenchimento}`);
-  } else {
-    console.warn(`EMAIL NÃO ENCONTRADO! Campos disponíveis:`, Object.keys(houseData).filter(k => k.includes('email')));
-  }
-
-  console.log(`Dados coletados de ${sectionSelector}:`, {
-    totalCampos: Object.keys(houseData).length,
-    temEmail: !!houseData.emailResponsavelPreenchimento,
-    email: houseData.emailResponsavelPreenchimento,
-    nomeResidencia: houseData.nomeResidencia,
-    tipoSRT: houseData.tipoSRT
-  });
-};
-    
-    // Coletar dados de todas as seções
-    console.log('Coletando dados do município...');
-    collectSectionData('#municipioFields', houseData);
-    
-    console.log('Coletando dados gerais...');
-    collectSectionData('#generalFields', houseData);
-    
-    console.log('Coletando dados da residência...');
-    collectSectionData('#residenceFields', houseData);
-    
-    console.log('Coletando dados dos cuidadores...');
-    collectSectionData('#caregiverFields', houseData);
-    
-    // Coletar dados de capacidade
-    const vagasTotais = document.getElementById('vagasTotais');
-    const vagasOcupadas = document.getElementById('vagasOcupadas');
-    const vagasDisponiveis = document.getElementById('vagasDisponiveis');
-    
-    if (vagasTotais) houseData.vagasTotais = parseInt(vagasTotais.value) || 0;
-    if (vagasOcupadas) houseData.vagasOcupadas = parseInt(vagasOcupadas.value) || 0;
-    if (vagasDisponiveis) houseData.vagasDisponiveis = parseInt(vagasDisponiveis.value) || 0;
-    
-    // Coletar dados dos moradores
-    const count = parseInt(document.getElementById('numMoradores').value) || 0;
-    houseData.numeroMoradores = count;
-    houseData.residents = [];
-    
-    console.log(`Coletando dados de ${count} moradores...`);
-    
-    for (let i = 1; i <= count; i++) {
-      const resident = {};
-      const residentSection = document.querySelector(`[data-resident-number="${i}"]`);
-      
-      if (residentSection && currentConfig.residentFields) {
-        // Coletar campos normais do morador
-        currentConfig.residentFields.forEach(field => {
-          const element = document.getElementById(`resident_${i}_${field.key}`);
-          
-          if (field.type === 'multiselect') {
-            // Coletar checkboxes para campos multiselect
-            const checkboxes = residentSection.querySelectorAll(`input[name="resident_${i}_${field.key}"]:checked`);
-            const selectedValues = Array.from(checkboxes).map(cb => cb.value);
-            
-            if (selectedValues.length > 0) {
-              resident[field.key] = selectedValues;
-            }
-          } else if (element && element.value) {
-            // Tratar diferentes tipos de dados
-            if (field.type === 'number') {
-              resident[field.key] = parseInt(element.value) || 0;
-            } else if (field.type === 'date') {
-              resident[field.key] = element.value;
-            } else {
-              resident[field.key] = element.value.trim();
-            }
-          }
-          
-          // Verificar campos condicionais
-          if (field.conditional && element) {
-            const dependentField = document.getElementById(`resident_${i}_${field.conditional.field}`);
-            if (dependentField) {
-              const shouldInclude = field.conditional.values 
-                ? field.conditional.values.includes(dependentField.value)
-                : dependentField.value === field.conditional.value;
-              
-              if (!shouldInclude && resident[field.key]) {
-                delete resident[field.key];
-              }
-            }
-          }
-        });
-        
-        // Adicionar metadados do morador
-        resident.residentNumber = i;
-        resident.addedAt = new Date().toISOString();
-        
-        // Validar dados mínimos do morador
-        if (resident.nomeCompleto || Object.keys(resident).length > 2) {
-          houseData.residents.push(resident);
-        }
-      }
-    }
-    
-    // Adicionar metadados adicionais
-    houseData.formCompletedAt = new Date().toISOString();
-    houseData.userAgent = navigator.userAgent;
-    houseData.formProgress = document.getElementById('progressFill').style.width;
-    
-    // Calcular e adicionar estatísticas
-    houseData.statistics = {
-      totalFieldsFilled: Object.keys(houseData).length,
-      residentsWithPVC: houseData.residents.filter(r => r.participaPVC === 'Sim').length,
-      residentsWithFamily: houseData.residents.filter(r => r.vinculoFamiliar === 'Sim' || r.vinculoFamiliar === 'Esporadicamente').length,
-      averageAge: houseData.residents.length > 0 
-        ? Math.round(houseData.residents.reduce((sum, r) => sum + (parseInt(r.idade) || 0), 0) / houseData.residents.length)
-        : 0
-    };
-    
-    // Validar dados críticos antes de salvar
-    const criticalFields = ['municipio', 'tipoSRT'];
-    const missingFields = criticalFields.filter(field => !houseData[field]);
-    
-    if (missingFields.length > 0) {
-      console.warn('Campos críticos faltando:', missingFields);
-    }
-    
-    console.log('Dados coletados:', houseData);
-    console.log('Total de campos preenchidos:', Object.keys(houseData).length);
-    console.log('Total de moradores:', houseData.residents.length);
-    
-    // Salvar no Firestore
-    console.log('Salvando no banco de dados...');
-    const docRef = await db.collection('houses').add(houseData);
-    console.log('Documento salvo com ID:', docRef.id);
-    
-    // Adicionar ID ao objeto para o email
-    houseData.documentId = docRef.id;
-    
-    // Enviar email
-    console.log('Enviando email de confirmação...');
-    try {
-      const emailResult = await EmailService.sendEmail(houseData);
-      
-      if (emailResult.success) {
-        console.log('Email enviado com sucesso');
-        showToast('Dados salvos e e-mail enviado com sucesso!');
-      } else {
-        console.error('Erro ao enviar e-mail:', emailResult.error);
-        showToast('Dados salvos, mas houve erro ao enviar e-mail', 'warning');
-      }
-    } catch (emailError) {
-      console.error('Erro no envio de email:', emailError);
-      showToast('Dados salvos com sucesso! (E-mail não enviado)', 'warning');
-    }
-    
-    // Criar backup local
-    try {
-      const backupData = {
-        ...houseData,
-        backupDate: new Date().toISOString(),
-        backupVersion: '1.0'
-      };
-      
-      const backupKey = `srt_backup_${docRef.id}_${Date.now()}`;
-      localStorage.setItem(backupKey, JSON.stringify(backupData));
-      
-      // Limpar backups antigos (manter apenas os últimos 5)
-      const allKeys = Object.keys(localStorage).filter(key => key.startsWith('srt_backup_'));
-      if (allKeys.length > 5) {
-        allKeys.sort().slice(0, -5).forEach(key => localStorage.removeItem(key));
-      }
-    } catch (backupError) {
-      console.warn('Não foi possível criar backup local:', backupError);
-    }
-    
-    // Animação de sucesso
-    hideLoading();
-    
-    const celebration = document.createElement('div');
-    celebration.className = 'fixed inset-0 pointer-events-none z-50 flex items-center justify-center';
-    celebration.innerHTML = `
-      <div class="relative">
-        <svg class="w-32 h-32 text-green-500 animate-bounce-in" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
-        </svg>
-        <div class="absolute inset-0 animate-ping">
-          <svg class="w-32 h-32 text-green-500 opacity-75" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
-          </svg>
-        </div>
-      </div>
-    `;
-    document.body.appendChild(celebration);
-    
-    // Aguardar e perguntar próxima ação
-    setTimeout(() => {
-      celebration.remove();
-      
-      const modal = document.createElement('div');
-      modal.className = 'fixed inset-0 z-50 flex items-center justify-center p-4';
-      modal.innerHTML = `
-        <div class="absolute inset-0 bg-black/60 backdrop-blur-sm" onclick="this.parentElement.remove()"></div>
-        <div class="relative bg-white dark:bg-gray-800 rounded-2xl p-8 max-w-md w-full shadow-2xl animate-scale-in">
-          <div class="text-center">
-            <svg class="w-16 h-16 text-green-500 mx-auto mb-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
-            </svg>
-            <h3 class="text-2xl font-bold text-gray-900 dark:text-white mb-2">Cadastro Realizado!</h3>
-            <p class="text-gray-600 dark:text-gray-300 mb-6">Os dados foram salvos com sucesso.</p>
-            <div class="space-y-3">
-              <button onclick="clearForm(); this.closest('.fixed').remove();" class="w-full px-6 py-3 bg-blue-600 hover:bg-blue-700 text-white rounded-xl font-medium transition-all transform hover:scale-105">
-                Cadastrar Nova Residência
-              </button>
-              <button onclick="window.location.href='admin.html'" class="w-full px-6 py-3 bg-gray-200 dark:bg-gray-700 hover:bg-gray-300 dark:hover:bg-gray-600 text-gray-700 dark:text-gray-300 rounded-xl font-medium transition-all">
-                Ir para o Painel Admin
-              </button>
-              <button onclick="this.closest('.fixed').remove();" class="w-full px-6 py-3 text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200 font-medium transition-all">
-                Continuar Preenchendo
-              </button>
-            </div>
-          </div>
-        </div>
-      `;
-      document.body.appendChild(modal);
-    }, 2000);
+    document.getElementById('successMessage').innerHTML = successMessage;
+    document.getElementById('successModal').style.display = 'block';
     
   } catch (error) {
     console.error('Erro ao salvar:', error);
-    hideLoading();
-    
-    // Mostrar erro detalhado
-    showToast(`Erro ao salvar: ${error.message}`, 'error');
-    
-    // Log detalhado do erro
-    console.error('Detalhes do erro:', {
-      message: error.message,
-      code: error.code,
-      stack: error.stack
-    });
-    
-    // Tentar salvar em cache local como fallback
-    try {
-      const fallbackData = {
-        ...houseData,
-        error: error.message,
-        savedAt: new Date().toISOString(),
-        fallback: true
-      };
-      
-      const cacheKey = `srt_fallback_${Date.now()}`;
-      localStorage.setItem(cacheKey, JSON.stringify(fallbackData));
-      
-      showToast('Dados salvos localmente. Tente sincronizar mais tarde.', 'warning');
-    } catch (cacheError) {
-      console.error('Erro ao salvar no cache:', cacheError);
-    }
-  } finally {
-    // Restaurar botão
-    submitBtn.disabled = false;
-    submitBtn.innerHTML = `
-      <svg class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
-      </svg>
-      Enviar Dados
-    `;
-  }
-};
-
-
-const initializeApp = async () => {
-  showLoading();
-  initTheme();
-  
-  try {
-    const configRef = db.collection('config').doc('srt');
-    const configSnap = await configRef.get();
-    
-    if (configSnap.exists) {
-      currentConfig = configSnap.data();
-    } else {
-      currentConfig = getDefaultConfig();
-      await configRef.set(currentConfig);
-    }
-    
-    renderFormFields();
-    
-    document.getElementById('numMoradores').addEventListener('change', updateResidentBlocks);
-    document.getElementById('vagasOcupadas').addEventListener('input', updateVagasDisponiveis);
-    document.getElementById('vagasTotais').addEventListener('input', updateVagasDisponiveis);
-    document.getElementById('clearBtn').addEventListener('click', clearForm);
-    document.getElementById('srtForm').addEventListener('submit', submitForm);
-    
-    document.querySelectorAll('[data-action]').forEach(btn => {
-      btn.addEventListener('click', () => {
-        const input = document.getElementById('numMoradores');
-        const current = parseInt(input.value) || 0;
-        const action = btn.dataset.action;
-        
-        if (action === 'plus' && current < 20) {
-          input.value = current + 1;
-          btn.classList.add('animate-bounce');
-        } else if (action === 'minus' && current > 0) {
-          input.value = current - 1;
-          btn.classList.add('animate-bounce');
-        }
-        
-        setTimeout(() => btn.classList.remove('animate-bounce'), 500);
-        input.dispatchEvent(new Event('change'));
-      });
-    });
-    
-    document.addEventListener('input', (e) => {
-      if (e.target.name && e.target.name.includes('dataNascimento')) {
-        const idadeField = e.target.closest('.grid')?.querySelector('[name*="idade"]');
-        if (idadeField) {
-          const birthDate = new Date(e.target.value);
-          const today = new Date();
-          let age = today.getFullYear() - birthDate.getFullYear();
-          const monthDiff = today.getMonth() - birthDate.getMonth();
-          
-          if (monthDiff < 0 || (monthDiff === 0 && today.getDate() < birthDate.getDate())) {
-            age--;
-          }
-          
-          if (age > 0 && age < 120) {
-            idadeField.value = age;
-            idadeField.dispatchEvent(new Event('input'));
-          }
-        }
-      }
-    });
-    
-    ['totalCuidadores', 'totalTecnicos', 'totalEnfermeiros', 'totalOutros'].forEach(fieldId => {
-      const field = document.getElementById(fieldId);
-      if (field) {
-        field.addEventListener('input', () => {
-          const total = ['totalCuidadores', 'totalTecnicos', 'totalEnfermeiros', 'totalOutros']
-            .reduce((sum, id) => sum + (parseInt(document.getElementById(id)?.value) || 0), 0);
-          
-          const totalField = document.getElementById('totalProfissionais');
-          if (totalField && total > 0) {
-            totalField.value = total;
-            totalField.dispatchEvent(new Event('input'));
-          }
-        });
-      }
-    });
-    
-    document.querySelectorAll('input, select, textarea').forEach(element => {
-      element.addEventListener('input', updateProgress);
-      element.addEventListener('change', updateProgress);
-    });
-    
-    const observer = new IntersectionObserver((entries) => {
-      entries.forEach(entry => {
-        if (entry.isIntersecting) {
-          entry.target.classList.add('animate-fade-in');
-          observer.unobserve(entry.target);
-        }
-      });
-    }, { threshold: 0.1 });
-    
-    document.querySelectorAll('section').forEach(section => {
-      observer.observe(section);
-    });
-    
-  } catch (error) {
-    console.error('Erro ao inicializar:', error);
-    showToast('Erro ao carregar configurações', 'error');
+    showToast('Erro ao salvar dados. Tente novamente.', 'error');
   } finally {
     hideLoading();
   }
 };
 
-window.addEventListener('DOMContentLoaded', initializeApp);
+window.closePreviewModal = () => {
+  document.getElementById('previewModal').style.display = 'none';
+};
+
+document.addEventListener('DOMContentLoaded', initializeApp);
+

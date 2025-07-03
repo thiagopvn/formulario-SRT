@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Controle de Usuários - SRT Admin</title>
+  <title>Gerenciar Usuários - SRT</title>
   <script src="https://cdn.tailwindcss.com"></script>
   <script src="https://unpkg.com/aos@2.3.1/dist/aos.js"></script>
   <link href="https://unpkg.com/aos@2.3.1/dist/aos.css" rel="stylesheet">
@@ -176,7 +176,7 @@
 <body class="bg-gray-50 dark:bg-gray-900 transition-colors duration-300">
   <div id="particles-js"></div>
   
-  <div id="adminPanel" class="flex h-screen">
+  <div class="flex h-screen">
     <aside class="w-64 bg-white dark:bg-gray-800 shadow-xl fixed h-full z-40 transform -translate-x-full md:translate-x-0 transition-transform duration-300" id="sidebar">
       <div class="p-6 border-b border-gray-200 dark:border-gray-700">
         <div class="flex items-center justify-between">
@@ -197,27 +197,12 @@
           <span>Casas</span>
         </a>
         
-        <button class="nav-item sidebar-item w-full px-4 py-3 bg-blue-50 dark:bg-blue-900/20 text-blue-600 dark:text-blue-400 rounded-xl font-medium flex items-center gap-3 transition-all hover:bg-blue-100 dark:hover:bg-blue-900/30 active">
+        <div class="nav-item sidebar-item w-full px-4 py-3 bg-blue-50 dark:bg-blue-900/20 text-blue-600 dark:text-blue-400 rounded-xl font-medium flex items-center gap-3 transition-all hover:bg-blue-100 dark:hover:bg-blue-900/30">
           <svg class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z" />
           </svg>
           <span>Usuários</span>
-        </button>
-        
-        <a href="admin.html#config" class="nav-item sidebar-item w-full px-4 py-3 text-gray-600 dark:text-gray-400 rounded-xl font-medium flex items-center gap-3 transition-all hover:bg-gray-100 dark:hover:bg-gray-700">
-          <svg class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z" />
-            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
-          </svg>
-          <span>Configurações</span>
-        </a>
-        
-        <a href="admin.html#reports" class="nav-item sidebar-item w-full px-4 py-3 text-gray-600 dark:text-gray-400 rounded-xl font-medium flex items-center gap-3 transition-all hover:bg-gray-100 dark:hover:bg-gray-700">
-          <svg class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 17v-2m3 2v-4m3 4v-6m2 10H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
-          </svg>
-          <span>Relatórios</span>
-        </a>
+        </div>
       </nav>
       
       <div class="absolute bottom-0 left-0 right-0 p-4 border-t border-gray-200 dark:border-gray-700">
@@ -242,12 +227,12 @@
       <header class="bg-white dark:bg-gray-800 shadow-sm px-6 py-4">
         <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
           <div>
-            <h1 class="text-2xl font-bold text-gray-800 dark:text-white">Controle de Usuários</h1>
-            <p class="text-sm text-gray-600 dark:text-gray-400">Gerencie os usuários com acesso ao sistema</p>
+            <h1 class="text-2xl font-bold text-gray-800 dark:text-white">Gerenciar Usuários</h1>
+            <p class="text-sm text-gray-600 dark:text-gray-400">Administre os usuários do sistema</p>
           </div>
           <button id="addUserBtn" class="px-4 py-2 bg-gradient-to-r from-blue-500 to-purple-600 hover:from-blue-600 hover:to-purple-700 text-white rounded-xl font-medium transition-all transform hover:scale-105 active:scale-95 flex items-center gap-2">
             <svg class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M18 9v3m0 0v3m0-3h3m-3 0h-3m-2-5a4 4 0 11-8 0 4 4 0 018 0zM3 20a6 6 0 0112 0v1H3v-1z" />
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6v6m0 0v6m0-6h6m-6 0H6" />
             </svg>
             <span>Adicionar Usuário</span>
           </button>
@@ -287,13 +272,13 @@
           </div>
           
           <div class="bg-white dark:bg-gray-800 rounded-xl p-6 shadow-lg hover-lift relative overflow-hidden group">
-            <div class="absolute inset-0 bg-gradient-to-r from-yellow-500 to-orange-600 opacity-0 group-hover:opacity-10 transition-opacity"></div>
+            <div class="absolute inset-0 bg-gradient-to-r from-purple-500 to-purple-600 opacity-0 group-hover:opacity-10 transition-opacity"></div>
             <div class="relative">
               <div class="flex items-center justify-between mb-2">
                 <h3 class="text-3xl font-bold text-gray-800 dark:text-white" id="adminUsers">0</h3>
-                <div class="p-3 bg-yellow-100 dark:bg-yellow-900/20 rounded-xl">
-                  <svg class="w-6 h-6 text-yellow-600 dark:text-yellow-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                <div class="p-3 bg-purple-100 dark:bg-purple-900/20 rounded-xl">
+                  <svg class="w-6 h-6 text-purple-600 dark:text-purple-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z" />
                   </svg>
                 </div>
               </div>
@@ -302,13 +287,13 @@
           </div>
           
           <div class="bg-white dark:bg-gray-800 rounded-xl p-6 shadow-lg hover-lift relative overflow-hidden group">
-            <div class="absolute inset-0 bg-gradient-to-r from-purple-500 to-purple-600 opacity-0 group-hover:opacity-10 transition-opacity"></div>
+            <div class="absolute inset-0 bg-gradient-to-r from-orange-500 to-orange-600 opacity-0 group-hover:opacity-10 transition-opacity"></div>
             <div class="relative">
               <div class="flex items-center justify-between mb-2">
                 <h3 class="text-3xl font-bold text-gray-800 dark:text-white" id="lastUserAdded">-</h3>
-                <div class="p-3 bg-purple-100 dark:bg-purple-900/20 rounded-xl">
-                  <svg class="w-6 h-6 text-purple-600 dark:text-purple-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
+                <div class="p-3 bg-orange-100 dark:bg-orange-900/20 rounded-xl">
+                  <svg class="w-6 h-6 text-orange-600 dark:text-orange-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
                   </svg>
                 </div>
               </div>
@@ -317,28 +302,32 @@
           </div>
         </div>
 
-        <div class="bg-white dark:bg-gray-800 rounded-xl shadow-lg overflow-hidden">
-          <div class="p-6 border-b border-gray-200 dark:border-gray-700">
-            <div class="flex flex-col sm:flex-row gap-4">
-              <div class="flex-1 relative">
-                <input type="text" id="searchInput" placeholder="Buscar usuário..." class="w-full pl-10 pr-4 py-2 bg-gray-100 dark:bg-gray-700 border-0 rounded-xl focus:ring-2 focus:ring-blue-500 transition-all">
+        <div class="bg-white dark:bg-gray-800 rounded-xl p-6 shadow-lg mb-6">
+          <div class="flex flex-col sm:flex-row gap-4">
+            <div class="flex-1">
+              <div class="relative">
+                <input type="text" id="searchInput" placeholder="Buscar usuários..." class="w-full pl-10 pr-4 py-2 bg-gray-100 dark:bg-gray-700 border-0 rounded-xl focus:ring-2 focus:ring-blue-500 transition-all">
                 <svg class="w-5 h-5 absolute left-3 top-2.5 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                   <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
                 </svg>
               </div>
+            </div>
+            <div class="flex gap-3">
               <select id="filterRole" class="px-4 py-2 bg-gray-100 dark:bg-gray-700 border-0 rounded-xl focus:ring-2 focus:ring-blue-500 transition-all">
-                <option value="">Todos os perfis</option>
+                <option value="">Todos os Perfis</option>
                 <option value="admin">Administrador</option>
                 <option value="user">Usuário</option>
               </select>
               <select id="filterStatus" class="px-4 py-2 bg-gray-100 dark:bg-gray-700 border-0 rounded-xl focus:ring-2 focus:ring-blue-500 transition-all">
-                <option value="">Todos os status</option>
+                <option value="">Todos os Status</option>
                 <option value="active">Ativo</option>
                 <option value="inactive">Inativo</option>
               </select>
             </div>
           </div>
-          
+        </div>
+
+        <div class="bg-white dark:bg-gray-800 rounded-xl shadow-lg overflow-hidden">
           <div class="overflow-x-auto">
             <table id="usersTable" class="w-full">
               <thead class="bg-gray-50 dark:bg-gray-900">
@@ -386,7 +375,7 @@
       <form id="userForm" class="p-6">
         <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
           <div>
-            <label for="userName" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Nome Completo</label>
+            <label for="userName" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Nome</label>
             <input type="text" id="userName" required class="w-full px-4 py-2 bg-gray-100 dark:bg-gray-700 border-0 rounded-xl focus:ring-2 focus:ring-blue-500 transition-all">
           </div>
           
@@ -396,15 +385,15 @@
           </div>
         </div>
         
-        <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4" id="passwordFields">
+        <div id="passwordFields" class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
           <div>
             <label for="userPassword" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Senha</label>
-            <input type="password" id="userPassword" required minlength="6" class="w-full px-4 py-2 bg-gray-100 dark:bg-gray-700 border-0 rounded-xl focus:ring-2 focus:ring-blue-500 transition-all">
+            <input type="password" id="userPassword" required class="w-full px-4 py-2 bg-gray-100 dark:bg-gray-700 border-0 rounded-xl focus:ring-2 focus:ring-blue-500 transition-all">
           </div>
           
           <div>
             <label for="confirmPassword" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Confirmar Senha</label>
-            <input type="password" id="confirmPassword" required minlength="6" class="w-full px-4 py-2 bg-gray-100 dark:bg-gray-700 border-0 rounded-xl focus:ring-2 focus:ring-blue-500 transition-all">
+            <input type="password" id="confirmPassword" required class="w-full px-4 py-2 bg-gray-100 dark:bg-gray-700 border-0 rounded-xl focus:ring-2 focus:ring-blue-500 transition-all">
           </div>
         </div>
         
@@ -434,7 +423,7 @@
             <svg class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
               <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7" />
             </svg>
-            <span id="submitBtnText">Salvar</span>
+            <span id="submitBtnText">Criar Usuário</span>
           </button>
         </div>
       </form>
@@ -443,27 +432,26 @@
 
   <div id="toastContainer" class="fixed top-4 right-4 z-50 space-y-4"></div>
 
-  <script src="js/usuario.js"></script>
   <script>
     particlesJS('particles-js', {
       particles: {
-        number: { value: 60, density: { enable: true, value_area: 800 } },
-        color: { value: '#8b5cf6' },
+        number: { value: 80, density: { enable: true, value_area: 800 } },
+        color: { value: '#3b82f6' },
         shape: { type: 'circle' },
-        opacity: { value: 0.3, random: true },
+        opacity: { value: 0.5, random: false },
         size: { value: 3, random: true },
         line_linked: {
           enable: true,
           distance: 150,
-          color: '#8b5cf6',
-          opacity: 0.2,
+          color: '#3b82f6',
+          opacity: 0.4,
           width: 1
         },
         move: {
           enable: true,
-          speed: 1,
+          speed: 2,
           direction: 'none',
-          random: true,
+          random: false,
           straight: false,
           out_mode: 'out',
           bounce: false
@@ -472,13 +460,27 @@
       interactivity: {
         detect_on: 'canvas',
         events: {
-          onhover: { enable: true, mode: 'grab' },
+          onhover: { enable: true, mode: 'repulse' },
           onclick: { enable: true, mode: 'push' },
           resize: true
         }
       },
       retina_detect: true
     });
+    
+    AOS.init({
+      duration: 800,
+      easing: 'ease-out-cubic',
+      once: true,
+      offset: 50
+    });
+
+    window.closeUserModal = () => {
+      document.getElementById('userModal').style.display = 'none';
+    };
   </script>
+  <script src="js/usuario.js"></script>
+  <script src="js/utils.js"></script>
 </body>
 </html>
+
