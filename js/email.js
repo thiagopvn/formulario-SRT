@@ -156,34 +156,34 @@ const EmailService = {
     `;
   },
 
-  generateCapacitySection(data) {
-    return `
-      <div class="section">
-        <div class="section-header">
-          <div class="section-icon">📊</div>
-          <h2 class="section-title">Capacidade e Ocupação</h2>
+generateCapacitySection(data) {
+  return `
+    <div class="section">
+      <div class="section-header">
+        <div class="section-icon">📊</div>
+        <h2 class="section-title">Capacidade e Ocupação</h2>
+      </div>
+      <div class="stats-grid">
+        <div class="stat-card">
+          <p class="stat-value">${this.formatters.value(data.vagasTotais)}</p>
+          <p class="stat-label">Cadastrados no CNES</p>
         </div>
-        <div class="stats-grid">
-          <div class="stat-card">
-            <p class="stat-value">${this.formatters.value(data.totalMoradores || data.totalResidents)}</p>
-            <p class="stat-label">Moradores na Implantação</p>
-          </div>
-          <div class="stat-card">
-            <p class="stat-value">${this.formatters.value(data.vagasTotais)}</p>
-            <p class="stat-label">Vagas no CNES</p>
-          </div>
-          <div class="stat-card">
-            <p class="stat-value">${this.formatters.value(data.vagasOcupadas)}</p>
-            <p class="stat-label">Vagas Ocupadas</p>
-          </div>
-          <div class="stat-card">
-            <p class="stat-value">${this.formatters.value(data.vagasDisponiveis)}</p>
-            <p class="stat-label">Vagas Disponíveis</p>
-          </div>
+        <div class="stat-card">
+          <p class="stat-value">${this.formatters.value(data.vagasOcupadas)}</p>
+          <p class="stat-label">Moradores Atuais</p>
+        </div>
+        <div class="stat-card">
+          <p class="stat-value">${this.formatters.value(data.vagasDisponiveis)}</p>
+          <p class="stat-label">Vagas Disponíveis</p>
+        </div>
+        <div class="stat-card">
+          <p class="stat-value">${this.formatters.value(data.numeroMoradores || data.residents?.length || 0)}</p>
+          <p class="stat-label">Total de Moradores Cadastrados</p>
         </div>
       </div>
-    `;
-  },
+    </div>
+  `;
+},
 
   generateResidentHTML(resident, index, fields) {
     let fieldsHTML = '';
@@ -651,7 +651,7 @@ const EmailService = {
             ${data.createdAt ? `
             <div class="info-box">
               <strong>Data de Registro no Sistema:</strong>
-              ${formatDateTime(data.createdAt)}
+              ${this.formatters.datetime(data.createdAt)}
             </div>
             ` : ''}
           </div>

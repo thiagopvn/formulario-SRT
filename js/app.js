@@ -1471,14 +1471,12 @@ const submitForm = async (event) => {
   
   showLoading();
   
-  // Declarar houseData fora do try-catch para que esteja disponível em todo o escopo
   const houseData = {
-    createdAt: firebase.firestore.FieldValue.serverTimestamp(),
-    status: 'active',
-    submittedAt: new Date().toISOString(),
-    formVersion: '2.0'
+  createdAt: new Date(),
+  submittedAt: new Date(),
+  status: 'active',
+  formVersion: '2.0'
   };
-  
   try {
     
     const collectSectionData = (sectionSelector, houseData) => {
