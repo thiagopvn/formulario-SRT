@@ -1353,3 +1353,8 @@ body {
     text-align: center;
   }
 }
+
+/* Fix for long floating labels */
+.floating-label > label {
+    white-space: normal !important;
+}
