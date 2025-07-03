@@ -125,9 +125,7 @@ const getDefaultConfig = () => {
       { key: 'nomeResidencia', label: 'Nome da Residência', type: 'text', required: true },
       { key: 'enderecoCompleto', label: 'Endereço Completo', type: 'text', required: true },
       { key: 'zona', label: 'Zona', type: 'select', required: false, options: ['Norte', 'Sul', 'Leste', 'Oeste', 'Centro'] },
-      { key: 'vagasTotais', label: 'Cadastrados no CNES', type: 'number', required: true, min: 0 },
-      { key: 'vagasOcupadas', label: 'Moradores Atuais', type: 'number', required: false, min: 0 },
-      { key: 'vagasDisponiveis', label: 'Vagas Disponíveis', type: 'number', required: false, min: 0 }
+      { key: 'vagasTotais', label: 'Cadastrados no CNES', type: 'number', required: true, min: 0 }
     ],
     caregivers: [
       { key: 'coordenadorNome', label: 'Nome do Coordenador', type: 'text', required: false },
@@ -267,13 +265,13 @@ const setupEventListeners = () => {
   document.getElementById('addResidentBtn').addEventListener('click', addResident);
   
   document.addEventListener('change', (e) => {
-    if (e.target.name === 'vagasTotais' || e.target.name === 'vagasOcupadas') {
+    if (e.target.name === 'vagasTotais') {
       calculateCapacityMetrics();
     }
   });
   
   document.addEventListener('input', (e) => {
-    if (e.target.name === 'vagasTotais' || e.target.name === 'vagasOcupadas') {
+    if (e.target.name === 'vagasTotais') {
       calculateCapacityMetrics();
     }
   });
@@ -358,14 +356,9 @@ const updateProgress = () => {
 
 const calculateCapacityMetrics = () => {
   const totalSlots = parseInt(document.getElementById('vagasTotais')?.value) || 0;
-  const occupiedSlots = parseInt(document.getElementById('vagasOcupadas')?.value) || 0;
+  const occupiedSlots = residents.length;
   const availableSlots = Math.max(0, totalSlots - occupiedSlots);
   const totalResidents = residents.length;
-  
-  const availableField = document.getElementById('vagasDisponiveis');
-  if (availableField) {
-    availableField.value = availableSlots;
-  }
   
   updateCapacityDisplay(totalSlots, occupiedSlots, availableSlots, totalResidents);
 };
@@ -677,6 +670,11 @@ const handleSubmit = async (e) => {
     const formData = collectFormData();
     formData.createdAt = firebase.firestore.FieldValue.serverTimestamp();
     formData.numeroMoradores = formData.residents ? formData.residents.length : 0;
+
+    const totalSlots = parseInt(formData.vagasTotais) || 0;
+    const occupiedSlots = formData.residents ? formData.residents.length : 0;
+    formData.vagasOcupadas = occupiedSlots;
+    formData.vagasDisponiveis = Math.max(0, totalSlots - occupiedSlots);
     
     const docRef = await db.collection('srt').add(formData);
     formData.id = docRef.id;

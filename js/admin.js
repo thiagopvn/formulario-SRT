@@ -443,6 +443,32 @@ const generateHouseDetailsHTML = (house) => {
     }
   });
 
+  // Adiciona a seção de Capacidade e Ocupação
+  const capacityData = [
+    { label: 'Cadastrados no CNES', value: house.vagasTotais || '-' },
+    { label: 'Moradores Atuais', value: house.vagasOcupadas !== undefined ? house.vagasOcupadas : '-' },
+    { label: 'Vagas Disponíveis', value: house.vagasDisponiveis !== undefined ? house.vagasDisponiveis : '-' },
+    { label: 'Total de Moradores Cadastrados', value: house.numeroMoradores || '-' }
+  ];
+
+  html += `
+    <div class="bg-gray-50 dark:bg-gray-700 rounded-xl p-6">
+      <div class="flex items-center gap-3 mb-4">
+        <span class="text-2xl">📊</span>
+        <h3 class="text-lg font-semibold text-gray-800 dark:text-white">Capacidade e Ocupação</h3>
+      </div>
+      <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+  `;
+  capacityData.forEach(item => {
+    html += `
+      <div class="bg-white dark:bg-gray-800 rounded-lg p-4">
+        <div class="text-sm font-medium text-gray-500 dark:text-gray-400 mb-1">${item.label}</div>
+        <div class="text-gray-900 dark:text-white">${item.value}</div>
+      </div>
+    `;
+  });
+  html += '</div></div>';
+
   if (house.residents && house.residents.length > 0 && formConfig.residentFields) {
     html += `
       <div class="bg-gray-50 dark:bg-gray-700 rounded-xl p-6">
