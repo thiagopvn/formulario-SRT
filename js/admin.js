@@ -677,7 +677,7 @@ const exportData = () => {
   };
 
   // --- Planilha de Resumo ---
-  """  const wsSummary = XLSX.utils.aoa_to_sheet([[]]);
+  const wsSummary = XLSX.utils.aoa_to_sheet([[]]);
   wsSummary['!merges'] = [];
 
   wsSummary['A1'] = { t: 's', v: 'Relatório Geral de Residências Terapêuticas', s: styles.title };
@@ -742,7 +742,7 @@ const exportData = () => {
   wsSummary['!cols'] = [null, {wch: 20}, {wch: 15}, null, {wch: 20}, {wch: 15}, null, {wch: 20}, {wch: 20}];
   wsSummary['!rows'] = [{hpt: 50}, null, {hpt: 25}, {hpt: 35}, {hpt: 50}, {hpt: 20}, {hpt: 30}];
 
-  XLSX.utils.book_append_sheet(wb, wsSummary, 'Resumo');""
+  XLSX.utils.book_append_sheet(wb, wsSummary, 'Resumo');
 
   // --- Planilha de Residências ---
   const residenceSheetData = [];
