@@ -620,27 +620,37 @@ const exportData = () => {
 
   const wb = XLSX.utils.book_new();
 
-  // --- Paleta de Cores e Estilos ---
   const palette = {
-    blue: '4A90E2',
-    lightBlue: 'D4E6F1',
-    teal: '4A7A8C',
-    darkGray: '333333',
-    gray: '555555',
-    lightGray: 'F5F5F5',
+    primary: '1E40AF',
+    secondary: '7C3AED',
+    accent: '10B981',
+    warning: 'F59E0B',
+    danger: 'EF4444',
+    info: '3B82F6',
+    dark: '1F2937',
+    light: 'F3F4F6',
     white: 'FFFFFF',
-    sectionColors: ['7B68EE', '48D1CC', 'F08080', '9370DB'] // Lilás, Verde Água, Coral, Roxo Médio
+    gradientBlue: '60A5FA',
+    gradientPurple: 'A78BFA',
+    gradientGreen: '34D399',
+    gradientOrange: 'FB923C'
   };
 
   const styles = {
-    title: {
-      font: { name: 'Calibri', sz: 26, bold: true, color: { rgb: palette.white } },
-      fill: { fgColor: { rgb: palette.teal } },
-      alignment: { horizontal: "center", vertical: "center" }
+    mainTitle: {
+      font: { name: 'Calibri', sz: 32, bold: true, color: { rgb: palette.white } },
+      fill: { fgColor: { rgb: palette.primary } },
+      alignment: { horizontal: "center", vertical: "center" },
+      border: {
+        top: { style: "medium", color: { rgb: palette.white } },
+        bottom: { style: "medium", color: { rgb: palette.white } },
+        left: { style: "medium", color: { rgb: palette.white } },
+        right: { style: "medium", color: { rgb: palette.white } }
+      }
     },
-    subtitle: (color) => ({
-      font: { name: 'Calibri', sz: 14, bold: true, color: { rgb: palette.white } },
-      fill: { fgColor: { rgb: color } },
+    sectionTitle: {
+      font: { name: 'Calibri', sz: 18, bold: true, color: { rgb: palette.white } },
+      fill: { fgColor: { rgb: palette.secondary } },
       alignment: { horizontal: "center", vertical: "center" },
       border: {
         top: { style: "thin", color: { rgb: palette.white } },
@@ -648,103 +658,284 @@ const exportData = () => {
         left: { style: "thin", color: { rgb: palette.white } },
         right: { style: "thin", color: { rgb: palette.white } }
       }
-    }),
-    header: {
-      font: { name: 'Calibri', sz: 12, bold: true, color: { rgb: palette.white } },
-      fill: { fgColor: { rgb: palette.blue } },
-      alignment: { horizontal: "center", vertical: "center", wrapText: true },
-      border: { bottom: { style: "medium", color: { rgb: palette.darkGray } } }
     },
-    cell: {
-      font: { name: 'Calibri', sz: 11, color: { rgb: palette.darkGray } },
-      alignment: { vertical: "center", wrapText: true }
-    },
-    cellZebra: {
-      font: { name: 'Calibri', sz: 11, color: { rgb: palette.darkGray } },
-      fill: { fgColor: { rgb: palette.lightGray } },
-      alignment: { vertical: "center", wrapText: true }
-    },
-    summaryCard: {
-      font: { name: 'Calibri', sz: 14, bold: true, color: { rgb: palette.gray } },
-      fill: { fgColor: { rgb: palette.lightBlue } },
+    metricCard: {
+      font: { name: 'Calibri', sz: 14, bold: true, color: { rgb: palette.dark } },
+      fill: { fgColor: { rgb: palette.gradientBlue } },
       alignment: { horizontal: "center", vertical: "center" },
-      border: { bottom: { style: "thick", color: { rgb: palette.blue } } }
+      border: {
+        top: { style: "medium", color: { rgb: palette.primary } },
+        bottom: { style: "medium", color: { rgb: palette.primary } },
+        left: { style: "medium", color: { rgb: palette.primary } },
+        right: { style: "medium", color: { rgb: palette.primary } }
+      }
     },
-    summaryValue: {
-      font: { name: 'Calibri', sz: 28, bold: true, color: { rgb: palette.teal } },
-      alignment: { horizontal: "center", vertical: "center" }
+    metricValue: {
+      font: { name: 'Calibri', sz: 36, bold: true, color: { rgb: palette.primary } },
+      fill: { fgColor: { rgb: palette.light } },
+      alignment: { horizontal: "center", vertical: "center" },
+      border: {
+        top: { style: "thin", color: { rgb: palette.info } },
+        bottom: { style: "thin", color: { rgb: palette.info } },
+        left: { style: "thin", color: { rgb: palette.info } },
+        right: { style: "thin", color: { rgb: palette.info } }
+      }
+    },
+    tableHeader: {
+      font: { name: 'Calibri', sz: 12, bold: true, color: { rgb: palette.white } },
+      fill: { fgColor: { rgb: palette.info } },
+      alignment: { horizontal: "center", vertical: "center" },
+      border: {
+        top: { style: "thin", color: { rgb: palette.dark } },
+        bottom: { style: "medium", color: { rgb: palette.dark } },
+        left: { style: "thin", color: { rgb: palette.dark } },
+        right: { style: "thin", color: { rgb: palette.dark } }
+      }
+    },
+    tableCell: {
+      font: { name: 'Calibri', sz: 11, color: { rgb: palette.dark } },
+      fill: { fgColor: { rgb: palette.white } },
+      alignment: { vertical: "center", wrapText: true },
+      border: {
+        top: { style: "thin", color: { rgb: palette.light } },
+        bottom: { style: "thin", color: { rgb: palette.light } },
+        left: { style: "thin", color: { rgb: palette.light } },
+        right: { style: "thin", color: { rgb: palette.light } }
+      }
+    },
+    tableCellAlternate: {
+      font: { name: 'Calibri', sz: 11, color: { rgb: palette.dark } },
+      fill: { fgColor: { rgb: palette.light } },
+      alignment: { vertical: "center", wrapText: true },
+      border: {
+        top: { style: "thin", color: { rgb: 'E5E7EB' } },
+        bottom: { style: "thin", color: { rgb: 'E5E7EB' } },
+        left: { style: "thin", color: { rgb: 'E5E7EB' } },
+        right: { style: "thin", color: { rgb: 'E5E7EB' } }
+      }
+    },
+    highlight: {
+      font: { name: 'Calibri', sz: 12, bold: true, color: { rgb: palette.white } },
+      fill: { fgColor: { rgb: palette.accent } },
+      alignment: { horizontal: "center", vertical: "center" },
+      border: {
+        top: { style: "medium", color: { rgb: palette.accent } },
+        bottom: { style: "medium", color: { rgb: palette.accent } },
+        left: { style: "medium", color: { rgb: palette.accent } },
+        right: { style: "medium", color: { rgb: palette.accent } }
+      }
     }
   };
 
-  // --- Planilha de Resumo ---
-  const wsSummary = XLSX.utils.aoa_to_sheet([[]]);
-  wsSummary['!merges'] = [];
-
-  wsSummary['A1'] = { t: 's', v: 'Relatório Geral de Residências Terapêuticas', s: styles.title };
-  wsSummary['!merges'].push({ s: { r: 0, c: 0 }, e: { r: 1, c: 9 } });
-
+  const wsSummary = XLSX.utils.aoa_to_sheet([]);
+  
+  const summaryData = [];
+  
+  summaryData.push(['RESUMO EXECUTIVO - RESIDÊNCIAS TERAPÊUTICAS']);
+  summaryData.push([]);
+  summaryData.push(['Data de Geração:', new Date().toLocaleString('pt-BR')]);
+  summaryData.push([]);
+  
+  summaryData.push(['INDICADORES GERAIS']);
+  summaryData.push([]);
+  
   const totalHouses = allHouses.length;
   const totalResidents = allHouses.reduce((sum, house) => sum + (house.residents ? house.residents.length : (parseInt(house.numeroMoradores) || 0)), 0);
   const totalCapacity = allHouses.reduce((sum, house) => sum + (parseInt(house.vagasTotais) || 0), 0);
-  const occupancyRate = totalCapacity > 0 ? ((totalResidents / totalCapacity) * 100) : 0;
-
-  // --- Métricas Adicionais ---
-  const residentsByGender = allHouses.reduce((acc, house) => {
+  const occupancyRate = totalCapacity > 0 ? ((totalResidents / totalCapacity) * 100).toFixed(1) : 0;
+  const avgResidentsPerHouse = totalHouses > 0 ? (totalResidents / totalHouses).toFixed(1) : 0;
+  
+  summaryData.push(['Total de Residências', totalHouses]);
+  summaryData.push(['Total de Moradores', totalResidents]);
+  summaryData.push(['Capacidade Total (CNES)', totalCapacity]);
+  summaryData.push(['Taxa de Ocupação Geral', occupancyRate + '%']);
+  summaryData.push(['Média de Moradores por Casa', avgResidentsPerHouse]);
+  summaryData.push([]);
+  
+  summaryData.push(['DISTRIBUIÇÃO POR TIPO DE SRT']);
+  summaryData.push([]);
+  summaryData.push(['Tipo', 'Quantidade', 'Percentual']);
+  
+  const srtTypes = {};
+  allHouses.forEach(house => {
+    const type = house.tipo_do_srt || house.tipoSRT || 'Não informado';
+    srtTypes[type] = (srtTypes[type] || 0) + 1;
+  });
+  
+  Object.entries(srtTypes).forEach(([type, count]) => {
+    const percentage = ((count / totalHouses) * 100).toFixed(1);
+    summaryData.push([type, count, percentage + '%']);
+  });
+  
+  summaryData.push([]);
+  summaryData.push(['DISTRIBUIÇÃO POR MUNICÍPIO']);
+  summaryData.push([]);
+  summaryData.push(['Município', 'Residências', 'Moradores', 'Taxa de Ocupação']);
+  
+  const municipioStats = {};
+  allHouses.forEach(house => {
+    const municipio = house.municipio || 'Não informado';
+    if (!municipioStats[municipio]) {
+      municipioStats[municipio] = {
+        houses: 0,
+        residents: 0,
+        capacity: 0
+      };
+    }
+    municipioStats[municipio].houses++;
+    municipioStats[municipio].residents += house.residents ? house.residents.length : (parseInt(house.numeroMoradores) || 0);
+    municipioStats[municipio].capacity += parseInt(house.vagasTotais) || 0;
+  });
+  
+  Object.entries(municipioStats).forEach(([municipio, stats]) => {
+    const occupancy = stats.capacity > 0 ? ((stats.residents / stats.capacity) * 100).toFixed(1) : 0;
+    summaryData.push([municipio, stats.houses, stats.residents, occupancy + '%']);
+  });
+  
+  summaryData.push([]);
+  summaryData.push(['ANÁLISE DOS MORADORES']);
+  summaryData.push([]);
+  
+  const residentsByGender = {};
+  const ageGroups = {
+    '18-29 anos': 0,
+    '30-39 anos': 0,
+    '40-49 anos': 0,
+    '50-59 anos': 0,
+    '60+ anos': 0,
+    'Não informado': 0
+  };
+  
+  allHouses.forEach(house => {
     (house.residents || []).forEach(resident => {
       const gender = resident.sexo || 'Não informado';
-      acc[gender] = (acc[gender] || 0) + 1;
+      residentsByGender[gender] = (residentsByGender[gender] || 0) + 1;
+      
+      if (resident.dataNascimento) {
+        const birthDate = new Date(resident.dataNascimento);
+        const age = new Date().getFullYear() - birthDate.getFullYear();
+        
+        if (age < 30) ageGroups['18-29 anos']++;
+        else if (age < 40) ageGroups['30-39 anos']++;
+        else if (age < 50) ageGroups['40-49 anos']++;
+        else if (age < 60) ageGroups['50-59 anos']++;
+        else ageGroups['60+ anos']++;
+      } else {
+        ageGroups['Não informado']++;
+      }
     });
-    return acc;
-  }, {});
-
-  const srtTypes = allHouses.reduce((acc, house) => {
-    const type = house.tipo_do_srt || 'Não informado';
-    acc[type] = (acc[type] || 0) + 1;
-    return acc;
-  }, {});
-
-  // --- Layout do Resumo ---
-  wsSummary['B4'] = { t: 's', v: 'Total de Residências', s: styles.summaryCard };
-  wsSummary['B5'] = { t: 'n', v: totalHouses, s: styles.summaryValue };
-  wsSummary['!merges'].push({ s: { r: 3, c: 1 }, e: { r: 3, c: 2 } });
-  wsSummary['!merges'].push({ s: { r: 4, c: 1 }, e: { r: 4, c: 2 } });
-
-  wsSummary['E4'] = { t: 's', v: 'Total de Moradores', s: styles.summaryCard };
-  wsSummary['E5'] = { t: 'n', v: totalResidents, s: styles.summaryValue };
-  wsSummary['!merges'].push({ s: { r: 3, c: 4 }, e: { r: 3, c: 5 } });
-  wsSummary['!merges'].push({ s: { r: 4, c: 4 }, e: { r: 4, c: 5 } });
+  });
   
-  wsSummary['H4'] = { t: 's', v: 'Taxa de Ocupação', s: styles.summaryCard };
-  wsSummary['H5'] = { t: 's', v: occupancyRate.toFixed(1) + '%', s: styles.summaryValue };
-  wsSummary['!merges'].push({ s: { r: 3, c: 7 }, e: { r: 3, c: 8 } });
-  wsSummary['!merges'].push({ s: { r: 4, c: 7 }, e: { r: 4, c: 8 } });
-
-  // Tabela de Moradores por Gênero
-  wsSummary['B7'] = { t: 's', v: 'Moradores por Gênero', s: styles.subtitle(palette.sectionColors[0]) };
-  wsSummary['!merges'].push({ s: { r: 6, c: 1 }, e: { r: 6, c: 3 } });
-  let genderRow = 8;
-  for (const gender in residentsByGender) {
-    wsSummary[`B${genderRow}`] = { t: 's', v: gender, s: styles.cell };
-    wsSummary[`C${genderRow}`] = { t: 'n', v: residentsByGender[gender], s: styles.cell };
-    genderRow++;
+  summaryData.push(['Distribuição por Gênero']);
+  summaryData.push(['Gênero', 'Quantidade', 'Percentual']);
+  Object.entries(residentsByGender).forEach(([gender, count]) => {
+    const percentage = ((count / totalResidents) * 100).toFixed(1);
+    summaryData.push([gender, count, percentage + '%']);
+  });
+  
+  summaryData.push([]);
+  summaryData.push(['Distribuição por Faixa Etária']);
+  summaryData.push(['Faixa Etária', 'Quantidade', 'Percentual']);
+  Object.entries(ageGroups).forEach(([ageGroup, count]) => {
+    if (count > 0) {
+      const percentage = ((count / totalResidents) * 100).toFixed(1);
+      summaryData.push([ageGroup, count, percentage + '%']);
+    }
+  });
+  
+  summaryData.push([]);
+  summaryData.push(['TOP 10 RESIDÊNCIAS POR OCUPAÇÃO']);
+  summaryData.push([]);
+  summaryData.push(['CAPS Vinculado', 'Município', 'Moradores', 'Capacidade', 'Taxa de Ocupação']);
+  
+  const housesWithOccupancy = allHouses.map(house => {
+    const capacity = parseInt(house.vagasTotais) || 0;
+    const residents = house.residents ? house.residents.length : (parseInt(house.numeroMoradores) || 0);
+    const rate = capacity > 0 ? ((residents / capacity) * 100) : 0;
+    
+    return {
+      caps: house.nome_do_caps_em_que_o_srt_esta_vinculada || house.capsVinculado || '-',
+      municipio: house.municipio || '-',
+      residents,
+      capacity,
+      rate
+    };
+  }).sort((a, b) => b.rate - a.rate).slice(0, 10);
+  
+  housesWithOccupancy.forEach(house => {
+    summaryData.push([house.caps, house.municipio, house.residents, house.capacity, house.rate.toFixed(1) + '%']);
+  });
+  
+  XLSX.utils.sheet_add_aoa(wsSummary, summaryData, { origin: 'A1' });
+  
+  wsSummary['!merges'] = [
+    { s: { r: 0, c: 0 }, e: { r: 0, c: 4 } },
+    { s: { r: 4, c: 0 }, e: { r: 4, c: 4 } },
+    { s: { r: 13, c: 0 }, e: { r: 13, c: 4 } },
+    { s: { r: 21, c: 0 }, e: { r: 21, c: 4 } },
+    { s: { r: 28, c: 0 }, e: { r: 28, c: 4 } },
+    { s: { r: 34, c: 0 }, e: { r: 34, c: 4 } },
+    { s: { r: 43, c: 0 }, e: { r: 43, c: 4 } }
+  ];
+  
+  wsSummary['!cols'] = [
+    { wch: 30 },
+    { wch: 20 },
+    { wch: 20 },
+    { wch: 20 },
+    { wch: 20 }
+  ];
+  
+  wsSummary['!rows'] = [
+    { hpt: 50 },
+    { hpt: 20 },
+    { hpt: 25 },
+    { hpt: 20 },
+    { hpt: 35 },
+    { hpt: 20 },
+    { hpt: 25 },
+    { hpt: 25 },
+    { hpt: 25 },
+    { hpt: 25 },
+    { hpt: 25 },
+    { hpt: 20 },
+    { hpt: 25 },
+    { hpt: 35 },
+    { hpt: 20 },
+    { hpt: 25 }
+  ];
+  
+  if (wsSummary['A1']) wsSummary['A1'].s = styles.mainTitle;
+  if (wsSummary['A5']) wsSummary['A5'].s = styles.sectionTitle;
+  if (wsSummary['A14']) wsSummary['A14'].s = styles.sectionTitle;
+  if (wsSummary['A22']) wsSummary['A22'].s = styles.sectionTitle;
+  if (wsSummary['A29']) wsSummary['A29'].s = styles.sectionTitle;
+  if (wsSummary['A35']) wsSummary['A35'].s = styles.sectionTitle;
+  if (wsSummary['A44']) wsSummary['A44'].s = styles.sectionTitle;
+  
+  for (let i = 15; i <= 17; i++) {
+    for (let j = 0; j <= 2; j++) {
+      const cellRef = XLSX.utils.encode_cell({ r: i - 1, c: j });
+      if (wsSummary[cellRef]) wsSummary[cellRef].s = styles.tableHeader;
+    }
   }
-
-  // Tabela de Tipos de SRT
-  wsSummary['E7'] = { t: 's', v: 'Tipos de SRT', s: styles.subtitle(palette.sectionColors[1]) };
-  wsSummary['!merges'].push({ s: { r: 6, c: 4 }, e: { r: 6, c: 6 } });
-  let srtRow = 8;
-  for (const type in srtTypes) {
-    wsSummary[`E${srtRow}`] = { t: 's', v: type, s: styles.cell };
-    wsSummary[`F${srtRow}`] = { t: 'n', v: srtTypes[type], s: styles.cell };
-    srtRow++;
+  
+  for (let i = 23; i <= 25; i++) {
+    for (let j = 0; j <= 3; j++) {
+      const cellRef = XLSX.utils.encode_cell({ r: i - 1, c: j });
+      if (wsSummary[cellRef]) wsSummary[cellRef].s = styles.tableHeader;
+    }
   }
+  
+  for (let i = 7; i <= 11; i++) {
+    const labelCell = XLSX.utils.encode_cell({ r: i - 1, c: 0 });
+    const valueCell = XLSX.utils.encode_cell({ r: i - 1, c: 1 });
+    if (wsSummary[labelCell]) wsSummary[labelCell].s = styles.metricCard;
+    if (wsSummary[valueCell]) wsSummary[valueCell].s = styles.metricValue;
+  }
+  
+  XLSX.utils.book_append_sheet(wb, wsSummary, 'Resumo Executivo');
 
-  wsSummary['!cols'] = [null, {wch: 20}, {wch: 15}, null, {wch: 20}, {wch: 15}, null, {wch: 20}, {wch: 20}];
-  wsSummary['!rows'] = [{hpt: 50}, null, {hpt: 25}, {hpt: 35}, {hpt: 50}, {hpt: 20}, {hpt: 30}];
-
-  XLSX.utils.book_append_sheet(wb, wsSummary, 'Resumo');
-
-  // --- Planilha de Residências ---
   const residenceSheetData = [];
   const residenceHeaders = [];
   const headerSections = [];
@@ -789,13 +980,28 @@ const exportData = () => {
   wsResidences['!merges'] = [];
   XLSX.utils.sheet_add_aoa(wsResidences, sheetData, {origin: 'A2'});
 
+  const sectionColors = [palette.info, palette.accent, palette.secondary, palette.warning];
   let startCol = 0;
   headerSections.forEach((section, i) => {
       if(section.count > 0) {
-          const color = palette.sectionColors[i % palette.sectionColors.length];
+          const color = sectionColors[i % sectionColors.length];
           wsResidences['!merges'].push({ s: { r: 0, c: startCol }, e: { r: 0, c: startCol + section.count - 1 } });
           const cellRef = XLSX.utils.encode_cell({ r: 0, c: startCol });
-          wsResidences[cellRef] = { t: 's', v: section.name, s: styles.subtitle(color) };
+          wsResidences[cellRef] = { 
+            t: 's', 
+            v: section.name, 
+            s: {
+              font: { name: 'Calibri', sz: 14, bold: true, color: { rgb: palette.white } },
+              fill: { fgColor: { rgb: color } },
+              alignment: { horizontal: "center", vertical: "center" },
+              border: {
+                top: { style: "medium", color: { rgb: palette.white } },
+                bottom: { style: "medium", color: { rgb: palette.white } },
+                left: { style: "medium", color: { rgb: palette.white } },
+                right: { style: "medium", color: { rgb: palette.white } }
+              }
+            }
+          };
           startCol += section.count;
       }
   });
@@ -805,22 +1011,21 @@ const exportData = () => {
 
   for (let C = 0; C < residenceHeaders.length; C++) {
       const cellRef = XLSX.utils.encode_cell({ r: 1, c: C });
-      if (wsResidences[cellRef]) wsResidences[cellRef].s = styles.header;
+      if (wsResidences[cellRef]) wsResidences[cellRef].s = styles.tableHeader;
   }
 
   for (let R = 2; R < sheetData.length + 1; R++) {
       for (let C = 0; C < residenceHeaders.length; C++) {
           const cellRef = XLSX.utils.encode_cell({ r: R, c: C });
           if (wsResidences[cellRef]) {
-              wsResidences[cellRef].s = (R % 2 === 0) ? styles.cell : styles.cellZebra;
+              wsResidences[cellRef].s = (R % 2 === 0) ? styles.tableCell : styles.tableCellAlternate;
           }
       }
   }
-  wsResidences['!rows'] = [{hpt: 30}, {hpt: 40}];
+  wsResidences['!rows'] = [{hpt: 35}, {hpt: 40}];
 
   XLSX.utils.book_append_sheet(wb, wsResidences, 'Residências');
 
-  // --- Planilha de Moradores ---
   const residentsSheetData = [];
   const residentHeaders = ['CNES do CAPS', ...formConfig.residentFields.map(f => f.label)];
 
@@ -850,14 +1055,14 @@ const exportData = () => {
     const range = XLSX.utils.decode_range(wsResidents['!ref']);
     for (let C = range.s.c; C <= range.e.c; ++C) {
         const address = XLSX.utils.encode_col(C) + "1";
-        if(wsResidents[address]) wsResidents[address].s = styles.header;
+        if(wsResidents[address]) wsResidents[address].s = styles.tableHeader;
     }
 
     for (let R = range.s.r + 1; R <= range.e.r; ++R) {
         for (let C = range.s.c; C <= range.e.c; ++C) {
             const cell_address = XLSX.utils.encode_cell({c:C, r:R});
             if(wsResidents[cell_address]) {
-                wsResidents[cell_address].s = (R % 2 !== 0) ? styles.cell : styles.cellZebra;
+                wsResidents[cell_address].s = (R % 2 !== 0) ? styles.tableCell : styles.tableCellAlternate;
             }
         }
     }
