@@ -677,7 +677,7 @@ const exportData = () => {
   };
 
   // --- Planilha de Resumo ---
-  const wsSummary = XLSX.utils.aoa_to_sheet([[]]);
+  """  const wsSummary = XLSX.utils.aoa_to_sheet([[]]);
   wsSummary['!merges'] = [];
 
   wsSummary['A1'] = { t: 's', v: 'Relatório Geral de Residências Terapêuticas', s: styles.title };
@@ -688,6 +688,22 @@ const exportData = () => {
   const totalCapacity = allHouses.reduce((sum, house) => sum + (parseInt(house.vagasTotais) || 0), 0);
   const occupancyRate = totalCapacity > 0 ? ((totalResidents / totalCapacity) * 100) : 0;
 
+  // --- Métricas Adicionais ---
+  const residentsByGender = allHouses.reduce((acc, house) => {
+    (house.residents || []).forEach(resident => {
+      const gender = resident.sexo || 'Não informado';
+      acc[gender] = (acc[gender] || 0) + 1;
+    });
+    return acc;
+  }, {});
+
+  const srtTypes = allHouses.reduce((acc, house) => {
+    const type = house.tipo_do_srt || 'Não informado';
+    acc[type] = (acc[type] || 0) + 1;
+    return acc;
+  }, {});
+
+  // --- Layout do Resumo ---
   wsSummary['B4'] = { t: 's', v: 'Total de Residências', s: styles.summaryCard };
   wsSummary['B5'] = { t: 'n', v: totalHouses, s: styles.summaryValue };
   wsSummary['!merges'].push({ s: { r: 3, c: 1 }, e: { r: 3, c: 2 } });
@@ -699,14 +715,34 @@ const exportData = () => {
   wsSummary['!merges'].push({ s: { r: 4, c: 4 }, e: { r: 4, c: 5 } });
   
   wsSummary['H4'] = { t: 's', v: 'Taxa de Ocupação', s: styles.summaryCard };
-  wsSummary['H5'] = { t: 'n', v: occupancyRate.toFixed(1) + '%', s: styles.summaryValue };
+  wsSummary['H5'] = { t: 's', v: occupancyRate.toFixed(1) + '%', s: styles.summaryValue };
   wsSummary['!merges'].push({ s: { r: 3, c: 7 }, e: { r: 3, c: 8 } });
   wsSummary['!merges'].push({ s: { r: 4, c: 7 }, e: { r: 4, c: 8 } });
 
-  wsSummary['!cols'] = [null, {wch: 20}, {wch: 20}, null, {wch: 20}, {wch: 20}, null, {wch: 20}, {wch: 20}];
-  wsSummary['!rows'] = [{hpt: 50}, null, {hpt: 25}, {hpt: 35}, {hpt: 50}];
+  // Tabela de Moradores por Gênero
+  wsSummary['B7'] = { t: 's', v: 'Moradores por Gênero', s: styles.subtitle(palette.sectionColors[0]) };
+  wsSummary['!merges'].push({ s: { r: 6, c: 1 }, e: { r: 6, c: 3 } });
+  let genderRow = 8;
+  for (const gender in residentsByGender) {
+    wsSummary[`B${genderRow}`] = { t: 's', v: gender, s: styles.cell };
+    wsSummary[`C${genderRow}`] = { t: 'n', v: residentsByGender[gender], s: styles.cell };
+    genderRow++;
+  }
 
-  XLSX.utils.book_append_sheet(wb, wsSummary, 'Resumo');
+  // Tabela de Tipos de SRT
+  wsSummary['E7'] = { t: 's', v: 'Tipos de SRT', s: styles.subtitle(palette.sectionColors[1]) };
+  wsSummary['!merges'].push({ s: { r: 6, c: 4 }, e: { r: 6, c: 6 } });
+  let srtRow = 8;
+  for (const type in srtTypes) {
+    wsSummary[`E${srtRow}`] = { t: 's', v: type, s: styles.cell };
+    wsSummary[`F${srtRow}`] = { t: 'n', v: srtTypes[type], s: styles.cell };
+    srtRow++;
+  }
+
+  wsSummary['!cols'] = [null, {wch: 20}, {wch: 15}, null, {wch: 20}, {wch: 15}, null, {wch: 20}, {wch: 20}];
+  wsSummary['!rows'] = [{hpt: 50}, null, {hpt: 25}, {hpt: 35}, {hpt: 50}, {hpt: 20}, {hpt: 30}];
+
+  XLSX.utils.book_append_sheet(wb, wsSummary, 'Resumo');""
 
   // --- Planilha de Residências ---
   const residenceSheetData = [];
