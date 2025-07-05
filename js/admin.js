@@ -662,7 +662,7 @@ const exportData = () => {
     metricCard: {
       font: { name: 'Calibri', sz: 14, bold: true, color: { rgb: palette.dark } },
       fill: { fgColor: { rgb: palette.gradientBlue } },
-      alignment: { horizontal: "center", vertical: "center" },
+      alignment: { horizontal: "left", vertical: "center" },
       border: {
         top: { style: "medium", color: { rgb: palette.primary } },
         bottom: { style: "medium", color: { rgb: palette.primary } },
@@ -874,8 +874,9 @@ const exportData = () => {
     { s: { r: 13, c: 0 }, e: { r: 13, c: 4 } },
     { s: { r: 21, c: 0 }, e: { r: 21, c: 4 } },
     { s: { r: 28, c: 0 }, e: { r: 28, c: 4 } },
-    { s: { r: 34, c: 0 }, e: { r: 34, c: 4 } },
-    { s: { r: 43, c: 0 }, e: { r: 43, c: 4 } }
+    { s: { r: 34, c: 0 }, e: { r: 34, c: 2 } },
+    { s: { r: 40, c: 0 }, e: { r: 40, c: 2 } },
+    { s: { r: 46, c: 0 }, e: { r: 46, c: 4 } }
   ];
   
   wsSummary['!cols'] = [
@@ -900,38 +901,37 @@ const exportData = () => {
     { hpt: 25 },
     { hpt: 20 },
     { hpt: 25 },
-    { hpt: 35 },
-    { hpt: 20 },
-    { hpt: 25 }
+    { hpt: 35 }
   ];
   
-  if (wsSummary['A1']) wsSummary['A1'].s = styles.mainTitle;
-  if (wsSummary['A5']) wsSummary['A5'].s = styles.sectionTitle;
-  if (wsSummary['A14']) wsSummary['A14'].s = styles.sectionTitle;
-  if (wsSummary['A22']) wsSummary['A22'].s = styles.sectionTitle;
-  if (wsSummary['A29']) wsSummary['A29'].s = styles.sectionTitle;
-  if (wsSummary['A35']) wsSummary['A35'].s = styles.sectionTitle;
-  if (wsSummary['A44']) wsSummary['A44'].s = styles.sectionTitle;
-  
-  for (let i = 15; i <= 17; i++) {
-    for (let j = 0; j <= 2; j++) {
-      const cellRef = XLSX.utils.encode_cell({ r: i - 1, c: j });
-      if (wsSummary[cellRef]) wsSummary[cellRef].s = styles.tableHeader;
+  const range = XLSX.utils.decode_range(wsSummary['!ref']);
+  for (let R = range.s.r; R <= range.e.r; ++R) {
+    for (let C = range.s.c; C <= range.e.c; ++C) {
+      const cell_address = XLSX.utils.encode_cell({r: R, c: C});
+      if (!wsSummary[cell_address]) continue;
+      
+      if (R === 0) {
+        wsSummary[cell_address].s = styles.mainTitle;
+      } else if ([4, 13, 21, 28, 34, 40, 46].includes(R)) {
+        wsSummary[cell_address].s = styles.sectionTitle;
+      } else if ([15, 23, 35, 41, 48].includes(R)) {
+        wsSummary[cell_address].s = styles.tableHeader;
+      } else if ([7, 8, 9, 10, 11].includes(R) && C === 0) {
+        wsSummary[cell_address].s = styles.metricCard;
+      } else if ([7, 8, 9, 10, 11].includes(R) && C === 1) {
+        wsSummary[cell_address].s = styles.metricValue;
+      } else if (R > 15 && R < 21) {
+        wsSummary[cell_address].s = R % 2 === 0 ? styles.tableCell : styles.tableCellAlternate;
+      } else if (R > 23 && R < 28) {
+        wsSummary[cell_address].s = R % 2 === 0 ? styles.tableCell : styles.tableCellAlternate;
+      } else if (R > 35 && R < 40) {
+        wsSummary[cell_address].s = R % 2 === 0 ? styles.tableCell : styles.tableCellAlternate;
+      } else if (R > 41 && R < 46) {
+        wsSummary[cell_address].s = R % 2 === 0 ? styles.tableCell : styles.tableCellAlternate;
+      } else if (R > 48) {
+        wsSummary[cell_address].s = R % 2 === 0 ? styles.tableCell : styles.tableCellAlternate;
+      }
     }
-  }
-  
-  for (let i = 23; i <= 25; i++) {
-    for (let j = 0; j <= 3; j++) {
-      const cellRef = XLSX.utils.encode_cell({ r: i - 1, c: j });
-      if (wsSummary[cellRef]) wsSummary[cellRef].s = styles.tableHeader;
-    }
-  }
-  
-  for (let i = 7; i <= 11; i++) {
-    const labelCell = XLSX.utils.encode_cell({ r: i - 1, c: 0 });
-    const valueCell = XLSX.utils.encode_cell({ r: i - 1, c: 1 });
-    if (wsSummary[labelCell]) wsSummary[labelCell].s = styles.metricCard;
-    if (wsSummary[valueCell]) wsSummary[valueCell].s = styles.metricValue;
   }
   
   XLSX.utils.book_append_sheet(wb, wsSummary, 'Resumo Executivo');
@@ -1009,19 +1009,20 @@ const exportData = () => {
   const colWidths = residenceHeaders.map(header => ({ wch: Math.max(header.length, 22) }));
   wsResidences['!cols'] = colWidths;
 
-  for (let C = 0; C < residenceHeaders.length; C++) {
-      const cellRef = XLSX.utils.encode_cell({ r: 1, c: C });
-      if (wsResidences[cellRef]) wsResidences[cellRef].s = styles.tableHeader;
-  }
-
-  for (let R = 2; R < sheetData.length + 1; R++) {
-      for (let C = 0; C < residenceHeaders.length; C++) {
-          const cellRef = XLSX.utils.encode_cell({ r: R, c: C });
-          if (wsResidences[cellRef]) {
-              wsResidences[cellRef].s = (R % 2 === 0) ? styles.tableCell : styles.tableCellAlternate;
-          }
+  const residenceRange = XLSX.utils.decode_range(wsResidences['!ref'] || 'A1');
+  for (let R = 1; R <= residenceRange.e.r; ++R) {
+    for (let C = 0; C <= residenceRange.e.c; ++C) {
+      const cell_address = XLSX.utils.encode_cell({r: R, c: C});
+      if (!wsResidences[cell_address]) continue;
+      
+      if (R === 1) {
+        wsResidences[cell_address].s = styles.tableHeader;
+      } else {
+        wsResidences[cell_address].s = R % 2 === 0 ? styles.tableCell : styles.tableCellAlternate;
       }
+    }
   }
+  
   wsResidences['!rows'] = [{hpt: 35}, {hpt: 40}];
 
   XLSX.utils.book_append_sheet(wb, wsResidences, 'Residências');
@@ -1052,27 +1053,32 @@ const exportData = () => {
     const residentColWidths = residentHeaders.map(header => ({ wch: Math.max(header.length, 25) }));
     wsResidents['!cols'] = residentColWidths;
 
-    const range = XLSX.utils.decode_range(wsResidents['!ref']);
-    for (let C = range.s.c; C <= range.e.c; ++C) {
-        const address = XLSX.utils.encode_col(C) + "1";
-        if(wsResidents[address]) wsResidents[address].s = styles.tableHeader;
-    }
-
-    for (let R = range.s.r + 1; R <= range.e.r; ++R) {
-        for (let C = range.s.c; C <= range.e.c; ++C) {
-            const cell_address = XLSX.utils.encode_cell({c:C, r:R});
-            if(wsResidents[cell_address]) {
-                wsResidents[cell_address].s = (R % 2 !== 0) ? styles.tableCell : styles.tableCellAlternate;
-            }
+    const residentRange = XLSX.utils.decode_range(wsResidents['!ref']);
+    for (let R = residentRange.s.r; R <= residentRange.e.r; ++R) {
+      for (let C = residentRange.s.c; C <= residentRange.e.c; ++C) {
+        const cell_address = XLSX.utils.encode_cell({c:C, r:R});
+        if (!wsResidents[cell_address]) continue;
+        
+        if (R === 0) {
+          wsResidents[cell_address].s = styles.tableHeader;
+        } else {
+          wsResidents[cell_address].s = R % 2 !== 0 ? styles.tableCell : styles.tableCellAlternate;
         }
+      }
     }
+    
     wsResidents['!rows'] = [{hpt: 40}];
 
     XLSX.utils.book_append_sheet(wb, wsResidents, 'Moradores');
   }
 
   const fileName = `Relatorio_SRT_${new Date().toLocaleDateString('pt-BR').replace(/\//g, '-')}.xlsx`;
-  XLSX.writeFile(wb, fileName);
+  XLSX.writeFile(wb, fileName, {
+    bookType: 'xlsx',
+    bookSST: false,
+    type: 'binary',
+    cellStyles: true
+  });
   
   showToast('Relatório exportado com sucesso!');
 };
