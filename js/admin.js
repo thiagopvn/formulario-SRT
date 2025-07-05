@@ -786,12 +786,12 @@ const exportData = () => {
 
   // --- Planilha de Moradores ---
   const residentsSheetData = [];
-  const residentHeaders = ['Residência', ...formConfig.residentFields.map(f => f.label)];
+  const residentHeaders = ['CNES do CAPS', ...formConfig.residentFields.map(f => f.label)];
 
   allHouses.forEach(house => {
     if (house.residents && house.residents.length > 0) {
       house.residents.forEach(resident => {
-        const row = { 'Residência': house.nomeResidencia || house.nome_do_caps_em_que_o_srt_esta_vinculada || house.id };
+        const row = { 'CNES do CAPS': house.cnesCapsVinculada || house.id };
         formConfig.residentFields.forEach(field => {
           const value = resident[field.key];
           if (field.type === 'date' && value) {
