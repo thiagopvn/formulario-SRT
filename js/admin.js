@@ -566,7 +566,7 @@ const updateChart = () => {
     const rate = total > 0 ? ((occupied / total) * 100).toFixed(1) : 0;
     
     return {
-      name: house.nomeResidencia || house.capsVinculado || 'Sem nome',
+      name: house.nome_do_caps_em_que_o_srt_esta_vinculada || house.nomeResidencia || 'Sem nome',
       rate: parseFloat(rate)
     };
   });
@@ -1123,7 +1123,7 @@ const generateOccupancyReport = (houses) => {
     const rate = total > 0 ? ((occupied / total) * 100).toFixed(1) : 0;
     
     return {
-      name: house.nomeResidencia || house.capsVinculado || 'Sem nome',
+      name: house.nome_do_caps_em_que_o_srt_esta_vinculada || house.nomeResidencia || 'Sem nome',
       total,
       occupied,
       rate: parseFloat(rate)
@@ -1165,7 +1165,7 @@ const generateResidentsReport = (houses) => {
   const allResidents = houses.flatMap(house => 
     (house.residents || []).map(resident => ({
       ...resident,
-      houseName: house.nomeResidencia || house.capsVinculado || 'Sem nome'
+      houseName: house.nome_do_caps_em_que_o_srt_esta_vinculada || house.nomeResidencia || 'Sem nome'
     }))
   );
   
