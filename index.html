@@ -393,6 +393,10 @@
                 <div class="w-8 h-8 bg-gray-300 dark:bg-gray-600 text-gray-600 dark:text-gray-400 rounded-full flex items-center justify-center text-sm font-bold">5</div>
                 <span class="text-sm font-medium text-gray-500 dark:text-gray-400">Moradores</span>
               </div>
+              <div class="step-indicator flex items-center gap-2 whitespace-nowrap" data-step="6">
+                <div class="w-8 h-8 bg-gray-300 dark:bg-gray-600 text-gray-600 dark:text-gray-400 rounded-full flex items-center justify-center text-sm font-bold">6</div>
+                <span class="text-sm font-medium text-gray-500 dark:text-gray-400">Observações</span>
+              </div>
             </div>
           </div>
         </div>
@@ -490,6 +494,22 @@
                 </button>
               </div>
               <div id="residentsContainer"></div>
+            </div>
+          </div>
+
+          <div id="step6" class="form-section">
+            <div class="mb-8">
+              <h3 class="text-xl font-bold text-gray-800 dark:text-white mb-2">Observações</h3>
+              <p class="text-gray-600 dark:text-gray-400">Gostaria de acrescentar alguma informação sobre o formulário do SRT?</p>
+            </div>
+            <div class="form-field">
+                <div class="floating-label">
+                    <textarea id="observacao" name="observacao" maxlength="1000" class="w-full px-4 py-3 bg-gray-100 dark:bg-gray-700 border-0 rounded-xl focus:ring-2 focus:ring-blue-500 transition-all resize-none" placeholder=" "></textarea>
+                    <label for="observacao">Digite aqui...</label>
+                </div>
+                <div class="text-right text-sm text-gray-500 dark:text-gray-400 mt-1">
+                    <span id="char-count">0</span> / 1000
+                </div>
             </div>
           </div>
 

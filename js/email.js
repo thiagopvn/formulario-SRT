@@ -651,6 +651,18 @@ generateCapacitySection(data) {
             ${this.generateCapacitySection(data)}
             ${caregiversSection}
             ${residentsSection}
+
+            ${data.observacao ? `
+            <div class="section">
+              <div class="section-header">
+                <div class="section-icon">📝</div>
+                <h2 class="section-title">Observações</h2>
+              </div>
+              <div class="data-row">
+                <div class="data-value" style="white-space: pre-wrap;">${data.observacao}</div>
+              </div>
+            </div>
+            ` : ''}
             
             ${data.createdAt ? `
             <div class="info-box">

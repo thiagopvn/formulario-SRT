@@ -12,7 +12,7 @@ firebase.initializeApp(firebaseConfig);
 const db = firebase.firestore();
 
 let currentStep = 1;
-let totalSteps = 5;
+let totalSteps = 6;
 let formConfig = null;
 let residents = [];
 
@@ -266,6 +266,14 @@ const setupEventListeners = () => {
   document.getElementById('clearBtn').addEventListener('click', clearForm);
   document.getElementById('addResidentBtn').addEventListener('click', addResident);
   
+  const observacaoTextarea = document.getElementById('observacao');
+  const charCount = document.getElementById('char-count');
+
+  observacaoTextarea.addEventListener('input', () => {
+      const count = observacaoTextarea.value.length;
+      charCount.textContent = count;
+  });
+  
   document.addEventListener('change', (e) => {
     if (e.target.name === 'vagasTotais' || e.target.name === 'vagasOcupadas') {
       calculateCapacityMetrics();
@@ -507,6 +515,8 @@ const collectFormData = () => {
   formData.residents = (formData.residents || []).filter(resident => 
     resident && Object.values(resident).some(value => value && value.trim())
   );
+
+  formData.observacao = document.getElementById('observacao').value;
   
   return formData;
 };
