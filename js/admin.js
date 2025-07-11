@@ -670,6 +670,20 @@ const generateHouseDetailsHTML = (house) => {
     html += '</div></div>';
   }
 
+  if (house.observacao) {
+    html += `
+      <div class="bg-gray-50 dark:bg-gray-700 rounded-xl p-6">
+        <div class="flex items-center gap-3 mb-4">
+          <span class="text-2xl">📝</span>
+          <h3 class="text-lg font-semibold text-gray-800 dark:text-white">Observações</h3>
+        </div>
+        <div class="bg-white dark:bg-gray-800 rounded-lg p-4">
+          <div class="text-gray-900 dark:text-white whitespace-pre-wrap">${formatValue(house.observacao)}</div>
+        </div>
+      </div>
+    `;
+  }
+
   const createdAt = house.createdAt;
   if (createdAt) {
     html += `
@@ -1172,7 +1186,8 @@ const exportData = () => {
     ...formConfig.municipio, 
     ...formConfig.general, 
     ...formConfig.residence, 
-    ...formConfig.caregivers
+    ...formConfig.caregivers,
+    { key: 'observacao', label: 'Observações', type: 'textarea', required: false }
   ];
 
   const sections = {
