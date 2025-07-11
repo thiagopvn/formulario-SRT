@@ -1,10 +1,13 @@
 let currentStep = 1;
 let steps;
+let submitButton;
 
 function showStep(step) {
     steps.forEach((s, i) => {
         s.style.display = (i + 1 === step) ? 'block' : 'none';
     });
+    // Habilita ou desabilita o botão de envio
+    submitButton.disabled = (step !== 5);
 }
 
 function validateStep(step) {
@@ -39,6 +42,7 @@ function prevStep() {
 
 document.addEventListener('DOMContentLoaded', () => {
     steps = document.querySelectorAll('.form-step');
+    submitButton = document.querySelector('button[type="submit"]');
     showStep(currentStep);
 
     document.getElementById('add-morador').addEventListener('click', () => {
@@ -66,6 +70,10 @@ document.addEventListener('DOMContentLoaded', () => {
 
     document.getElementById('form-usuario').addEventListener('submit', e => {
         e.preventDefault();
+
+        if (!validateStep(currentStep)) {
+            return;
+        }
 
         const comentarios = document.getElementById('comentarios').value;
         // Lógica para enviar o formulário, incluindo os comentários
