@@ -1,5 +1,5 @@
 let currentStep = 1;
-const steps = document.querySelectorAll('.form-step');
+let steps;
 
 function showStep(step) {
     steps.forEach((s, i) => {
@@ -22,6 +22,7 @@ function prevStep() {
 }
 
 document.addEventListener('DOMContentLoaded', () => {
+    steps = document.querySelectorAll('.form-step');
     showStep(currentStep);
 
     document.getElementById('add-morador').addEventListener('click', () => {
