@@ -7,7 +7,23 @@ function showStep(step) {
     });
 }
 
+function validateStep(step) {
+    const currentStepFields = document.querySelectorAll(`#step-${step} [required]`);
+    for (const field of currentStepFields) {
+        if (!field.value.trim()) {
+            alert('Por favor, preencha todos os campos obrigatórios.');
+            field.focus();
+            return false;
+        }
+    }
+    return true;
+}
+
 function nextStep() {
+    if (!validateStep(currentStep)) {
+        return; // Para a execução se a validação falhar
+    }
+
     if (currentStep < 5) {
         currentStep++;
         showStep(currentStep);
