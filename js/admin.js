@@ -1409,11 +1409,17 @@ const displayFormConfiguration = () => {
     fields.forEach((field, index) => {
       const fieldDiv = document.createElement('div');
       fieldDiv.className = 'bg-gray-50 dark:bg-gray-700 rounded-lg p-3 flex items-center justify-between';
+      fieldDiv.dataset.id = field.key;
       
       fieldDiv.innerHTML = `
-        <div>
-          <div class="font-medium text-gray-800 dark:text-white">${field.label}</div>
-          <div class="text-sm text-gray-500 dark:text-gray-400">${field.type} ${field.required ? '(obrigatório)' : ''}</div>
+        <div class="flex items-center gap-3">
+          <svg class="w-5 h-5 text-gray-400 cursor-move" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16" />
+          </svg>
+          <div>
+            <div class="font-medium text-gray-800 dark:text-white">${field.label}</div>
+            <div class="text-sm text-gray-500 dark:text-gray-400">${field.type} ${field.required ? '(obrigatório)' : ''}</div>
+          </div>
         </div>
         <div class="flex gap-2">
           <button onclick="editField('${section}', ${index})" class="text-blue-600 hover:text-blue-800 dark:text-blue-400">
@@ -1430,6 +1436,28 @@ const displayFormConfiguration = () => {
       `;
       
       container.appendChild(fieldDiv);
+    });
+    
+    new Sortable(container, {
+      animation: 150,
+      handle: '.cursor-move',
+      onEnd: async (evt) => {
+        const newOrder = Array.from(evt.to.children).map(item => {
+          const fieldKey = item.dataset.id;
+          return formConfig[section].find(f => f.key === fieldKey);
+        });
+        
+        formConfig[section] = newOrder;
+        
+        try {
+          await db.collection('config').doc('srt').set(formConfig);
+          showToast('Ordem dos campos atualizada!', 'success');
+          displayFormConfiguration(); // Re-render to update indexes
+        } catch (error) {
+          console.error('Erro ao salvar nova ordem:', error);
+          showToast('Erro ao salvar a nova ordem dos campos.', 'error');
+        }
+      }
     });
     
     const sectionElement = document.querySelector(`[data-section="${section}"]`);
