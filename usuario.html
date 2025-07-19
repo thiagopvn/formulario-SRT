@@ -1,95 +1,236 @@
 <!DOCTYPE html>
 <html lang="pt-BR">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Formulário de Cadastro - SRT</title>
-    <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css">
-    <link rel="stylesheet" href="css/style.css">
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Gerenciamento de Usuários - SRT</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script src="https://unpkg.com/aos@2.3.1/dist/aos.js"></script>
+  <link href="https://unpkg.com/aos@2.3.1/dist/aos.css" rel="stylesheet">
+  <script src="https://cdn.jsdelivr.net/particles.js/2.0.0/particles.min.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-auth-compat.js"></script>
+  <script>
+    tailwind.config = {
+      darkMode: 'class',
+      theme: {
+        extend: {
+          animation: {
+            'float': 'float 20s ease-in-out infinite',
+            'gradient': 'gradient 15s ease infinite',
+            'slide-left': 'slideLeft 0.3s ease-out',
+            'slide-right': 'slideRight 0.3s ease-out',
+            'fade-in': 'fadeIn 0.5s ease-out',
+            'scale-in': 'scaleIn 0.3s ease-out',
+            'pulse-glow': 'pulseGlow 2s ease-in-out infinite',
+            'shake': 'shake 0.5s cubic-bezier(.36,.07,.19,.97) both',
+          },
+          keyframes: {
+            float: {
+              '0%, 100%': { transform: 'translateY(0px)' },
+              '50%': { transform: 'translateY(-20px)' },
+            },
+            gradient: {
+              '0%, 100%': { backgroundPosition: '0% 50%' },
+              '50%': { backgroundPosition: '100% 50%' },
+            },
+            slideLeft: {
+              '0%': { transform: 'translateX(20px)', opacity: '0' },
+              '100%': { transform: 'translateX(0)', opacity: '1' },
+            },
+            slideRight: {
+              '0%': { transform: 'translateX(-20px)', opacity: '0' },
+              '100%': { transform: 'translateX(0)', opacity: '1' },
+            },
+            fadeIn: {
+              '0%': { opacity: '0' },
+              '100%': { opacity: '1' },
+            },
+            scaleIn: {
+              '0%': { transform: 'scale(0.9)', opacity: '0' },
+              '100%': { transform: 'scale(1)', opacity: '1' },
+            },
+            pulseGlow: {
+              '0%, 100%': { boxShadow: '0 0 20px rgba(59, 130, 246, 0.5)' },
+              '50%': { boxShadow: '0 0 40px rgba(59, 130, 246, 0.8)' },
+            },
+            shake: {
+              '10%, 90%': { transform: 'translate3d(-1px, 0, 0)' },
+              '20%, 80%': { transform: 'translate3d(2px, 0, 0)' },
+              '30%, 50%, 70%': { transform: 'translate3d(-4px, 0, 0)' },
+              '40%, 60%': { transform: 'translate3d(4px, 0, 0)' },
+            },
+          },
+        },
+      },
+    }
+  </script>
+  <link rel="stylesheet" href="css/style.css">
 </head>
-<body>
-    <div class="container mt-5">
-        <div class="card">
-            <div class="card-header">
-                <h1 class="text-center">Formulário de Cadastro</h1>
-            </div>
-            <div class="card-body">
-                <form id="form-usuario">
-                    <div id="step-1" class="form-step">
-                        <h2 class="text-center">Informações Pessoais</h2>
-                        <div class="form-group">
-                            <label for="nome">Nome Completo</label>
-                            <input type="text" class="form-control" id="nome" required>
-                        </div>
-                        <div class="form-group">
-                            <label for="email">E-mail</label>
-                            <input type="email" class="form-control" id="email" required>
-                        </div>
-                        <div class="d-flex justify-content-end mt-3">
-                            <button type="button" class="btn btn-primary" onclick="nextStep()">Próximo</button>
-                        </div>
-                    </div>
-                    <div id="step-2" class="form-step">
-                        <h2 class="text-center">Endereço</h2>
-                        <div class="form-group">
-                            <label for="cep">CEP</label>
-                            <input type="text" class="form-control" id="cep" required>
-                        </div>
-                        <div class="form-group">
-                            <label for="rua">Rua</label>
-                            <input type="text" class="form-control" id="rua" required>
-                        </div>
-                        <div class="form-group">
-                            <label for="numero">Número</label>
-                            <input type="text" class="form-control" id="numero" required>
-                        </div>
-                        <div class="d-flex justify-content-between mt-3">
-                            <button type="button" class="btn btn-secondary" onclick="prevStep()">Voltar</button>
-                            <button type="button" class="btn btn-primary" onclick="nextStep()">Próximo</button>
-                        </div>
-                    </div>
-                    <div id="step-3" class="form-step">
-                        <h2 class="text-center">Documentos</h2>
-                        <div class="form-group">
-                            <label for="rg">RG</label>
-                            <input type="text" class="form-control" id="rg" required>
-                        </div>
-                        <div class="form-group">
-                            <label for="cpf">CPF</label>
-                            <input type="text" class="form-control" id="cpf" required>
-                        </div>
-                        <div class="d-flex justify-content-between mt-3">
-                            <button type="button" class="btn btn-secondary" onclick="prevStep()">Voltar</button>
-                            <button type="button" class="btn btn-primary" onclick="nextStep()">Próximo</button>
-                        </div>
-                    </div>
-                    <div id="step-4" class="form-step">
-                        <h2 class="text-center">Moradores</h2>
-                        <div id="moradores-container">
-                            <!-- Moradores serão adicionados aqui -->
-                        </div>
-                        <button type="button" class="btn btn-success" id="add-morador">Adicionar Morador</button>
-                        <div class="d-flex justify-content-between mt-3">
-                            <button type="button" class="btn btn-secondary" onclick="prevStep()">Voltar</button>
-                            <button type="button" class="btn btn-primary" onclick="nextStep()">Próximo</button>
-                        </div>
-                    </div>
-                    <div id="step-5" class="form-step">
-                        <h2 class="text-center">Comentários</h2>
-                        <div class="form-group">
-                            <label for="comentarios">Gostaria de deixar algum comentário ou observação?</label>
-                            <textarea class="form-control" id="comentarios" rows="5"></textarea>
-                        </div>
-                        <div class="d-flex justify-content-between mt-3">
-                            <button type="button" class="btn btn-secondary" onclick="prevStep()">Voltar</button>
-                            <button type="submit" class="btn btn-primary">Enviar</button>
-                        </div>
-                    </div>
-                </form>
-            </div>
-        </div>
-    </div>
+<body class="bg-gray-50 dark:bg-gray-900 transition-colors duration-300">
+  <div id="particles-js"></div>
 
-    <script src="js/usuario.js"></script>
+  <div id="adminPanel" class="flex h-screen">
+    <aside class="w-64 bg-white dark:bg-gray-800 shadow-xl fixed h-full z-40 transform -translate-x-full md:translate-x-0 transition-transform duration-300" id="sidebar">
+      <div class="p-6 border-b border-gray-200 dark:border-gray-700">
+        <div class="flex items-center justify-between">
+          <h2 class="text-2xl font-black gradient-text">SRT Admin</h2>
+        </div>
+      </div>
+      
+      <nav class="p-4 space-y-2">
+        <a href="admin.html" class="nav-item sidebar-item w-full px-4 py-3 text-gray-600 dark:text-gray-400 rounded-xl font-medium flex items-center gap-3 transition-all hover:bg-gray-100 dark:hover:bg-gray-700">
+          <svg class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6" />
+          </svg>
+          <span>Casas</span>
+        </a>
+        
+        <button class="nav-item sidebar-item w-full px-4 py-3 bg-blue-50 dark:bg-blue-900/20 text-blue-600 dark:text-blue-400 rounded-xl font-medium flex items-center gap-3 transition-all hover:bg-blue-100 dark:hover:bg-blue-900/30 active" data-tab="users">
+          <svg class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z" />
+          </svg>
+          <span>Usuários</span>
+        </button>
+      </nav>
+      
+      <div class="absolute bottom-0 left-0 right-0 p-4 border-t border-gray-200 dark:border-gray-700">
+        <button id="logoutBtn" class="w-full px-4 py-2 bg-red-50 dark:bg-red-900/20 text-red-600 dark:text-red-400 rounded-xl flex items-center justify-center gap-2 transition-all hover:bg-red-100 dark:hover:bg-red-900/30">
+          <svg class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1" />
+          </svg>
+          <span class="text-sm font-medium">Sair</span>
+        </button>
+      </div>
+    </aside>
+
+    <main class="flex-1 md:ml-64 overflow-auto">
+      <div id="usersTab" class="tab-content active">
+        <header class="bg-white dark:bg-gray-800 shadow-sm px-6 py-4">
+          <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+            <div>
+              <h1 class="text-2xl font-bold text-gray-800 dark:text-white">Gerenciamento de Usuários</h1>
+              <p class="text-sm text-gray-600 dark:text-gray-400">Adicione, edite ou remova usuários do sistema</p>
+            </div>
+            <button id="addUserBtn" class="px-4 py-2 bg-gradient-to-r from-blue-500 to-purple-600 hover:from-blue-600 hover:to-purple-700 text-white rounded-xl font-medium transition-all transform hover:scale-105 active:scale-95 flex items-center gap-2">
+              <svg class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6v6m0 0v6m0-6h6m-6 0H6" />
+              </svg>
+              <span>Adicionar Usuário</span>
+            </button>
+          </div>
+        </header>
+        
+        <div class="p-6">
+          <div class="bg-white dark:bg-gray-800 rounded-xl shadow-lg overflow-hidden">
+            <div class="overflow-x-auto">
+              <table id="usersTable" class="w-full">
+                <thead class="bg-gray-50 dark:bg-gray-900">
+                  <tr>
+                    <th class="px-6 py-4 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">Email</th>
+                    <th class="px-6 py-4 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">Ações</th>
+                  </tr>
+                </thead>
+                <tbody class="bg-white dark:bg-gray-800 divide-y divide-gray-200 dark:divide-gray-700"></tbody>
+              </table>
+            </div>
+          </div>
+        </div>
+      </div>
+    </main>
+  </div>
+
+  <div id="userModal" class="fixed inset-0 z-50 hidden">
+    <div class="modal-backdrop absolute inset-0 bg-black/60 backdrop-blur-sm" onclick="closeUserModal()"></div>
+    <div class="modal-content absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 w-full max-w-md bg-white dark:bg-gray-800 rounded-2xl shadow-2xl overflow-hidden animate-scale-in">
+      <div class="bg-gradient-to-r from-blue-500 to-purple-600 p-6 text-white">
+        <div class="flex items-center justify-between">
+          <h2 id="userModalTitle" class="text-2xl font-bold">Adicionar Usuário</h2>
+          <button class="modal-close p-2 hover:bg-white/20 rounded-lg transition-colors" onclick="closeUserModal()">
+            <svg class="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
+            </svg>
+          </button>
+        </div>
+      </div>
+      <form id="userForm" class="p-6">
+        <input type="hidden" id="userId">
+        <div class="space-y-6">
+          <div>
+            <label for="userEmail" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">E-mail</label>
+            <input type="email" id="userEmail" required class="w-full px-4 py-3 bg-gray-100 dark:bg-gray-700 border-0 rounded-xl focus:ring-2 focus:ring-blue-500 transition-all">
+          </div>
+          <div>
+            <label for="userPassword" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Senha</label>
+            <input type="password" id="userPassword" required class="w-full px-4 py-3 bg-gray-100 dark:bg-gray-700 border-0 rounded-xl focus:ring-2 focus:ring-blue-500 transition-all">
+          </div>
+        </div>
+        <div class="flex gap-3 justify-end pt-6 border-t border-gray-200 dark:border-gray-700 mt-6">
+          <button type="button" onclick="closeUserModal()" class="px-6 py-2 bg-gray-100 dark:bg-gray-700 hover:bg-gray-200 dark:hover:bg-gray-600 rounded-xl font-medium transition-all">
+            Cancelar
+          </button>
+          <button type="submit" class="px-6 py-2 bg-gradient-to-r from-blue-500 to-purple-600 hover:from-blue-600 hover:to-purple-700 text-white rounded-xl font-medium transition-all transform hover:scale-105 active:scale-95 flex items-center gap-2">
+            <svg class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7" />
+            </svg>
+            <span>Salvar</span>
+          </button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <div id="toastContainer" class="fixed top-4 right-4 z-50 space-y-4"></div>
+
+  <script>
+    particlesJS('particles-js', {
+      particles: {
+        number: { value: 80, density: { enable: true, value_area: 800 } },
+        color: { value: '#3b82f6' },
+        shape: { type: 'circle' },
+        opacity: { value: 0.5, random: false },
+        size: { value: 3, random: true },
+        line_linked: {
+          enable: true,
+          distance: 150,
+          color: '#3b82f6',
+          opacity: 0.4,
+          width: 1
+        },
+        move: {
+          enable: true,
+          speed: 2,
+          direction: 'none',
+          random: false,
+          straight: false,
+          out_mode: 'out',
+          bounce: false
+        }
+      },
+      interactivity: {
+        detect_on: 'canvas',
+        events: {
+          onhover: { enable: true, mode: 'repulse' },
+          onclick: { enable: true, mode: 'push' },
+          resize: true
+        }
+      },
+      retina_detect: true
+    });
+    
+    AOS.init({
+      duration: 800,
+      easing: 'ease-out-cubic',
+      once: true,
+      offset: 50
+    });
+
+    window.closeUserModal = () => {
+      document.getElementById('userModal').style.display = 'none';
+    };
+  </script>
+  <script src="js/usuario.js"></script>
+  <script src="js/utils.js"></script>
 </body>
 </html>
