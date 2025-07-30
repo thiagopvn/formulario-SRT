@@ -1,0 +1,695 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Painel Administrativo - SRT</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script src="https://unpkg.com/aos@2.3.1/dist/aos.js"></script>
+  <link href="https://unpkg.com/aos@2.3.1/dist/aos.css" rel="stylesheet">
+  <script src="https://cdn.jsdelivr.net/particles.js/2.0.0/particles.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/Sortable/1.15.0/Sortable.min.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-auth-compat.js"></script>
+  <script>
+    tailwind.config = {
+      darkMode: 'class',
+      theme: {
+        extend: {
+          animation: {
+            'float': 'float 20s ease-in-out infinite',
+            'gradient': 'gradient 15s ease infinite',
+            'slide-left': 'slideLeft 0.3s ease-out',
+            'slide-right': 'slideRight 0.3s ease-out',
+            'fade-in': 'fadeIn 0.5s ease-out',
+            'scale-in': 'scaleIn 0.3s ease-out',
+            'pulse-glow': 'pulseGlow 2s ease-in-out infinite',
+            'shake': 'shake 0.5s cubic-bezier(.36,.07,.19,.97) both',
+          },
+          keyframes: {
+            float: {
+              '0%, 100%': { transform: 'translateY(0px)' },
+              '50%': { transform: 'translateY(-20px)' },
+            },
+            gradient: {
+              '0%, 100%': { backgroundPosition: '0% 50%' },
+              '50%': { backgroundPosition: '100% 50%' },
+            },
+            slideLeft: {
+              '0%': { transform: 'translateX(20px)', opacity: '0' },
+              '100%': { transform: 'translateX(0)', opacity: '1' },
+            },
+            slideRight: {
+              '0%': { transform: 'translateX(-20px)', opacity: '0' },
+              '100%': { transform: 'translateX(0)', opacity: '1' },
+            },
+            fadeIn: {
+              '0%': { opacity: '0' },
+              '100%': { opacity: '1' },
+            },
+            scaleIn: {
+              '0%': { transform: 'scale(0.9)', opacity: '0' },
+              '100%': { transform: 'scale(1)', opacity: '1' },
+            },
+            pulseGlow: {
+              '0%, 100%': { boxShadow: '0 0 20px rgba(59, 130, 246, 0.5)' },
+              '50%': { boxShadow: '0 0 40px rgba(59, 130, 246, 0.8)' },
+            },
+            shake: {
+              '10%, 90%': { transform: 'translate3d(-1px, 0, 0)' },
+              '20%, 80%': { transform: 'translate3d(2px, 0, 0)' },
+              '30%, 50%, 70%': { transform: 'translate3d(-4px, 0, 0)' },
+              '40%, 60%': { transform: 'translate3d(4px, 0, 0)' },
+            },
+          },
+        },
+      },
+    }
+  </script>
+  <style>
+    @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&display=swap');
+    
+    * {
+      font-family: 'Inter', sans-serif;
+    }
+    
+    .gradient-text {
+      background: linear-gradient(135deg, #3b82f6 0%, #8b5cf6 100%);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      background-clip: text;
+    }
+    
+    .glass-morphism {
+      background: rgba(255, 255, 255, 0.1);
+      backdrop-filter: blur(10px);
+      -webkit-backdrop-filter: blur(10px);
+      border: 1px solid rgba(255, 255, 255, 0.2);
+    }
+    
+    .dark .glass-morphism {
+      background: rgba(0, 0, 0, 0.2);
+      border: 1px solid rgba(255, 255, 255, 0.1);
+    }
+    
+    .hover-lift {
+      transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    }
+    
+    .hover-lift:hover {
+      transform: translateY(-4px);
+      box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04);
+    }
+    
+    .sidebar-item {
+      position: relative;
+      overflow: hidden;
+    }
+    
+    .sidebar-item::before {
+      content: '';
+      position: absolute;
+      top: 0;
+      left: -100%;
+      width: 100%;
+      height: 100%;
+      background: linear-gradient(90deg, transparent, rgba(255,255,255,0.1), transparent);
+      transition: left 0.5s;
+    }
+    
+    .sidebar-item:hover::before {
+      left: 100%;
+    }
+    
+    #particles-js {
+      position: fixed;
+      width: 100%;
+      height: 100%;
+      top: 0;
+      left: 0;
+      z-index: -1;
+    }
+    
+    .morph-button {
+      position: relative;
+      overflow: hidden;
+    }
+    
+    .morph-button::after {
+      content: '';
+      position: absolute;
+      top: 50%;
+      left: 50%;
+      width: 0;
+      height: 0;
+      border-radius: 50%;
+      background: rgba(255, 255, 255, 0.3);
+      transform: translate(-50%, -50%);
+      transition: width 0.6s, height 0.6s;
+    }
+    
+    .morph-button:active::after {
+      width: 300px;
+      height: 300px;
+    }
+    
+    .table-row-hover {
+      transition: all 0.2s ease;
+    }
+    
+    .table-row-hover:hover {
+      background-color: rgba(59, 130, 246, 0.05);
+      transform: scale(1.01);
+    }
+    
+    .dark .table-row-hover:hover {
+      background-color: rgba(139, 92, 246, 0.1);
+    }
+    
+    .tab-content {
+      display: none;
+      opacity: 0;
+      transform: translateY(20px);
+      transition: all 0.3s ease;
+    }
+    
+    .tab-content.active {
+      display: block;
+      opacity: 1;
+      transform: translateY(0);
+    }
+    
+    @media (max-width: 768px) {
+      .mobile-menu-open {
+        transform: translateX(0) !important;
+      }
+    }
+  </style>
+</head>
+<body class="bg-gray-50 dark:bg-gray-900 transition-colors duration-300">
+  <div id="particles-js"></div>
+  
+  <div id="loginDiv" class="min-h-screen flex items-center justify-center p-4" style="display: none;">
+    <div class="bg-white dark:bg-gray-800 rounded-2xl shadow-2xl p-8 w-full max-w-md">
+      <div class="text-center mb-8">
+        <h1 class="text-3xl font-black gradient-text mb-2">SRT Admin</h1>
+        <p class="text-gray-600 dark:text-gray-400">Acesso ao Painel Administrativo</p>
+      </div>
+      
+      <form id="loginForm" class="space-y-6">
+        <div>
+          <label for="loginEmail" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">E-mail</label>
+          <input type="email" id="loginEmail" required class="w-full px-4 py-3 bg-gray-100 dark:bg-gray-700 border-0 rounded-xl focus:ring-2 focus:ring-blue-500 transition-all">
+        </div>
+        
+        <div>
+          <label for="loginPassword" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Senha</label>
+          <input type="password" id="loginPassword" required class="w-full px-4 py-3 bg-gray-100 dark:bg-gray-700 border-0 rounded-xl focus:ring-2 focus:ring-blue-500 transition-all">
+        </div>
+        
+        <div id="loginError" class="text-red-500 text-sm text-center"></div>
+        
+        <button type="submit" id="loginBtn" class="w-full px-6 py-3 bg-gradient-to-r from-blue-500 to-purple-600 hover:from-blue-600 hover:to-purple-700 text-white rounded-xl font-medium transition-all transform hover:scale-105 active:scale-95 flex items-center justify-center gap-2">
+          <span>Entrar</span>
+          <svg class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M14 5l7 7m0 0l-7 7m7-7H3" />
+          </svg>
+        </button>
+      </form>
+    </div>
+  </div>
+
+  <div id="adminPanel" class="flex h-screen" style="display: none;">
+    <aside class="w-64 bg-white dark:bg-gray-800 shadow-xl fixed h-full z-40 transform -translate-x-full md:translate-x-0 transition-transform duration-300" id="sidebar">
+      <div class="p-6 border-b border-gray-200 dark:border-gray-700">
+        <div class="flex items-center justify-between">
+          <h2 class="text-2xl font-black gradient-text">SRT Admin</h2>
+          <button class="md:hidden" id="mobileMenuToggle">
+            <svg class="w-6 h-6 text-gray-600 dark:text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
+            </svg>
+          </button>
+        </div>
+      </div>
+      
+      <nav class="p-4 space-y-2">
+        <button class="nav-item sidebar-item w-full px-4 py-3 bg-blue-50 dark:bg-blue-900/20 text-blue-600 dark:text-blue-400 rounded-xl font-medium flex items-center gap-3 transition-all hover:bg-blue-100 dark:hover:bg-blue-900/30 active" data-tab="houses">
+          <svg class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6" />
+          </svg>
+          <span>Casas</span>
+        </button>
+        
+        <a href="usuario.html" class="nav-item sidebar-item w-full px-4 py-3 text-gray-600 dark:text-gray-400 rounded-xl font-medium flex items-center gap-3 transition-all hover:bg-gray-100 dark:hover:bg-gray-700">
+          <svg class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z" />
+          </svg>
+          <span>Usuários</span>
+        </a>
+        
+        <button class="nav-item sidebar-item w-full px-4 py-3 text-gray-600 dark:text-gray-400 rounded-xl font-medium flex items-center gap-3 transition-all hover:bg-gray-100 dark:hover:bg-gray-700" data-tab="config">
+          <svg class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z" />
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+          </svg>
+          <span>Configurações</span>
+        </button>
+        
+        <button class="nav-item sidebar-item w-full px-4 py-3 text-gray-600 dark:text-gray-400 rounded-xl font-medium flex items-center gap-3 transition-all hover:bg-gray-100 dark:hover:bg-gray-700" data-tab="reports">
+          <svg class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 17v-2m3 2v-4m3 4v-6m2 10H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+          </svg>
+          <span>Relatórios</span>
+        </button>
+      </nav>
+      
+      <div class="absolute bottom-0 left-0 right-0 p-4 border-t border-gray-200 dark:border-gray-700">
+        <button id="themeToggle" class="w-full mb-2 px-4 py-2 bg-gray-100 dark:bg-gray-700 rounded-xl flex items-center justify-center gap-2 transition-all hover:bg-gray-200 dark:hover:bg-gray-600">
+          <svg class="w-5 h-5 text-yellow-500 dark:text-purple-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <path class="sun-icon dark:hidden" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 3v1m0 16v1m9-9h-1M4 12H3m15.364 6.364l-.707-.707M6.343 6.343l-.707-.707m12.728 0l-.707.707M6.343 17.657l-.707.707M16 12a4 4 0 11-8 0 4 4 0 018 0z" />
+            <path class="moon-icon hidden dark:block" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20.354 15.354A9 9 0 018.646 3.646 9.003 9.003 0 0012 21a9.003 9.003 0 008.354-5.646z" />
+          </svg>
+          <span class="text-sm font-medium text-gray-700 dark:text-gray-300">Tema</span>
+        </button>
+        
+        <button id="logoutBtn" class="w-full px-4 py-2 bg-red-50 dark:bg-red-900/20 text-red-600 dark:text-red-400 rounded-xl flex items-center justify-center gap-2 transition-all hover:bg-red-100 dark:hover:bg-red-900/30">
+          <svg class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1" />
+          </svg>
+          <span class="text-sm font-medium">Sair</span>
+        </button>
+      </div>
+    </aside>
+
+    <main class="flex-1 md:ml-64 overflow-auto">
+      <div id="housesTab" class="tab-content active">
+        <header class="bg-white dark:bg-gray-800 shadow-sm px-6 py-4">
+          <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+            <div>
+              <h1 class="text-2xl font-bold text-gray-800 dark:text-white">Residências Terapêuticas</h1>
+              <p class="text-sm text-gray-600 dark:text-gray-400">Gerencie as casas cadastradas no sistema</p>
+            </div>
+            <button id="exportBtn" class="px-4 py-2 bg-gradient-to-r from-green-500 to-green-600 hover:from-green-600 hover:to-green-700 text-white rounded-xl font-medium transition-all transform hover:scale-105 active:scale-95 flex items-center gap-2">
+              <svg class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+              </svg>
+              <span>Exportar</span>
+            </button>
+          </div>
+        </header>
+        
+        <div class="p-6">
+          <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
+            <div class="bg-white dark:bg-gray-800 rounded-xl p-6 shadow-lg hover-lift relative overflow-hidden group">
+              <div class="absolute inset-0 bg-gradient-to-r from-blue-500 to-blue-600 opacity-0 group-hover:opacity-10 transition-opacity"></div>
+              <div class="relative">
+                <div class="flex items-center justify-between mb-2">
+                  <h3 class="text-3xl font-bold text-gray-800 dark:text-white" id="totalHouses">0</h3>
+                  <div class="p-3 bg-blue-100 dark:bg-blue-900/20 rounded-xl">
+                    <svg class="w-6 h-6 text-blue-600 dark:text-blue-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6" />
+                    </svg>
+                  </div>
+                </div>
+                <p class="text-sm text-gray-600 dark:text-gray-400">Total de Casas</p>
+              </div>
+            </div>
+            
+            <div class="bg-white dark:bg-gray-800 rounded-xl p-6 shadow-lg hover-lift relative overflow-hidden group">
+              <div class="absolute inset-0 bg-gradient-to-r from-purple-500 to-purple-600 opacity-0 group-hover:opacity-10 transition-opacity"></div>
+              <div class="relative">
+                <div class="flex items-center justify-between mb-2">
+                  <h3 class="text-3xl font-bold text-gray-800 dark:text-white" id="totalResidentsCount">0</h3>
+                  <div class="p-3 bg-purple-100 dark:bg-purple-900/20 rounded-xl">
+                    <svg class="w-6 h-6 text-purple-600 dark:text-purple-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z" />
+                    </svg>
+                  </div>
+                </div>
+                <p class="text-sm text-gray-600 dark:text-gray-400">Total de Moradores</p>
+              </div>
+            </div>
+            
+            <div class="bg-white dark:bg-gray-800 rounded-xl p-6 shadow-lg hover-lift relative overflow-hidden group">
+              <div class="absolute inset-0 bg-gradient-to-r from-green-500 to-green-600 opacity-0 group-hover:opacity-10 transition-opacity"></div>
+              <div class="relative">
+                <div class="flex items-center justify-between mb-2">
+                  <h3 class="text-3xl font-bold text-gray-800 dark:text-white" id="avgResidents">0</h3>
+                  <div class="p-3 bg-green-100 dark:bg-green-900/20 rounded-xl">
+                    <svg class="w-6 h-6 text-green-600 dark:text-green-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" />
+                    </svg>
+                  </div>
+                </div>
+                <p class="text-sm text-gray-600 dark:text-gray-400">Média por Casa</p>
+              </div>
+            </div>
+            
+            <div class="bg-white dark:bg-gray-800 rounded-xl p-6 shadow-lg hover-lift relative overflow-hidden group">
+              <div class="absolute inset-0 bg-gradient-to-r from-orange-500 to-orange-600 opacity-0 group-hover:opacity-10 transition-opacity"></div>
+              <div class="relative">
+                <div class="flex items-center justify-between mb-2">
+                  <h3 class="text-3xl font-bold text-gray-800 dark:text-white" id="occupancyRate">0%</h3>
+                  <div class="p-3 bg-orange-100 dark:bg-orange-900/20 rounded-xl">
+                    <svg class="w-6 h-6 text-orange-600 dark:text-orange-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" />
+                    </svg>
+                  </div>
+                </div>
+                <p class="text-sm text-gray-600 dark:text-gray-400">Taxa de Ocupação</p>
+              </div>
+            </div>
+          </div>
+
+          <div class="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-8">
+            <div class="lg:col-span-2 bg-white dark:bg-gray-800 rounded-xl p-6 shadow-lg">
+              <h3 class="text-lg font-semibold text-gray-800 dark:text-white mb-4">Taxa de Ocupação por Casa</h3>
+              <div class="h-64">
+                <canvas id="occupancyChart"></canvas>
+              </div>
+            </div>
+            
+            <div class="bg-white dark:bg-gray-800 rounded-xl p-6 shadow-lg">
+              <h3 class="text-lg font-semibold text-gray-800 dark:text-white mb-4">Buscar Casa</h3>
+              <div class="relative">
+                <input type="text" id="searchInput" placeholder="Buscar por nome, CAPS ou município..." class="w-full pl-10 pr-4 py-2 bg-gray-100 dark:bg-gray-700 border-0 rounded-xl focus:ring-2 focus:ring-blue-500 transition-all">
+                <svg class="w-5 h-5 absolute left-3 top-2.5 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+                </svg>
+              </div>
+            </div>
+          </div>
+
+          <div class="bg-white dark:bg-gray-800 rounded-xl shadow-lg overflow-hidden">
+            <div class="overflow-x-auto">
+              <table id="housesTable" class="w-full">
+                <thead class="bg-gray-50 dark:bg-gray-900">
+                  <tr>
+                    <th class="px-6 py-4 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">CAPS Vinculado</th>
+                    <th class="px-6 py-4 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">Tipo SRT</th>
+                    <th class="px-6 py-4 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">Moradores</th>
+                    <th class="px-6 py-4 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">Vagas</th>
+                    <th class="px-6 py-4 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">Ações</th>
+                  </tr>
+                </thead>
+                <tbody class="bg-white dark:bg-gray-800 divide-y divide-gray-200 dark:divide-gray-700"></tbody>
+              </table>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div id="configTab" class="tab-content">
+        <header class="bg-white dark:bg-gray-800 shadow-sm px-6 py-4">
+          <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+            <div>
+              <h1 class="text-2xl font-bold text-gray-800 dark:text-white">Configurações do Formulário</h1>
+              <p class="text-sm text-gray-600 dark:text-gray-400">Gerencie os campos do formulário de cadastro</p>
+            </div>
+            <button id="addFieldBtn" class="px-4 py-2 bg-gradient-to-r from-blue-500 to-purple-600 hover:from-blue-600 hover:to-purple-700 text-white rounded-xl font-medium transition-all transform hover:scale-105 active:scale-95 flex items-center gap-2">
+              <svg class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6v6m0 0v6m0-6h6m-6 0H6" />
+              </svg>
+              <span>Adicionar Campo</span>
+            </button>
+          </div>
+        </header>
+        
+        <div class="p-6">
+          <div class="grid grid-cols-1 lg:grid-cols-2 xl:grid-cols-3 gap-6">
+            <div class="bg-white dark:bg-gray-800 rounded-xl p-6 shadow-lg" data-section="municipio">
+              <div class="flex items-center justify-between mb-4">
+                <h3 class="text-lg font-semibold text-gray-800 dark:text-white">Informações do Município</h3>
+                <span class="field-count text-sm text-gray-500 dark:text-gray-400">0 campos</span>
+              </div>
+              <div id="municipioFieldsList" class="space-y-3"></div>
+            </div>
+            
+            <div class="bg-white dark:bg-gray-800 rounded-xl p-6 shadow-lg" data-section="general">
+              <div class="flex items-center justify-between mb-4">
+                <h3 class="text-lg font-semibold text-gray-800 dark:text-white">Dados do SRT</h3>
+                <span class="field-count text-sm text-gray-500 dark:text-gray-400">0 campos</span>
+              </div>
+              <div id="generalFieldsList" class="space-y-3"></div>
+            </div>
+            
+            <div class="bg-white dark:bg-gray-800 rounded-xl p-6 shadow-lg" data-section="residence">
+              <div class="flex items-center justify-between mb-4">
+                <h3 class="text-lg font-semibold text-gray-800 dark:text-white">Dados da Residência</h3>
+                <span class="field-count text-sm text-gray-500 dark:text-gray-400">0 campos</span>
+              </div>
+              <div id="residenceFieldsList" class="space-y-3"></div>
+            </div>
+            
+            <div class="bg-white dark:bg-gray-800 rounded-xl p-6 shadow-lg" data-section="caregivers">
+              <div class="flex items-center justify-between mb-4">
+                <h3 class="text-lg font-semibold text-gray-800 dark:text-white">Dados da Equipe</h3>
+                <span class="field-count text-sm text-gray-500 dark:text-gray-400">0 campos</span>
+              </div>
+              <div id="caregiversFieldsList" class="space-y-3"></div>
+            </div>
+            
+            <div class="bg-white dark:bg-gray-800 rounded-xl p-6 shadow-lg" data-section="residentFields">
+              <div class="flex items-center justify-between mb-4">
+                <h3 class="text-lg font-semibold text-gray-800 dark:text-white">Dados dos Moradores</h3>
+                <span class="field-count text-sm text-gray-500 dark:text-gray-400">0 campos</span>
+              </div>
+              <div id="residentFieldsFieldsList" class="space-y-3"></div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div id="reportsTab" class="tab-content">
+        <header class="bg-white dark:bg-gray-800 shadow-sm px-6 py-4">
+          <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+            <div>
+              <h1 class="text-2xl font-bold text-gray-800 dark:text-white">Relatórios</h1>
+              <p class="text-sm text-gray-600 dark:text-gray-400">Gere relatórios personalizados dos dados</p>
+            </div>
+          </div>
+        </header>
+        
+        <div class="p-6">
+          <div class="bg-white dark:bg-gray-800 rounded-xl p-6 shadow-lg mb-6">
+            <h3 class="text-lg font-semibold text-gray-800 dark:text-white mb-4">Gerar Relatório</h3>
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-4 mb-4">
+              <div>
+                <label for="startDate" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Data Inicial</label>
+                <input type="date" id="startDate" class="w-full px-4 py-2 bg-gray-100 dark:bg-gray-700 border-0 rounded-xl focus:ring-2 focus:ring-blue-500 transition-all">
+              </div>
+              <div>
+                <label for="endDate" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Data Final</label>
+                <input type="date" id="endDate" class="w-full px-4 py-2 bg-gray-100 dark:bg-gray-700 border-0 rounded-xl focus:ring-2 focus:ring-blue-500 transition-all">
+              </div>
+              <div>
+                <label for="reportType" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Tipo de Relatório</label>
+                <select id="reportType" class="w-full px-4 py-2 bg-gray-100 dark:bg-gray-700 border-0 rounded-xl focus:ring-2 focus:ring-blue-500 transition-all">
+                  <option value="summary">Resumo Geral</option>
+                  <option value="occupancy">Análise de Ocupação</option>
+                  <option value="residents">Perfil dos Moradores</option>
+                </select>
+              </div>
+            </div>
+            <button id="generateReportBtn" class="px-6 py-2 bg-gradient-to-r from-green-500 to-green-600 hover:from-green-600 hover:to-green-700 text-white rounded-xl font-medium transition-all transform hover:scale-105 active:scale-95 flex items-center gap-2">
+              <svg class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 17v-2m3 2v-4m3 4v-6m2 10H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+              </svg>
+              <span>Gerar Relatório</span>
+            </button>
+          </div>
+          
+          <div class="bg-white dark:bg-gray-800 rounded-xl shadow-lg overflow-hidden">
+            <div class="p-6">
+              <h3 class="text-lg font-semibold text-gray-800 dark:text-white mb-4">Resultado do Relatório</h3>
+              <div id="reportContent" class="text-gray-600 dark:text-gray-400">
+                Selecione um período e tipo de relatório para visualizar os dados.
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </main>
+  </div>
+
+  <div id="loadingOverlay" class="fixed inset-0 bg-black/80 backdrop-blur-sm z-50 hidden items-center justify-center">
+    <div class="bg-white dark:bg-gray-800 rounded-2xl p-8 shadow-2xl">
+      <div class="flex space-x-2 justify-center items-center">
+        <div class="w-4 h-4 bg-blue-500 rounded-full animate-bounce" style="animation-delay: -0.3s"></div>
+        <div class="w-4 h-4 bg-purple-500 rounded-full animate-bounce" style="animation-delay: -0.15s"></div>
+        <div class="w-4 h-4 bg-pink-500 rounded-full animate-bounce"></div>
+      </div>
+      <p class="mt-4 text-gray-600 dark:text-gray-300 font-medium">Processando...</p>
+    </div>
+  </div>
+
+  <div id="houseModal" class="fixed inset-0 z-50 hidden">
+    <div class="modal-backdrop absolute inset-0 bg-black/60 backdrop-blur-sm" onclick="closeHouseModal()"></div>
+    <div class="modal-content absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 w-full max-w-6xl max-h-[90vh] bg-white dark:bg-gray-800 rounded-2xl shadow-2xl overflow-hidden animate-scale-in">
+      <div class="bg-gradient-to-r from-blue-500 to-purple-600 p-6 text-white">
+        <div class="flex items-center justify-between">
+          <h2 class="text-2xl font-bold">Detalhes da Residência</h2>
+          <button class="modal-close p-2 hover:bg-white/20 rounded-lg transition-colors" onclick="closeHouseModal()">
+            <svg class="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
+            </svg>
+          </button>
+        </div>
+      </div>
+      <div class="p-6 overflow-y-auto max-h-[calc(90vh-120px)]">
+        <div id="houseDetails"></div>
+      </div>
+    </div>
+  </div>
+
+  <div id="fieldModal" class="fixed inset-0 z-50 hidden">
+    <div class="modal-backdrop absolute inset-0 bg-black/60 backdrop-blur-sm" onclick="closeFieldModal()"></div>
+    <div class="modal-content absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 w-full max-w-2xl bg-white dark:bg-gray-800 rounded-2xl shadow-2xl overflow-hidden animate-scale-in">
+      <div class="bg-gradient-to-r from-blue-500 to-purple-600 p-6 text-white">
+        <div class="flex items-center justify-between">
+          <h2 id="fieldModalTitle" class="text-2xl font-bold">Adicionar Campo</h2>
+          <button class="modal-close p-2 hover:bg-white/20 rounded-lg transition-colors" onclick="closeFieldModal()">
+            <svg class="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
+            </svg>
+          </button>
+        </div>
+      </div>
+      <form id="fieldForm" class="p-6">
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
+          <div>
+            <label for="fieldSection" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Seção</label>
+            <select id="fieldSection" required class="w-full px-4 py-2 bg-gray-100 dark:bg-gray-700 border-0 rounded-xl focus:ring-2 focus:ring-blue-500 transition-all">
+              <option value="municipio">Informações do Município</option>
+              <option value="general">Dados do SRT</option>
+              <option value="residence">Dados da Residência</option>
+              <option value="caregivers">Dados da Equipe</option>
+              <option value="residentFields">Dados dos Moradores</option>
+            </select>
+          </div>
+          
+          <div>
+            <label for="fieldType" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Tipo do Campo</label>
+            <select id="fieldType" required class="w-full px-4 py-2 bg-gray-100 dark:bg-gray-700 border-0 rounded-xl focus:ring-2 focus:ring-blue-500 transition-all">
+              <option value="text">Texto</option>
+              <option value="number">Número</option>
+              <option value="date">Data</option>
+              <option value="select">Lista</option>
+              <option value="multiselect">Múltipla Seleção</option>
+              <option value="textarea">Texto Longo</option>
+              <option value="tel">Telefone</option>
+              <option value="email">E-mail</option>
+            </select>
+          </div>
+        </div>
+        
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
+          <div>
+            <label for="fieldLabel" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Rótulo do Campo</label>
+            <input type="text" id="fieldLabel" required class="w-full px-4 py-2 bg-gray-100 dark:bg-gray-700 border-0 rounded-xl focus:ring-2 focus:ring-blue-500 transition-all">
+          </div>
+          
+          <div>
+            <label for="fieldKey" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Chave do Campo</label>
+            <input type="text" id="fieldKey" required class="w-full px-4 py-2 bg-gray-100 dark:bg-gray-700 border-0 rounded-xl focus:ring-2 focus:ring-blue-500 transition-all">
+          </div>
+        </div>
+        
+        <div class="mb-4">
+          <label class="flex items-center gap-2">
+            <input type="checkbox" id="fieldRequired" class="w-5 h-5 text-blue-600 bg-gray-100 border-gray-300 rounded focus:ring-blue-500">
+            <span class="text-sm font-medium text-gray-700 dark:text-gray-300">Campo obrigatório</span>
+          </label>
+        </div>
+        
+        <div id="optionsContainer" class="mb-4 hidden">
+          <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Opções</label>
+          <div id="optionsList" class="space-y-2 mb-2"></div>
+          <button type="button" id="addOptionBtn" class="px-4 py-2 bg-blue-100 dark:bg-blue-900/20 text-blue-600 dark:text-blue-400 rounded-xl font-medium transition-all hover:bg-blue-200 dark:hover:bg-blue-900/30">
+            Adicionar Opção
+          </button>
+        </div>
+        
+        <div id="numberConstraints" class="grid grid-cols-2 gap-4 mb-4 hidden">
+          <div>
+            <label for="fieldMin" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Valor Mínimo</label>
+            <input type="number" id="fieldMin" class="w-full px-4 py-2 bg-gray-100 dark:bg-gray-700 border-0 rounded-xl focus:ring-2 focus:ring-blue-500 transition-all">
+          </div>
+          <div>
+            <label for="fieldMax" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Valor Máximo</label>
+            <input type="number" id="fieldMax" class="w-full px-4 py-2 bg-gray-100 dark:bg-gray-700 border-0 rounded-xl focus:ring-2 focus:ring-blue-500 transition-all">
+          </div>
+        </div>
+        
+        <div class="flex gap-3 justify-end pt-4 border-t border-gray-200 dark:border-gray-700">
+          <button type="button" onclick="closeFieldModal()" class="px-6 py-2 bg-gray-100 dark:bg-gray-700 hover:bg-gray-200 dark:hover:bg-gray-600 rounded-xl font-medium transition-all">
+            Cancelar
+          </button>
+          <button type="submit" class="px-6 py-2 bg-gradient-to-r from-blue-500 to-purple-600 hover:from-blue-600 hover:to-purple-700 text-white rounded-xl font-medium transition-all transform hover:scale-105 active:scale-95 flex items-center gap-2">
+            <svg class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7" />
+            </svg>
+            <span>Salvar</span>
+          </button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <div id="toastContainer" class="fixed top-4 right-4 z-50 space-y-4"></div>
+
+  <script>
+    particlesJS('particles-js', {
+      particles: {
+        number: { value: 80, density: { enable: true, value_area: 800 } },
+        color: { value: '#3b82f6' },
+        shape: { type: 'circle' },
+        opacity: { value: 0.5, random: false },
+        size: { value: 3, random: true },
+        line_linked: {
+          enable: true,
+          distance: 150,
+          color: '#3b82f6',
+          opacity: 0.4,
+          width: 1
+        },
+        move: {
+          enable: true,
+          speed: 2,
+          direction: 'none',
+          random: false,
+          straight: false,
+          out_mode: 'out',
+          bounce: false
+        }
+      },
+      interactivity: {
+        detect_on: 'canvas',
+        events: {
+          onhover: { enable: true, mode: 'repulse' },
+          onclick: { enable: true, mode: 'push' },
+          resize: true
+        }
+      },
+      retina_detect: true
+    });
+    
+    AOS.init({
+      duration: 800,
+      easing: 'ease-out-cubic',
+      once: true,
+      offset: 50
+    });
+
+    window.closeHouseModal = () => {
+      document.getElementById('houseModal').style.display = 'none';
+    };
+  </script>
+  <script src="js/admin.js"></script>
+  <script src="js/utils.js"></script>
+</body>
+</html>
+

@@ -1,0 +1,514 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Gerenciamento de Usuários - SRT</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script src="https://unpkg.com/aos@2.3.1/dist/aos.js"></script>
+  <link href="https://unpkg.com/aos@2.3.1/dist/aos.css" rel="stylesheet">
+  <script src="https://cdn.jsdelivr.net/particles.js/2.0.0/particles.min.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-auth-compat.js"></script>
+  <script>
+    tailwind.config = {
+      darkMode: 'class',
+      theme: {
+        extend: {
+          animation: {
+            'float': 'float 20s ease-in-out infinite',
+            'gradient': 'gradient 15s ease infinite',
+            'slide-left': 'slideLeft 0.3s ease-out',
+            'slide-right': 'slideRight 0.3s ease-out',
+            'fade-in': 'fadeIn 0.5s ease-out',
+            'scale-in': 'scaleIn 0.3s ease-out',
+            'pulse-glow': 'pulseGlow 2s ease-in-out infinite',
+            'shake': 'shake 0.5s cubic-bezier(.36,.07,.19,.97) both',
+          },
+          keyframes: {
+            float: {
+              '0%, 100%': { transform: 'translateY(0px)' },
+              '50%': { transform: 'translateY(-20px)' },
+            },
+            gradient: {
+              '0%, 100%': { backgroundPosition: '0% 50%' },
+              '50%': { backgroundPosition: '100% 50%' },
+            },
+            slideLeft: {
+              '0%': { transform: 'translateX(20px)', opacity: '0' },
+              '100%': { transform: 'translateX(0)', opacity: '1' },
+            },
+            slideRight: {
+              '0%': { transform: 'translateX(-20px)', opacity: '0' },
+              '100%': { transform: 'translateX(0)', opacity: '1' },
+            },
+            fadeIn: {
+              '0%': { opacity: '0' },
+              '100%': { opacity: '1' },
+            },
+            scaleIn: {
+              '0%': { transform: 'scale(0.9)', opacity: '0' },
+              '100%': { transform: 'scale(1)', opacity: '1' },
+            },
+            pulseGlow: {
+              '0%, 100%': { boxShadow: '0 0 20px rgba(59, 130, 246, 0.5)' },
+              '50%': { boxShadow: '0 0 40px rgba(59, 130, 246, 0.8)' },
+            },
+            shake: {
+              '10%, 90%': { transform: 'translate3d(-1px, 0, 0)' },
+              '20%, 80%': { transform: 'translate3d(2px, 0, 0)' },
+              '30%, 50%, 70%': { transform: 'translate3d(-4px, 0, 0)' },
+              '40%, 60%': { transform: 'translate3d(4px, 0, 0)' },
+            },
+          },
+        },
+      },
+    }
+  </script>
+  <style>
+    @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&display=swap');
+    
+    * {
+      font-family: 'Inter', sans-serif;
+    }
+    
+    .gradient-text {
+      background: linear-gradient(135deg, #3b82f6 0%, #8b5cf6 100%);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      background-clip: text;
+    }
+    
+    .glass-morphism {
+      background: rgba(255, 255, 255, 0.1);
+      backdrop-filter: blur(10px);
+      -webkit-backdrop-filter: blur(10px);
+      border: 1px solid rgba(255, 255, 255, 0.2);
+    }
+    
+    .dark .glass-morphism {
+      background: rgba(0, 0, 0, 0.2);
+      border: 1px solid rgba(255, 255, 255, 0.1);
+    }
+    
+    .hover-lift {
+      transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    }
+    
+    .hover-lift:hover {
+      transform: translateY(-4px);
+      box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04);
+    }
+    
+    #particles-js {
+      position: fixed;
+      width: 100%;
+      height: 100%;
+      top: 0;
+      left: 0;
+      z-index: -1;
+    }
+    
+    .table-row-hover {
+      transition: all 0.2s ease;
+    }
+    
+    .table-row-hover:hover {
+      background-color: rgba(59, 130, 246, 0.05);
+      transform: scale(1.01);
+    }
+    
+    .dark .table-row-hover:hover {
+      background-color: rgba(139, 92, 246, 0.1);
+    }
+    
+    .status-badge {
+      padding: 0.25rem 0.75rem;
+      border-radius: 9999px;
+      font-size: 0.75rem;
+      font-weight: 500;
+      display: inline-flex;
+      align-items: center;
+      gap: 0.25rem;
+    }
+    
+    .status-active {
+      background-color: rgba(16, 185, 129, 0.1);
+      color: #10b981;
+    }
+    
+    .dark .status-active {
+      background-color: rgba(16, 185, 129, 0.2);
+      color: #34d399;
+    }
+    
+    .status-inactive {
+      background-color: rgba(239, 68, 68, 0.1);
+      color: #ef4444;
+    }
+    
+    .dark .status-inactive {
+      background-color: rgba(239, 68, 68, 0.2);
+      color: #f87171;
+    }
+    
+    .role-badge {
+      padding: 0.25rem 0.75rem;
+      border-radius: 9999px;
+      font-size: 0.75rem;
+      font-weight: 500;
+    }
+    
+    .role-admin {
+      background-color: rgba(139, 92, 246, 0.1);
+      color: #8b5cf6;
+    }
+    
+    .dark .role-admin {
+      background-color: rgba(139, 92, 246, 0.2);
+      color: #a78bfa;
+    }
+    
+    .role-user {
+      background-color: rgba(59, 130, 246, 0.1);
+      color: #3b82f6;
+    }
+    
+    .dark .role-user {
+      background-color: rgba(59, 130, 246, 0.2);
+      color: #60a5fa;
+    }
+  </style>
+</head>
+<body class="bg-gray-50 dark:bg-gray-900 transition-colors duration-300">
+  <div id="particles-js"></div>
+
+  <div id="adminPanel" class="flex h-screen">
+    <aside class="w-64 bg-white dark:bg-gray-800 shadow-xl fixed h-full z-40 transform -translate-x-full md:translate-x-0 transition-transform duration-300" id="sidebar">
+      <div class="p-6 border-b border-gray-200 dark:border-gray-700">
+        <div class="flex items-center justify-between">
+          <h2 class="text-2xl font-black gradient-text">SRT Admin</h2>
+          <button class="md:hidden" id="mobileMenuToggle">
+            <svg class="w-6 h-6 text-gray-600 dark:text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
+            </svg>
+          </button>
+        </div>
+      </div>
+      
+      <nav class="p-4 space-y-2">
+        <a href="admin.html" class="nav-item sidebar-item w-full px-4 py-3 text-gray-600 dark:text-gray-400 rounded-xl font-medium flex items-center gap-3 transition-all hover:bg-gray-100 dark:hover:bg-gray-700">
+          <svg class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6" />
+          </svg>
+          <span>Casas</span>
+        </a>
+        
+        <button class="nav-item sidebar-item w-full px-4 py-3 bg-blue-50 dark:bg-blue-900/20 text-blue-600 dark:text-blue-400 rounded-xl font-medium flex items-center gap-3 transition-all hover:bg-blue-100 dark:hover:bg-blue-900/30 active" data-tab="users">
+          <svg class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z" />
+          </svg>
+          <span>Usuários</span>
+        </button>
+      </nav>
+      
+      <div class="absolute bottom-0 left-0 right-0 p-4 border-t border-gray-200 dark:border-gray-700">
+        <button id="themeToggle" class="w-full mb-2 px-4 py-2 bg-gray-100 dark:bg-gray-700 rounded-xl flex items-center justify-center gap-2 transition-all hover:bg-gray-200 dark:hover:bg-gray-600">
+          <svg class="w-5 h-5 text-yellow-500 dark:text-purple-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <path class="sun-icon dark:hidden" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 3v1m0 16v1m9-9h-1M4 12H3m15.364 6.364l-.707-.707M6.343 6.343l-.707-.707m12.728 0l-.707.707M6.343 17.657l-.707.707M16 12a4 4 0 11-8 0 4 4 0 018 0z" />
+            <path class="moon-icon hidden dark:block" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20.354 15.354A9 9 0 018.646 3.646 9.003 9.003 0 0012 21a9.003 9.003 0 008.354-5.646z" />
+          </svg>
+          <span class="text-sm font-medium text-gray-700 dark:text-gray-300">Tema</span>
+        </button>
+        
+        <button id="logoutBtn" class="w-full px-4 py-2 bg-red-50 dark:bg-red-900/20 text-red-600 dark:text-red-400 rounded-xl flex items-center justify-center gap-2 transition-all hover:bg-red-100 dark:hover:bg-red-900/30">
+          <svg class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1" />
+          </svg>
+          <span class="text-sm font-medium">Sair</span>
+        </button>
+      </div>
+    </aside>
+
+    <main class="flex-1 md:ml-64 overflow-auto">
+      <div id="usersTab" class="tab-content active">
+        <header class="bg-white dark:bg-gray-800 shadow-sm px-6 py-4">
+          <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+            <div>
+              <h1 class="text-2xl font-bold text-gray-800 dark:text-white">Gerenciamento de Usuários</h1>
+              <p class="text-sm text-gray-600 dark:text-gray-400">Gerencie os usuários com acesso ao sistema</p>
+            </div>
+            <div class="flex gap-3">
+              <button id="refreshBtn" class="px-4 py-2 bg-gray-100 dark:bg-gray-700 hover:bg-gray-200 dark:hover:bg-gray-600 text-gray-700 dark:text-gray-300 rounded-xl font-medium transition-all transform hover:scale-105 active:scale-95 flex items-center gap-2">
+                <svg class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
+                </svg>
+                <span>Atualizar</span>
+              </button>
+              <button id="addUserBtn" class="px-4 py-2 bg-gradient-to-r from-blue-500 to-purple-600 hover:from-blue-600 hover:to-purple-700 text-white rounded-xl font-medium transition-all transform hover:scale-105 active:scale-95 flex items-center gap-2">
+                <svg class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6v6m0 0v6m0-6h6m-6 0H6" />
+                </svg>
+                <span>Adicionar Usuário</span>
+              </button>
+            </div>
+          </div>
+        </header>
+        
+        <div class="p-6">
+          <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
+            <div class="bg-white dark:bg-gray-800 rounded-xl p-6 shadow-lg hover-lift relative overflow-hidden group">
+              <div class="absolute inset-0 bg-gradient-to-r from-blue-500 to-blue-600 opacity-0 group-hover:opacity-10 transition-opacity"></div>
+              <div class="relative">
+                <div class="flex items-center justify-between mb-2">
+                  <h3 class="text-3xl font-bold text-gray-800 dark:text-white" id="totalUsers">0</h3>
+                  <div class="p-3 bg-blue-100 dark:bg-blue-900/20 rounded-xl">
+                    <svg class="w-6 h-6 text-blue-600 dark:text-blue-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z" />
+                    </svg>
+                  </div>
+                </div>
+                <p class="text-sm text-gray-600 dark:text-gray-400">Total de Usuários</p>
+              </div>
+            </div>
+            
+            <div class="bg-white dark:bg-gray-800 rounded-xl p-6 shadow-lg hover-lift relative overflow-hidden group">
+              <div class="absolute inset-0 bg-gradient-to-r from-green-500 to-green-600 opacity-0 group-hover:opacity-10 transition-opacity"></div>
+              <div class="relative">
+                <div class="flex items-center justify-between mb-2">
+                  <h3 class="text-3xl font-bold text-gray-800 dark:text-white" id="activeUsers">0</h3>
+                  <div class="p-3 bg-green-100 dark:bg-green-900/20 rounded-xl">
+                    <svg class="w-6 h-6 text-green-600 dark:text-green-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+                    </svg>
+                  </div>
+                </div>
+                <p class="text-sm text-gray-600 dark:text-gray-400">Usuários Ativos</p>
+              </div>
+            </div>
+            
+            <div class="bg-white dark:bg-gray-800 rounded-xl p-6 shadow-lg hover-lift relative overflow-hidden group">
+              <div class="absolute inset-0 bg-gradient-to-r from-purple-500 to-purple-600 opacity-0 group-hover:opacity-10 transition-opacity"></div>
+              <div class="relative">
+                <div class="flex items-center justify-between mb-2">
+                  <h3 class="text-3xl font-bold text-gray-800 dark:text-white" id="adminUsers">0</h3>
+                  <div class="p-3 bg-purple-100 dark:bg-purple-900/20 rounded-xl">
+                    <svg class="w-6 h-6 text-purple-600 dark:text-purple-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z" />
+                    </svg>
+                  </div>
+                </div>
+                <p class="text-sm text-gray-600 dark:text-gray-400">Administradores</p>
+              </div>
+            </div>
+            
+            <div class="bg-white dark:bg-gray-800 rounded-xl p-6 shadow-lg hover-lift relative overflow-hidden group">
+              <div class="absolute inset-0 bg-gradient-to-r from-red-500 to-red-600 opacity-0 group-hover:opacity-10 transition-opacity"></div>
+              <div class="relative">
+                <div class="flex items-center justify-between mb-2">
+                  <h3 class="text-3xl font-bold text-gray-800 dark:text-white" id="inactiveUsers">0</h3>
+                  <div class="p-3 bg-red-100 dark:bg-red-900/20 rounded-xl">
+                    <svg class="w-6 h-6 text-red-600 dark:text-red-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M18.364 18.364A9 9 0 005.636 5.636m12.728 12.728A9 9 0 015.636 5.636m12.728 12.728L5.636 5.636" />
+                    </svg>
+                  </div>
+                </div>
+                <p class="text-sm text-gray-600 dark:text-gray-400">Usuários Inativos</p>
+              </div>
+            </div>
+          </div>
+
+          <div class="bg-white dark:bg-gray-800 rounded-xl shadow-lg overflow-hidden">
+            <div class="px-6 py-4 border-b border-gray-200 dark:border-gray-700">
+              <div class="relative">
+                <input type="text" id="searchInput" placeholder="Buscar por nome ou e-mail..." class="w-full pl-10 pr-4 py-2 bg-gray-100 dark:bg-gray-700 border-0 rounded-xl focus:ring-2 focus:ring-blue-500 transition-all">
+                <svg class="w-5 h-5 absolute left-3 top-2.5 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+                </svg>
+              </div>
+            </div>
+            
+            <div class="overflow-x-auto">
+              <table id="usersTable" class="w-full">
+                <thead class="bg-gray-50 dark:bg-gray-900">
+                  <tr>
+                    <th class="px-6 py-4 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">Usuário</th>
+                    <th class="px-6 py-4 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">E-mail</th>
+                    <th class="px-6 py-4 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">Tipo</th>
+                    <th class="px-6 py-4 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">Status</th>
+                    <th class="px-6 py-4 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">Último Acesso</th>
+                    <th class="px-6 py-4 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">Ações</th>
+                  </tr>
+                </thead>
+                <tbody class="bg-white dark:bg-gray-800 divide-y divide-gray-200 dark:divide-gray-700"></tbody>
+              </table>
+            </div>
+          </div>
+        </div>
+      </div>
+    </main>
+  </div>
+
+  <div id="userModal" class="fixed inset-0 z-50 hidden">
+    <div class="modal-backdrop absolute inset-0 bg-black/60 backdrop-blur-sm" onclick="closeUserModal()"></div>
+    <div class="modal-content absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 w-full max-w-2xl bg-white dark:bg-gray-800 rounded-2xl shadow-2xl overflow-hidden animate-scale-in">
+      <div class="bg-gradient-to-r from-blue-500 to-purple-600 p-6 text-white">
+        <div class="flex items-center justify-between">
+          <h2 id="userModalTitle" class="text-2xl font-bold">Adicionar Usuário</h2>
+          <button class="modal-close p-2 hover:bg-white/20 rounded-lg transition-colors" onclick="closeUserModal()">
+            <svg class="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
+            </svg>
+          </button>
+        </div>
+      </div>
+      <form id="userForm" class="p-6">
+        <input type="hidden" id="userId">
+        <input type="hidden" id="isEdit" value="false">
+        
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
+          <div>
+            <label for="userName" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Nome Completo</label>
+            <input type="text" id="userName" required class="w-full px-4 py-3 bg-gray-100 dark:bg-gray-700 border-0 rounded-xl focus:ring-2 focus:ring-blue-500 transition-all">
+          </div>
+          
+          <div>
+            <label for="userEmail" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">E-mail</label>
+            <input type="email" id="userEmail" required class="w-full px-4 py-3 bg-gray-100 dark:bg-gray-700 border-0 rounded-xl focus:ring-2 focus:ring-blue-500 transition-all">
+          </div>
+        </div>
+        
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6" id="passwordFields">
+          <div>
+            <label for="userPassword" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Senha</label>
+            <input type="password" id="userPassword" class="w-full px-4 py-3 bg-gray-100 dark:bg-gray-700 border-0 rounded-xl focus:ring-2 focus:ring-blue-500 transition-all">
+            <p class="text-xs text-gray-500 dark:text-gray-400 mt-1">Mínimo 6 caracteres</p>
+          </div>
+          
+          <div>
+            <label for="userPasswordConfirm" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Confirmar Senha</label>
+            <input type="password" id="userPasswordConfirm" class="w-full px-4 py-3 bg-gray-100 dark:bg-gray-700 border-0 rounded-xl focus:ring-2 focus:ring-blue-500 transition-all">
+          </div>
+        </div>
+        
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
+          <div>
+            <label for="userRole" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Tipo de Usuário</label>
+            <select id="userRole" required class="w-full px-4 py-3 bg-gray-100 dark:bg-gray-700 border-0 rounded-xl focus:ring-2 focus:ring-blue-500 transition-all">
+              <option value="admin">Administrador</option>
+              <option value="user">Usuário</option>
+            </select>
+          </div>
+          
+          <div>
+            <label for="userStatus" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Status</label>
+            <select id="userStatus" required class="w-full px-4 py-3 bg-gray-100 dark:bg-gray-700 border-0 rounded-xl focus:ring-2 focus:ring-blue-500 transition-all">
+              <option value="active">Ativo</option>
+              <option value="inactive">Inativo</option>
+            </select>
+          </div>
+        </div>
+        
+        <div id="errorMessage" class="text-red-500 text-sm mb-4 hidden"></div>
+        
+        <div class="flex gap-3 justify-end pt-6 border-t border-gray-200 dark:border-gray-700">
+          <button type="button" onclick="closeUserModal()" class="px-6 py-2 bg-gray-100 dark:bg-gray-700 hover:bg-gray-200 dark:hover:bg-gray-600 rounded-xl font-medium transition-all">
+            Cancelar
+          </button>
+          <button type="submit" class="px-6 py-2 bg-gradient-to-r from-blue-500 to-purple-600 hover:from-blue-600 hover:to-purple-700 text-white rounded-xl font-medium transition-all transform hover:scale-105 active:scale-95 flex items-center gap-2">
+            <svg class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7" />
+            </svg>
+            <span>Salvar</span>
+          </button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <div id="confirmModal" class="fixed inset-0 z-50 hidden">
+    <div class="modal-backdrop absolute inset-0 bg-black/60 backdrop-blur-sm"></div>
+    <div class="modal-content absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 w-full max-w-md bg-white dark:bg-gray-800 rounded-2xl shadow-2xl overflow-hidden animate-scale-in">
+      <div class="p-6">
+        <div class="flex items-center justify-center mb-4">
+          <div class="w-16 h-16 bg-red-100 dark:bg-red-900/20 rounded-full flex items-center justify-center">
+            <svg class="w-8 h-8 text-red-600 dark:text-red-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
+            </svg>
+          </div>
+        </div>
+        <h3 class="text-xl font-bold text-center text-gray-800 dark:text-white mb-2">Confirmar Exclusão</h3>
+        <p class="text-center text-gray-600 dark:text-gray-400 mb-6">Tem certeza que deseja excluir este usuário? Esta ação não pode ser desfeita.</p>
+        <div class="flex gap-3">
+          <button onclick="closeConfirmModal()" class="flex-1 px-4 py-2 bg-gray-100 dark:bg-gray-700 hover:bg-gray-200 dark:hover:bg-gray-600 rounded-xl font-medium transition-all">
+            Cancelar
+          </button>
+          <button id="confirmDeleteBtn" class="flex-1 px-4 py-2 bg-red-500 hover:bg-red-600 text-white rounded-xl font-medium transition-all">
+            Excluir
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div id="loadingOverlay" class="fixed inset-0 bg-black/80 backdrop-blur-sm z-50 hidden items-center justify-center">
+    <div class="bg-white dark:bg-gray-800 rounded-2xl p-8 shadow-2xl">
+      <div class="flex space-x-2 justify-center items-center">
+        <div class="w-4 h-4 bg-blue-500 rounded-full animate-bounce" style="animation-delay: -0.3s"></div>
+        <div class="w-4 h-4 bg-purple-500 rounded-full animate-bounce" style="animation-delay: -0.15s"></div>
+        <div class="w-4 h-4 bg-pink-500 rounded-full animate-bounce"></div>
+      </div>
+      <p class="mt-4 text-gray-600 dark:text-gray-300 font-medium">Processando...</p>
+    </div>
+  </div>
+
+  <div id="toastContainer" class="fixed top-4 right-4 z-50 space-y-4"></div>
+
+  <script>
+    particlesJS('particles-js', {
+      particles: {
+        number: { value: 80, density: { enable: true, value_area: 800 } },
+        color: { value: '#3b82f6' },
+        shape: { type: 'circle' },
+        opacity: { value: 0.5, random: false },
+        size: { value: 3, random: true },
+        line_linked: {
+          enable: true,
+          distance: 150,
+          color: '#3b82f6',
+          opacity: 0.4,
+          width: 1
+        },
+        move: {
+          enable: true,
+          speed: 2,
+          direction: 'none',
+          random: false,
+          straight: false,
+          out_mode: 'out',
+          bounce: false
+        }
+      },
+      interactivity: {
+        detect_on: 'canvas',
+        events: {
+          onhover: { enable: true, mode: 'repulse' },
+          onclick: { enable: true, mode: 'push' },
+          resize: true
+        }
+      },
+      retina_detect: true
+    });
+    
+    AOS.init({
+      duration: 800,
+      easing: 'ease-out-cubic',
+      once: true,
+      offset: 50
+    });
+  </script>
+  <script src="js/usuario.js"></script>
+  <script src="js/utils.js"></script>
+</body>
+</html>
