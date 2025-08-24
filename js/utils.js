@@ -42,6 +42,86 @@ const Utils = {
     }
   },
 
+  // Função para parsear uma string de data DD/MM/YYYY ou YYYY para um objeto Date UTC
+  parseDateString: (dateStr) => {
+    if (!dateStr) return null;
+    
+    // Remove espaços e caracteres extras
+    const cleanStr = String(dateStr).trim();
+    
+    // Se já for um objeto Date válido, retorna ele
+    if (cleanStr instanceof Date && !isNaN(cleanStr.getTime())) {
+      return cleanStr;
+    }
+    
+    // Se for apenas um ano (4 dígitos)
+    if (/^\d{4}$/.test(cleanStr)) {
+      const year = parseInt(cleanStr);
+      // Retorna 1º de janeiro do ano em UTC
+      return new Date(Date.UTC(year, 0, 1));
+    }
+    
+    // Se for formato DD/MM/YYYY
+    if (/^\d{2}\/\d{2}\/\d{4}$/.test(cleanStr)) {
+      const [day, month, year] = cleanStr.split('/').map(num => parseInt(num));
+      // Cria a data em UTC para evitar problemas de timezone
+      return new Date(Date.UTC(year, month - 1, day));
+    }
+    
+    // Se for formato ISO ou outro formato de data
+    if (cleanStr.includes('-') || cleanStr.includes('T')) {
+      const date = new Date(cleanStr);
+      if (!isNaN(date.getTime())) {
+        // Converte para UTC
+        return new Date(Date.UTC(date.getFullYear(), date.getMonth(), date.getDate()));
+      }
+    }
+    
+    // Se não conseguir processar, retorna null
+    return null;
+  },
+
+  // Função para formatar data como DD/MM/YYYY (aceita Date ou string)
+  formatDateToDDMMYYYY: (dateObjOrString) => {
+    if (!dateObjOrString) return '';
+    
+    let date = null;
+    
+    // Se for string, tenta parsear primeiro
+    if (typeof dateObjOrString === 'string') {
+      // Se já estiver no formato DD/MM/YYYY, retorna como está
+      if (/^\d{2}\/\d{2}\/\d{4}$/.test(dateObjOrString)) {
+        return dateObjOrString;
+      }
+      // Se for apenas ano
+      if (/^\d{4}$/.test(dateObjOrString)) {
+        return dateObjOrString;
+      }
+      // Tenta parsear a string
+      date = Utils.parseDateString(dateObjOrString);
+    } else if (dateObjOrString instanceof Date) {
+      date = dateObjOrString;
+    } else if (dateObjOrString && dateObjOrString.toDate) {
+      // Timestamp do Firebase
+      date = dateObjOrString.toDate();
+    } else if (dateObjOrString && dateObjOrString.seconds) {
+      // Timestamp do Firebase com seconds
+      date = new Date(dateObjOrString.seconds * 1000);
+    }
+    
+    if (!date || isNaN(date.getTime())) {
+      // Se não conseguir processar, retorna o valor original como string
+      return String(dateObjOrString);
+    }
+    
+    // Formata usando UTC para evitar problemas de timezone
+    const day = String(date.getUTCDate()).padStart(2, '0');
+    const month = String(date.getUTCMonth() + 1).padStart(2, '0');
+    const year = date.getUTCFullYear();
+    
+    return `${day}/${month}/${year}`;
+  },
+
   formatDateTime: (timestamp) => {
     if (!timestamp) return '';
     try {

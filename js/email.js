@@ -11,17 +11,7 @@ const EmailService = {
 
   formatters: {
     date: (dateStr) => {
-      if (!dateStr) return '-';
-      try {
-        const date = new Date(dateStr);
-        return date.toLocaleDateString('pt-BR', {
-          day: '2-digit',
-          month: '2-digit',
-          year: 'numeric'
-        });
-      } catch {
-        return dateStr;
-      }
+      return Utils.formatDateToDDMMYYYY(dateStr) || '-';
     },
 
     datetime: (timestamp) => {

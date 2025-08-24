@@ -11,9 +11,13 @@ This is a Brazilian Portuguese web application for managing Therapeutic Resident
 ### Frontend Structure
 - **Pure HTML/CSS/JavaScript** - No build process or framework dependencies
 - **Tailwind CSS** via CDN for styling
-- **Firebase** for authentication and data storage (Firestore)
-- **EmailJS** for sending email notifications
+- **Firebase** (v9.23.0) for authentication and data storage (Firestore)
+- **EmailJS** (v3) for sending email notifications
 - **Chart.js** for data visualization in admin panel
+- **SheetJS (xlsx)** (v0.18.5) for Excel export functionality
+- **Sortable.js** (v1.15.0) for drag-and-drop field configuration
+- **Particles.js** for animated background effects
+- **AOS** (Animate On Scroll) for scroll animations
 
 ### Key Files
 - `index.html` - Main registration form for new SRT entries
@@ -40,8 +44,10 @@ Since this is a static site with no build process:
 python -m http.server 8000
 # or
 npx http-server
+# or using VS Code Live Server extension
 
 # No build/test/lint commands - pure static files
+# No package.json or dependency management - all libraries loaded via CDN
 ```
 
 ## Firebase Configuration
@@ -64,11 +70,12 @@ The Firebase configuration is hardcoded in JavaScript files. The project uses:
    - Observations
 
 2. **Admin Panel** (`admin.html`)
-   - View all submissions
-   - Export to Excel
-   - Occupancy charts
+   - View all submissions in card format
+   - Export to Excel (XLSX format)
+   - Occupancy charts (Chart.js visualization)
    - Search/filter functionality
-   - Form field configuration
+   - Dynamic form field configuration with drag-and-drop reordering
+   - Firebase Auth required for access
 
 3. **User Management** (`usuario.html`)
    - Add/edit/delete users
@@ -93,9 +100,11 @@ The Firebase configuration is hardcoded in JavaScript files. The project uses:
 ## Common Tasks
 
 ### Adding a New Form Field
-1. Add field configuration in admin panel (`admin.html` > Configurações)
-2. Field types: text, number, date, select, multiselect, textarea, tel, email
-3. Fields are dynamically generated from Firestore config
+1. Navigate to admin panel (`admin.html` > Configurações tab)
+2. Use the "Adicionar Campo" button to create new fields
+3. Supported field types: text, number, date, select, multiselect, textarea, tel, email
+4. Fields are dynamically generated from Firestore `config` collection
+5. Use drag-and-drop to reorder fields (Sortable.js)
 
 ### Modifying Email Templates
 - Email templates are in `js/email.js`
@@ -105,3 +114,14 @@ The Firebase configuration is hardcoded in JavaScript files. The project uses:
 ### Updating Firebase Rules
 - Ensure Firestore rules allow authenticated writes to `srt` collection
 - Admin users need read/write access to `users` and `config` collections
+
+### Working with Excel Export
+- Uses SheetJS library for Excel generation
+- Export function in `admin.js` creates XLSX files with all SRT data
+- File naming convention: `Relatorio_SRT_DD-MM-YYYY.xlsx`
+
+### Authentication Flow
+1. Admin users authenticate via Firebase Auth
+2. User role verification: `userDoc.data().role === 'admin'`
+3. Session persisted in browser
+4. Logout clears session and redirects to login

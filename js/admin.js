@@ -546,15 +546,7 @@ const generateHouseDetailsHTML = (house) => {
   };
 
   const formatDate = (dateValue) => {
-    if (!dateValue) return '-';
-    try {
-      // Converte Timestamps do Firebase ou strings de data
-      const date = dateValue.toDate ? dateValue.toDate() : new Date(dateValue);
-      if (isNaN(date.getTime())) return dateValue; // Retorna o valor original se a data for inválida
-      return date.toLocaleDateString('pt-BR');
-    } catch {
-      return dateValue;
-    }
+    return Utils.formatDateToDDMMYYYY(dateValue);
   };
 
   let html = '<div class="space-y-6">';
@@ -1056,7 +1048,7 @@ const exportData = () => {
       residentsByGender[gender] = (residentsByGender[gender] || 0) + 1;
       
       if (resident.dataNascimento) {
-        const birthDate = new Date(resident.dataNascimento);
+        const birthDate = Utils.parseDateString(resident.dataNascimento) || new Date(resident.dataNascimento);
         const age = new Date().getFullYear() - birthDate.getFullYear();
         
         if (age < 30) ageGroups['18-29 anos']++;
@@ -1207,15 +1199,19 @@ const exportData = () => {
     const row = [];
     allResidenceFields.forEach(field => {
       const value = house[field.key];
-      if (field.type === 'date' && value && value.seconds) {
-        row.push(new Date(value.seconds * 1000)); // Push Date object for proper formatting
+      if (field.type === 'date' && value) {
+        const parsedDate = Utils.parseDateString(value);
+        row.push(parsedDate || value); // Push parsed Date object or original value
       } else if (Array.isArray(value)) {
         row.push(value.join(', '));
       } else {
         row.push(value || '-');
       }
     });
-    row.push(house.createdAt && house.createdAt.seconds ? new Date(house.createdAt.seconds * 1000) : '-'); // Push Date object
+    const createdAtDate = house.createdAt && house.createdAt.seconds 
+      ? new Date(house.createdAt.seconds * 1000) 
+      : (house.createdAt ? Utils.parseDateString(house.createdAt) : null);
+    row.push(createdAtDate || '-'); // Push Date object
     sheetData.push(row);
   });
   
@@ -1302,7 +1298,8 @@ const exportData = () => {
         formConfig.residentFields.forEach(field => {
           const value = resident[field.key];
           if (field.type === 'date' && value) {
-            row[field.label] = new Date(value); // Push Date object for proper formatting
+            const parsedDate = Utils.parseDateString(value);
+            row[field.label] = parsedDate || value; // Push parsed Date object or original value
           } else {
             row[field.label] = value || '-';
           }

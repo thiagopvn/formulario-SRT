@@ -317,16 +317,21 @@ const validateFlexibleDate = (input) => {
   
   // Aceita formato DD/MM/AAAA
   if (/^\d{2}\/\d{2}\/\d{4}$/.test(value)) {
-    const [day, month, year] = value.split('/').map(num => parseInt(num));
-    const date = new Date(year, month - 1, day);
+    // Usa a função utilitária para parsear a data corretamente
+    const parsedDate = Utils.parseDateString(value);
     
-    if (date.getDate() === day && 
-        date.getMonth() === month - 1 && 
-        date.getFullYear() === year &&
-        year >= 1900 && 
-        date <= new Date()) {
-      input.setCustomValidity('');
-      return true;
+    if (parsedDate && !isNaN(parsedDate.getTime())) {
+      const year = parsedDate.getUTCFullYear();
+      const today = new Date();
+      today.setHours(23, 59, 59, 999); // Define para o final do dia
+      
+      if (year >= 1900 && parsedDate <= today) {
+        input.setCustomValidity('');
+        return true;
+      } else {
+        input.setCustomValidity('Data inválida. Use o formato DD/MM/AAAA.');
+        return false;
+      }
     } else {
       input.setCustomValidity('Data inválida. Use o formato DD/MM/AAAA.');
       return false;
